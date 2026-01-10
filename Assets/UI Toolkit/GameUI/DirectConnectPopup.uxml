@@ -1,0 +1,19 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/GameUIStyleSheet.uss?fileID=7433441132597879392&amp;guid=35b9b2a65173fdb47ad41dfdb0b5a02a&amp;type=3#GameUIStyleSheet" />
+    <ui:VisualElement name="Canvas" picking-mode="Ignore" class="canvas canvas-transparent-background">
+        <ui:VisualElement name="Container" picking-mode="Ignore" class="container">
+            <ui:VisualElement name="UIWrapper" picking-mode="Ignore">
+                <ui:VisualElement name="ConnectionPanel" picking-mode="Ignore">
+                    <ui:VisualElement name="IPContainer" picking-mode="Ignore" class="section-separator">
+                        <ui:Label text="IP Address" name="IPLabel" picking-mode="Ignore" />
+                        <ui:TextField name="IPAddressField" tabindex="5" value="127.0.0.1" />
+                        <ui:Label text="Port" name="PortLabel" picking-mode="Ignore" />
+                        <ui:TextField name="PortField" tabindex="6" value="7979" />
+                    </ui:VisualElement>
+                    <ui:Button text="Connect" name="ConfirmButton" tabindex="11" parse-escape-sequences="false" />
+                    <ui:Button text="Cancel" name="CancelButton" tabindex="11" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

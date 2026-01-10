@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/GameUIStyleSheet.uss?fileID=7433441132597879392&amp;guid=35b9b2a65173fdb47ad41dfdb0b5a02a&amp;type=3#GameUIStyleSheet" />
+    <ui:VisualElement name="Canvas" picking-mode="Ignore" class="canvas canvas-transparent-background canvas-justify-bottom">
+        <ui:VisualElement name="Container" picking-mode="Ignore" class="container container-in-game">
+            <ui:VisualElement name="UIWrapper" picking-mode="Ignore">
+                <ui:VisualElement name="UILayout" picking-mode="Ignore">
+                    <ui:Label tabindex="-1" text="Connecting..." parse-escape-sequences="true" display-tooltip-when-elided="true" enable-rich-text="false" name="ConnectionStatus" picking-mode="Ignore" class="text-size-xsmall" />
+                </ui:VisualElement>
+                <ui:Button text="Cancel" name="CancelButton" tabindex="6" focusable="true" class="text-size-xsmal" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/PlayerHUD.uss?fileID=7433441132597879392&amp;guid=89bbe73027f904b8da50bf55484c285f&amp;type=3#PlayerHUD"/>
+    <ui:VisualElement name="weapon-info-container" picking-mode="Ignore">
+        <ui:Label name="weapon-type-label" text="Weapon Name" enabled="true" style="display: none;"/>
+        <ui:Label name="reloading-label" text="RELOADING"/>
+        <ui:VisualElement name="weapon-icon" style="display: none;"/>
+        <ui:VisualElement name="ammo-container">
+            <ui:Label name="ammo-label" text="0 / 0"/>
+            <ui:Label name="ammo-reserve-label" text="Reserve: &#8734;" style="display: none;"/>
+            <ui:ProgressBar value="22" title="AMMO" name="player-ammo-bar" class="kits-progress-bar kits-ammo-bar"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="health-info-container" picking-mode="Ignore">
+        <ui:ProgressBar value="63.8" title="HEALTH" name="player-health-bar" class="kits-progress-bar"/>
+        <ui:ProgressBar name="player-stamina-bar" low-value="0" high-value="100" value="100" class="kits-progress-bar" style="display: none;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="reticle-container" picking-mode="Ignore">
+        <ui:VisualElement name="player-reticle" picking-mode="Ignore"/>
+    </ui:VisualElement>
+</ui:UXML>

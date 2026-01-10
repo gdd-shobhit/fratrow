@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement name="respawn-screen-container" style="flex-grow: 1; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.7);">
+        <ui:Label text="YOU ARE DEAD" name="death-message" style="font-size: 48px; color: rgb(255, 85, 85); -unity-font-style: bold;" />
+        <ui:Label name="respawn-timer-label" style="font-size: 32px; color: white; margin-top: 20px;" />
+    </ui:VisualElement>
+</ui:UXML>

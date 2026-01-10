@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/Leaderboard/table.uss?fileID=7433441132597879392&amp;guid=ae0f7f1b297840a4f85f4c14cf0a086f&amp;type=3#table"/>
+    <ui:VisualElement name="root" style="flex-grow: 1; align-self: stretch; justify-content: center; align-items: center; align-content: stretch;">
+        <ui:VisualElement name="VisualElement" class="score-table">
+            <ui:VisualElement class="table-header" style="flex-direction: row; justify-content: flex-start; align-self: auto; align-content: auto; margin-right: 3px;">
+                <ui:Label text="Name" name="Label" class="header-cell" style="flex-basis: 200px; flex-grow: 2; color: rgb(255, 255, 255);"/>
+                <ui:Label text="Kills" class="header-cell" style="flex-basis: 50px; flex-grow: 1; color: rgb(255, 255, 255);"/>
+                <ui:Label text="Death" class="header-cell" style="flex-basis: 50px; flex-grow: 1; color: rgb(255, 255, 255);"/>
+            </ui:VisualElement>
+            <ui:ListView name="score-items" virtualization-method="DynamicHeight" fixed-item-height="22" style="flex-grow: 1;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

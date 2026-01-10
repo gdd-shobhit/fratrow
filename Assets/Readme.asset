@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf7219bab7fe46a1ad266029b2fee19, type: 3}
+  m_Name: Readme
+  m_EditorClassIdentifier: 
+  icon: {fileID: 2800000, guid: c47bc758c119a47d3895f8b81fbd74c4, type: 3}
+  title: Multiplayer FPS
+  sections:
+  - heading: Welcome to the Multiplayer FPS template
+    text: "This template is a complete, production\u2011ready foundation for building
+      networked shooters with Unity\u2019s DOTS stack. With Netcode for Entities,
+      GhostBridge\u2019s hybrid authoring, and a clear scene and prefab structure,
+      it serves as a practical guide to ECS\u2011driven architecture, gameplay systems,
+      and multiplayer synchronization. The template supports dedicated server builds
+      across platforms and includes developer\u2011oriented examples\u2014such as
+      ghost authoring, RPCs, and server bootstrap workflows\u2014to help teams prototype
+      quickly, learn best practices, and scale to real\u2011world projects."
+    linkText: 
+    url: 
+  - heading: Netcode for Entities Documentation
+    text: 
+    linkText: Read more about netcode for entities
+    url: https://docs.unity3d.com/Packages/com.unity.netcode@latest
+  - heading: Multiplayer
+    text: 
+    linkText: Read more about multiplayer solutions
+    url: https://docs.unity3d.com/Manual/multiplayer
+  - heading: Survival Kids Network infrastructure
+    text: 
+    linkText: Blog Post
+    url: https://unity.com/blog/inside-the-survival-kids-multiplayer-network-infrastructure
+  - heading: Report bugs
+    text: 
+    linkText: Submit a report
+    url: https://unity3d.com/unity/qa/bug-reporting
+  loadedLayout: 1

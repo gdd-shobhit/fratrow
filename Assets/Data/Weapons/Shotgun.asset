@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 600e1b9bafb249d0907133f228c0a442, type: 3}
+  m_Name: Shotgun
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Shotgun
+  Type: 1
+  ReticleType: 2
+  CooldownInMs: 1
+  Damage: 20
+  HitscanRange: 0
+  MagazineSize: 10
+  ReloadTime: 3
+  ProjectileGhostPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: 83a79bf5320972c46ae675e08e77534b
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 1605990968
+        y: 1277661219
+        z: 240610982
+        w: 3023402984
+  ProjectileHitVfxPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: e0aa30b8adee8b44dac442776f34f5e7
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 2332273166
+        y: 1152970458
+        z: 1998867629
+        w: 2120172534
+  MuzzleFlashVfxPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: d5370334ebfc741919094c943fa694ee
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 1127248733
+        y: 2437402558
+        z: 1237618833
+        w: 3997788915
+  WeaponFireSfx: {fileID: 11400000, guid: efa46b087affc004e90934acb0e499bb, type: 2}
+  WeaponReloadSfx: {fileID: 11400000, guid: 787dd818efa43da4f969b63e44de56b7, type: 2}
+  Behavior: 0
+  AoeRadius: 5
+  ProjectileSpeed: 30

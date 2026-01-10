@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/Leaderboard/killfeed.uss?fileID=7433441132597879392&amp;guid=31906fc372e12f74d911e689ce00ea1f&amp;type=3#killfeed"/>
+    <ui:VisualElement name="InGameHudContainer" picking-mode="Ignore" style="flex-grow: 1;">
+        <ui:VisualElement name="ActionFeedContainer" picking-mode="Ignore" style="position: absolute; top: 10px; right: 10px; width: auto; align-items: flex-end;"/>
+    </ui:VisualElement>
+</ui:UXML>

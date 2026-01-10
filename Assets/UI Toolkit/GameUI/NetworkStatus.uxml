@@ -1,0 +1,6 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/GameUI/GameUIStyleSheet.uss?fileID=7433441132597879392&amp;guid=35b9b2a65173fdb47ad41dfdb0b5a02a&amp;type=3#GameUIStyleSheet" />
+    <engine:Label text="Connetion:" name="ConnectionStatus" style="width: 395px; height: 39px; align-items: stretch; -unity-text-align: middle-left; font-size: 24px; left: 30px;" />
+    <engine:Label text="Networking role:" name="NetworkingRole" style="width: 395px; height: 39px; align-items: stretch; -unity-text-align: middle-left; font-size: 24px; top: 0; left: 30px;" />
+    <engine:Label text="Session name: " name="SessionName" style="width: 395px; height: 39px; align-items: stretch; -unity-text-align: middle-left; font-size: 24px; -unity-font-style: normal; left: 30px;" />
+</engine:UXML>

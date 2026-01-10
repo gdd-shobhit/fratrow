@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 600e1b9bafb249d0907133f228c0a442, type: 3}
+  m_Name: AssaultRifle
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Assault Rifle
+  Type: 0
+  ReticleType: 0
+  CooldownInMs: 0.1
+  Damage: 10
+  HitscanRange: 100
+  MagazineSize: 30
+  ReloadTime: 2
+  ProjectileGhostPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: 
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 0
+        y: 0
+        z: 0
+        w: 0
+  ProjectileHitVfxPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: e0aa30b8adee8b44dac442776f34f5e7
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 2332273166
+        y: 1152970458
+        z: 1998867629
+        w: 2120172534
+  MuzzleFlashVfxPrefab:
+    <GhostPrefab>k__BackingField:
+      m_AssetGUID: d5370334ebfc741919094c943fa694ee
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    m_GhostGuid:
+      Value:
+        x: 1127248733
+        y: 2437402558
+        z: 1237618833
+        w: 3997788915
+  WeaponFireSfx: {fileID: 11400000, guid: fc81bfa0b72614d498bbd910628ff6ef, type: 2}
+  WeaponReloadSfx: {fileID: 11400000, guid: e371920830b214046bde8a79c9798829, type: 2}
+  Behavior: 0
+  AoeRadius: 5
+  ProjectileSpeed: 30

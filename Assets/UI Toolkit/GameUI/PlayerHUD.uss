@@ -1,0 +1,208 @@
+#hud-root {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#weapon-info-container,
+#health-info-container {
+    position: absolute;
+    bottom: 20px;
+    background-color: rgba(0, 0, 0, 0.0);
+    padding: 15px;
+    border-radius: 5px;
+    width: 320px;
+}
+
+#weapon-info-container {
+    right: 20px;
+    left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align children to the right */
+}
+
+#health-info-container {
+    left: 20px;
+    right: auto;
+}
+
+#player-health-bar {
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    flex-shrink: 0;
+    justify-content: center;
+}
+
+#player-ammo-bar {
+    width: 85%;
+    height: 30px;
+    min-height: 30px;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    flex-shrink: 0;
+    justify-content: center;
+}
+
+#ammo-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* Vertically center items */
+    justify-content: flex-end; /* Push everything to the right */
+    margin-top: 5px;
+    width: 100%;
+}
+
+#ammo-label {
+    font-size: 16px;
+    color: white;
+    -unity-font-style: bold;
+    text-shadow: 1px 1px 2px rgb(0, 0, 0);
+    margin-right: 10px; /* Space between label and bar */
+    flex-shrink: 0; /* Prevent text from shrinking */
+}
+
+#weapon-type-label {
+    font-size: 24px;
+    color: white;
+    -unity-font-style: bold;
+    text-shadow: 1px 1px 2px rgb(0, 0, 0);
+    margin-bottom: 5px;
+}
+
+#weapon-icon {
+    height: 48px;
+    width: 256px;
+    background-size: 75% 75%;
+    align-self: flex-end;
+}
+
+#ammo-reserve-label {
+    font-size: 16px;
+    color: rgb(200, 200, 200);
+    text-shadow: 1px 1px 2px rgb(0, 0, 0);
+    margin-left: 15px;
+    align-self: center;
+}
+
+#reloading-label {
+    font-size: 20px;
+    color: rgb(255, 200, 0);
+    -unity-font-style: bold;
+    text-shadow: 1px 1px 2px rgb(0, 0, 0);
+    margin-top: 5px;
+    -unity-text-align: middle-center;
+    width: 85%;
+
+    /* Animation for blinking effect */
+    transition-property: opacity;
+    transition-duration: 0.5s;
+}
+
+
+#reticle-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#player-reticle {
+    position: relative;
+    width: 256px;
+    height: 256px;
+    -unity-background-scale-mode: scale-to-fit;
+    background-size: 100% 100%;
+    transform-origin: center;
+}
+
+/* Low ammo warning style */
+.low-ammo {
+    color: rgb(255, 100, 0);
+}
+
+/* No ammo style */
+.no-ammo {
+    color: rgb(255, 0, 0);
+}
+
+/* FROM Kits TODO: Cleanup*/
+
+:root{
+    --color-progressbar-background: rgba(16, 16, 16, 0.75);
+    --color-progressbar-border-color: rgba(0, 0, 0, 0);
+    --color-progressbar-fill: rgba(145, 213, 97, 0.75);
+    --color-progressbar-text: rgb(255, 255, 255);
+    --color-progressbar-text-low: rgb(255, 0, 0);
+    --color-progressbar-ammo-blue: rgba(19, 181, 231, 0.75);
+}
+
+.kits-progress-bar .unity-progress-bar{
+    position: relative;
+    width: 100%;
+    background-color: black;
+    border-radius: 10px;
+    min-height: 16px;
+    max-height: 16px;
+    overflow: hidden;
+    justify-content: center;
+}
+
+.kits-progress-bar .unity-progress-bar__container {
+    justify-content: center;
+}
+
+.kits-progress-bar .unity-progress-bar__background {
+    position: absolute;
+    width: 100%;
+    min-height: 16px;
+    max-height: 16px;
+    background-color: var(--color-progressbar-background);
+    border-radius: 10px;
+    overflow: hidden;
+    border-width: 4px;
+    border-color: var(--color-progressbar-border-color);
+}
+
+.kits-progress-bar .unity-progress-bar__progress {
+    position: absolute;
+    height: 8px;
+    margin: 0px;
+    border-radius: 5px;
+    padding: 0px;
+    top: 0;
+    left: 0;
+    background-color: var(--color-progressbar-fill);
+    transition: width 0.3s ease-in-out;
+}
+
+.kits-progress-bar .unity-progress-bar__title {
+    display: none;
+}
+
+.kits-ammo-bar .unity-progress-bar__progress {
+    background-color: var(--color-progressbar-ammo-blue);
+}
+
+.kits-reticle-cross{
+    background-image: url("../../Art/Textures/reticle_cross.png");
+}
+
+.kits-reticle-opencircular{
+    background-image: url("../../Art/Textures/reticle_opencircular.png");
+}
+
+.kits-reticle-tcross{
+    background-image: url("../../Art/Textures/reticle_tcross.png");
+}
+
+.kits-reticle-circularcross{
+    background-image: url("../../Art/Textures/reticle_circularcross.png");
+}
+
+.kits-icon-reload{
+    background-image: url("../../Art/Textures/reticle_reload_circle.png");
+}
