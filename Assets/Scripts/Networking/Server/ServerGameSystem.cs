@@ -230,6 +230,18 @@ namespace Unity.FPSSample_2
             ecb.SetComponent(playerEntity, new GhostGameObjectGuid { Guid = GhostGameObject.GenerateRandomHash() });
             ecb.SetComponent(playerEntity, new PlayerGhost.PlayerData { Name = playerName });
 
+            // Initialize character stats for the player
+            // Use player name and default stats (can be customized later)
+            var (popularity, troubleRating, cashValue) = GetDefaultPlayerStats();
+            var characterStats = new CharacterStats
+            {
+                CharacterName = playerName,
+                Popularity = popularity,
+                TroubleMakerRating = troubleRating,
+                CashValue = cashValue
+            };
+            ecb.SetComponent(playerEntity, characterStats);
+
             // Update the clients map
             var clientsMap = SystemAPI.GetSingletonBuffer<ClientsMap>();
             clientsMap.ElementAt(ownerNetworkId.Value).PlayerEntity = playerEntity;
@@ -327,6 +339,14 @@ namespace Unity.FPSSample_2
 
                 ecb.DestroyEntity(entity);
             }
+        }
+
+        [BurstDiscard]
+        private (float Popularity, float TroubleMakerRating, float CashValue) GetDefaultPlayerStats()
+        {
+            // Try to get default stats from a PlayerStatsData asset if available via a manager
+            // For now, return default values - can be extended to load from ScriptableObject or manager
+            return (Popularity: 50f, TroubleMakerRating: 50f, CashValue: 50f);
         }
 
         [BurstDiscard]

@@ -16,7 +16,7 @@ namespace Unity.FPSSample_2
     {
         public static GameManager Instance { get; private set; }
 
-        public const int MaxPlayer = 32;
+        public const int MaxPlayer = 4;
         public const string MainMenuSceneName = "MainMenu";
         public const string GameSceneName = "GameScene";
         static public GameConnection GameConnection { get; private set; }
