@@ -39,4 +39,13 @@ namespace Unity.FPSSample_2
         [GhostField]
         public uint NPCID;
     }
+
+    /// <summary>
+    /// Stores the guest type ID for an NPC guest. Used to identify and apply passive abilities at runtime.
+    /// </summary>
+    public struct GuestTypeID : IComponentData
+    {
+        [GhostField]
+        public uint TypeID;
+    }
 }

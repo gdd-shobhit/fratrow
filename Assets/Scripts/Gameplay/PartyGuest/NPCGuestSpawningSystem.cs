@@ -261,10 +261,18 @@ namespace Unity.FPSSample_2
             // Set NPC ID
             ecb.SetComponent(npcEntity, new NPCGuestDataID { NPCID = npcID });
 
+            // Set guest type ID if guest type is assigned
+            if (npcData.GuestType != null)
+            {
+                ecb.SetComponent(npcEntity, new GuestTypeID { TypeID = npcData.GuestType.TypeID });
+                // Add event marker to trigger ability application when guest enters party
+                ecb.AddComponent<GuestEnteredPartyEvent>(npcEntity);
+            }
+
             // Ensure NPC tag is present
             ecb.AddComponent<NPCGuestTag>(npcEntity);
 
-            Debug.Log($"[NPCGuestSpawningSystem] Spawned NPC guest: {npcData.CharacterName} at {spawnPosition}");
+            Debug.Log($"[NPCGuestSpawningSystem] Spawned NPC guest: {npcData.CharacterName} (Type: {npcData.GuestType?.TypeName ?? "None"}) at {spawnPosition}");
         }
 
         [BurstDiscard]

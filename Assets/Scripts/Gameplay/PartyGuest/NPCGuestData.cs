@@ -23,6 +23,10 @@ namespace Unity.FPSSample_2
         [TextArea(2, 5)]
         public string Description = "";
 
+        [Header("Guest Type")]
+        [Tooltip("The type/class of this guest, which determines their passive ability")]
+        public GuestType GuestType;
+
         public override void OnValidate()
         {
             base.OnValidate();

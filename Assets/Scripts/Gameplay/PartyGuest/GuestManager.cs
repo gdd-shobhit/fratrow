@@ -18,6 +18,10 @@ namespace Unity.FPSSample_2
         [Tooltip("Reference to the NPC Guest Spawn Settings ScriptableObject")]
         public NPCGuestSpawnSettings SpawnSettings;
 
+        [Header("Type Registry")]
+        [Tooltip("Reference to the Guest Type Registry ScriptableObject")]
+        public GuestTypeRegistry GuestTypeRegistry;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

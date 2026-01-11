@@ -39,6 +39,15 @@ namespace Unity.FPSSample_2
                 NPCID = authoring.NPCID
             });
 
+            // Add guest type ID if GuestData and GuestType are assigned
+            if (authoring.GuestData != null && authoring.GuestData.GuestType != null)
+            {
+                AddComponent(entity, new GuestTypeID
+                {
+                    TypeID = authoring.GuestData.GuestType.TypeID
+                });
+            }
+
             // If GuestData is assigned, bake the stats
             if (authoring.GuestData != null)
             {
