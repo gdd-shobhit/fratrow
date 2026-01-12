@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 using UnityEngine;
 
 public enum StatType
@@ -100,6 +101,12 @@ public class BaseCharacterStats : IHasStats
     }
 }
 
+public enum AbilityType
+{
+    Passive,
+    Active
+}
+
 [System.Serializable]
 public class Ability
 {
@@ -107,13 +114,15 @@ public class Ability
     public string description;
     public float abilityValue;
     public StatType effectsOn;
+    public AbilityType AbilityType;
 
-    public Ability(string name, string description, float abilityValue, StatType effectsOn)
+    public Ability(string name, string description, float abilityValue, StatType effectsOn, AbilityType abilityType)
     {
         this.name = name;
         this.description = description;
         this.abilityValue = abilityValue;
         this.effectsOn = effectsOn;
+        this.AbilityType = abilityType;
     }
 }
 

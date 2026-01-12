@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eab6ccf4b885de146a22bcff56bfe90d, type: 3}
+  m_Name: ThePresident
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerClassSO
+  playerClass: 0
+  description: He is that guy
+  health: 200
+  popularity: 80
+  troubleMaker: 20
+  cashvalue: 60
+  abilities:
+  - name: The one responsible
+    description: Can kick any trouble maker once a day
+    abilityValue: -100
+    effectsOn: 1
+    AbilityType: 1

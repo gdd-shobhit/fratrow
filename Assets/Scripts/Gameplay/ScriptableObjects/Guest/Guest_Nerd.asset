@@ -12,7 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96a93f789fd659419246bd4fea9522c, type: 3}
   m_Name: Guest_Nerd
   m_EditorClassIdentifier: Assembly-CSharp::GuestSO
-  health: 0
-  popularity: 0
+  guestName: The Nerd
+  description: sample text
+  health: 100
+  popularity: 10
   troubleMaker: 0
-  cashvalue: 0
+  cashvalue: 60
+  abilities:
+  - name: 
+    description: 
+    abilityValue: 0
+    effectsOn: 0
