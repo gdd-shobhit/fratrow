@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,7 +8,12 @@ public class GameManager : MonoBehaviour
 {
     private static GameManager _instance;
     private static bool _applicationQuitting = false;
+    public List<PlayerClassSO> playerClasses;
+    public List<GuestSO> guestClasses;
 
+    public Dictionary<PlayerClass,PlayerClassSO> playerClassesDict;
+    public Dictionary<GuestClass, GuestSO> guestClassesDict;
+    
     /// <summary>
     /// Public accessor for the singleton instance.
     /// Returns null if the application is quitting.
@@ -58,6 +64,21 @@ public class GameManager : MonoBehaviour
 
         // Set this as the instance
         _instance = this;
+
+        playerClassesDict = new Dictionary<PlayerClass, PlayerClassSO>();
+        guestClassesDict = new Dictionary<GuestClass, GuestSO>();
+        // Intialize the dictionaries from our database of players and npc classes
+        for (int i = 0; i < playerClasses.Count; i++)
+        {
+            playerClassesDict.Add(playerClasses[i].playerClass, playerClasses[i]);
+        }
+
+        for (int i = 0; i < guestClasses.Count; i++)
+        {
+            guestClassesDict.Add(guestClasses[i].guestClass, guestClasses[i]);
+        }
+
+        Debug.Log($"Players and Guest classes are loaded");
 
         // Persist across scenes if enabled
         if (persistAcrossScenes)

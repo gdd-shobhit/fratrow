@@ -6,6 +6,7 @@ public class GuestSO : ScriptableObject
 {
     [Header("Guest Information")]
     public string guestName;
+    public GuestClass guestClass;
     [TextArea(3, 5)]
     public string description;
     
@@ -22,10 +23,9 @@ public class GuestSO : ScriptableObject
     public List<Ability> abilities = new List<Ability>();
 
     /// <summary>
-    /// Creates an IHasStats implementation from this ScriptableObject's data.
-    /// This allows NPCGuest to use the data while maintaining the interface pattern.
+    /// Creates stats instance.
     /// </summary>
-    public IHasStats CreateStatsInstance()
+    public BaseCharacterStats CreateStatsInstance()
     {
         var stats = new BaseCharacterStats
         {

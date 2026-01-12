@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Guest_Nerd
   m_EditorClassIdentifier: Assembly-CSharp::GuestSO
   guestName: The Nerd
+  guestClass: 1
   description: sample text
   health: 100
   popularity: 10
@@ -23,3 +24,4 @@ MonoBehaviour:
     description: 
     abilityValue: 0
     effectsOn: 0
+    AbilityType: 0

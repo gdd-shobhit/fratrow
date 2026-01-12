@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Policy;
 using UnityEngine;
 
 public enum StatType
@@ -10,58 +9,14 @@ public enum StatType
     CashValue = 2
 }
 
-/// <summary>
-/// Interface for objects that have character stats.
-/// Allows different implementations (e.g., BaseCharacterStats, NPCStats from ScriptableObject, etc.)
-/// </summary>
-public interface IHasStats
-{
-    float Health { get; set; }
-    float Popularity { get; set; }
-    float TroubleMaker { get; set; }
-    float CashValue { get; set; }
-    List<Ability> Abilities { get; }
-    
-    void ModifyStat(StatType statType, float amount);
-    void AddAbility(Ability ability);
-    void RemoveAbility(Ability ability);
-}
-
 [System.Serializable]
-public class BaseCharacterStats : IHasStats
+public class BaseCharacterStats
 {
     public float health;
     public float popularity;
     public float troubleMaker;
     public float cashvalue;
     public List<Ability> abilities;
-
-    // IHasStats implementation
-    public float Health 
-    { 
-        get => health; 
-        set => health = value; 
-    }
-    
-    public float Popularity 
-    { 
-        get => popularity; 
-        set => popularity = value; 
-    }
-    
-    public float TroubleMaker 
-    { 
-        get => troubleMaker; 
-        set => troubleMaker = value; 
-    }
-    
-    public float CashValue 
-    { 
-        get => cashvalue; 
-        set => cashvalue = value; 
-    }
-    
-    public List<Ability> Abilities => abilities;
 
     public BaseCharacterStats()
     {
@@ -135,15 +90,12 @@ public abstract class BaseCharacter : MonoBehaviour
     [Header("Character Stats")]
     [SerializeField] protected BaseCharacterStats stats = new BaseCharacterStats();
 
-    // Protected property to access stats - can be overridden in derived classes
-    protected virtual IHasStats Stats => stats;
-
-    // Properties for accessing stats through interface
-    public float Health => Stats.Health;
-    public float Popularity => Stats.Popularity;
-    public float TroubleMaker => Stats.TroubleMaker;
-    public float CashValue => Stats.CashValue;
-    public List<Ability> Abilities => Stats.Abilities;
+    // Properties for accessing stats
+    public float Health => stats.health;
+    public float Popularity => stats.popularity;
+    public float TroubleMaker => stats.troubleMaker;
+    public float CashValue => stats.cashvalue;
+    public List<Ability> Abilities => stats.abilities;
 
     protected virtual void Awake()
     {
@@ -168,7 +120,7 @@ public abstract class BaseCharacter : MonoBehaviour
     /// </summary>
     public virtual void TakeDamage(float damage)
     {
-        Stats.Health = Mathf.Max(0, Stats.Health - damage);
+        stats.health = Mathf.Max(0, stats.health - damage);
         OnHealthChanged();
     }
 
@@ -177,7 +129,7 @@ public abstract class BaseCharacter : MonoBehaviour
     /// </summary>
     public virtual void Heal(float amount)
     {
-        Stats.Health += amount;
+        stats.health += amount;
         OnHealthChanged();
     }
 
@@ -194,7 +146,7 @@ public abstract class BaseCharacter : MonoBehaviour
     /// </summary>
     public virtual void ModifyStat(StatType statType, float amount)
     {
-        Stats.ModifyStat(statType, amount);
+        stats.ModifyStat(statType, amount);
     }
 
     /// <summary>
@@ -202,7 +154,7 @@ public abstract class BaseCharacter : MonoBehaviour
     /// </summary>
     public virtual void AddAbility(Ability ability)
     {
-        Stats.AddAbility(ability);
+        stats.AddAbility(ability);
     }
 
     /// <summary>
@@ -210,6 +162,6 @@ public abstract class BaseCharacter : MonoBehaviour
     /// </summary>
     public virtual void RemoveAbility(Ability ability)
     {
-        Stats.RemoveAbility(ability);
+        stats.RemoveAbility(ability);
     }
 }

@@ -1,5 +1,13 @@
 using UnityEngine;
 
+public enum GuestClass
+{
+    None,
+    Nerd,
+    MeanGirl,
+    Jock
+}
+
 /// <summary>
 /// NPC Guest character that loads its data from a GuestSO ScriptableObject.
 /// </summary>
@@ -7,10 +15,8 @@ public class NPCGuest : BaseCharacter
 {
     [Header("Guest Data")]
     [SerializeField] private GuestSO guestData;
-
-    // Override Stats property to use data from ScriptableObject
-    private IHasStats guestStats;
-    protected override IHasStats Stats => guestStats ?? base.Stats;
+    [Header("Guest Class Information")]
+    public GuestClass guestClass;
 
     protected override void InitializeCharacter()
     {
@@ -19,7 +25,7 @@ public class NPCGuest : BaseCharacter
         if (guestData != null)
         {
             // Create stats instance from ScriptableObject data
-            guestStats = guestData.CreateStatsInstance();
+            stats = guestData.CreateStatsInstance();
         }
         else
         {
