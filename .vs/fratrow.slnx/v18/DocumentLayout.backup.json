@@ -1,0 +1,241 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\fratrow\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\ghostbridge\\ghosts\\ghostgameobject\\ghostgameobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ghostbridge\\ghosts\\ghostgameobject\\ghostgameobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\guesttype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\guesttype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\guestability.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\guestability.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\ghostbridge\\partyguest\\npcguestghostauthoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ghostbridge\\partyguest\\npcguestghostauthoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\playerstatsauthoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\playerstatsauthoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\guestabilitysystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\guestabilitysystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\guesttyperegistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\guesttyperegistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\characterstatscomponents.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\characterstatscomponents.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\basecharacterstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\basecharacterstats.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\npcguestdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\npcguestdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\npcguestghost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\npcguestghost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\npcguestregistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\npcguestregistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|d:\\fratrow\\assets\\scripts\\gameplay\\partyguest\\npcguestspawningsystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gameplay\\partyguest\\npcguestspawningsystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GhostGameObject.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\GhostBridge\\Ghosts\\GhostGameObject\\GhostGameObject.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GhostBridge\\Ghosts\\GhostGameObject\\GhostGameObject.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\GhostBridge\\Ghosts\\GhostGameObject\\GhostGameObject.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GhostBridge\\Ghosts\\GhostGameObject\\GhostGameObject.cs",
+              "ViewState": "AgIAAFUAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T08:07:56.893Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GuestAbility.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbility.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbility.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbility.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbility.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T03:11:39.476Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "NPCGuestGhostAuthoring.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\GhostBridge\\PartyGuest\\NPCGuestGhostAuthoring.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GhostBridge\\PartyGuest\\NPCGuestGhostAuthoring.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\GhostBridge\\PartyGuest\\NPCGuestGhostAuthoring.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GhostBridge\\PartyGuest\\NPCGuestGhostAuthoring.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAACAAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:20:22.064Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "GuestAbilitySystem.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbilitySystem.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbilitySystem.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbilitySystem.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestAbilitySystem.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:19:34.708Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "GuestTypeRegistry.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestTypeRegistry.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestTypeRegistry.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestTypeRegistry.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestTypeRegistry.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:19:34.645Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GuestType.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestType.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestType.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\GuestType.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\GuestType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:19:34.569Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CharacterStatsComponents.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\CharacterStatsComponents.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\CharacterStatsComponents.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\CharacterStatsComponents.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\CharacterStatsComponents.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:19:26.643Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PlayerStatsAuthoring.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\PlayerStatsAuthoring.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\PlayerStatsAuthoring.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\PlayerStatsAuthoring.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\PlayerStatsAuthoring.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADUAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T01:19:03.49Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "NPCGuestGhost.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestGhost.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestGhost.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestGhost.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestGhost.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T00:42:28.839Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "NPCGuestRegistry.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestRegistry.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestRegistry.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestRegistry.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestRegistry.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABkAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T00:42:05.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "NPCGuestSpawningSystem.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestSpawningSystem.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestSpawningSystem.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestSpawningSystem.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestSpawningSystem.cs",
+              "ViewState": "AgIAALMAAAAAAAAAAAAAAM8AAAA/AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T00:38:35.129Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "BaseCharacterStats.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\BaseCharacterStats.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\BaseCharacterStats.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\BaseCharacterStats.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\BaseCharacterStats.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAhwCwAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T00:38:16.668Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "NPCGuestData.cs",
+              "DocumentMoniker": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestData.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestData.cs",
+              "ToolTip": "D:\\fratrow\\Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestData.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Gameplay\\PartyGuest\\NPCGuestData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T00:35:39.709Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
