@@ -13,7 +13,11 @@ public class GameManager : MonoBehaviour
 
     public Dictionary<PlayerClass,PlayerClassSO> playerClassesDict;
     public Dictionary<GuestClass, GuestSO> guestClassesDict;
-    
+
+    // Metrics for how the team is doing
+    private float totalPopularity;
+    private float totalCashvalue;
+
     /// <summary>
     /// Public accessor for the singleton instance.
     /// Returns null if the application is quitting.
@@ -31,15 +35,20 @@ public class GameManager : MonoBehaviour
             if (_instance == null)
             {
                 // Try to find existing instance in scene
-                _instance = FindFirstObjectByType<GameManager>();
-
-                // If no instance exists, create one
-                if (_instance == null)
+                GameManager found = FindFirstObjectByType<GameManager>();
+                
+                if (found != null)
                 {
+                    // Found one in scene - use it (Awake will set _instance properly)
+                    _instance = found;
+                }
+                else
+                {
+                    // If no instance exists, create one
                     GameObject gameManagerObject = new GameObject("GameManager");
                     _instance = gameManagerObject.AddComponent<GameManager>();
                     DontDestroyOnLoad(gameManagerObject);
-                    Debug.Log("GameManager instance created.");
+                    Debug.Log("GameManager instance created via Instance getter.");
                 }
             }
 
@@ -111,5 +120,15 @@ public class GameManager : MonoBehaviour
     protected virtual void Update()
     {
         // Override in derived classes or add update logic here
+    }
+
+    public void AddTotalCashValue(float inCashValue)
+    {
+        this.totalCashvalue += inCashValue;
+    }
+
+    public void AddTotalPopularityValue(float inPopularityValue)
+    {
+        this.totalPopularity += inPopularityValue;
     }
 }

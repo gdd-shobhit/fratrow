@@ -13,7 +13,7 @@ public class PlayerClassSO : ScriptableObject
     public float health;
     [Range(0f, 100f)]
     public float popularity;
-    [Range(0f, 100f)]
+    [Range(-100f, 100f)]
     public float troubleMaker;
     [Range(0f, 100f)]
     public float cashvalue;

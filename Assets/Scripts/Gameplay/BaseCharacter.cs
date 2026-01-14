@@ -28,13 +28,13 @@ public class BaseCharacterStats
         switch (statType)
         {
             case StatType.Popularity:
-                popularity = Math.Clamp(popularity + amount, 0.0f, 100.0f);
+                popularity = Math.Clamp(popularity + amount, -100.0f, 100.0f);
                 break;
             case StatType.TroubleMaker:
-                troubleMaker = Math.Clamp(troubleMaker + amount, 0.0f, 100.0f);
+                troubleMaker = Math.Clamp(troubleMaker + amount, -100.0f, 100.0f);
                 break;
             case StatType.CashValue:
-                cashvalue = Math.Clamp(cashvalue + amount, 0.0f, 100.0f);
+                cashvalue = Math.Clamp(cashvalue + amount, -100.0f, 100.0f);
                 break;
         }
     }

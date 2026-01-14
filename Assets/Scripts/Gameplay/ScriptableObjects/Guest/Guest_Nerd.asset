@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuestSO
   guestName: The Nerd
   guestClass: 1
-  description: sample text
-  health: 100
-  popularity: 10
+  description: Godamn, a nerd
+  health: 70
+  popularity: 5
   troubleMaker: 0
-  cashvalue: 60
+  cashvalue: 40
   abilities:
-  - name: 
-    description: 
-    abilityValue: 0
-    effectsOn: 0
+  - name: Leave me alone
+    description: You can hackle this guy for a chance to get money
+    abilityValue: 15
+    effectsOn: 2
     AbilityType: 0

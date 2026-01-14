@@ -10339,6 +10339,66 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 951552774}
   m_Mesh: {fileID: 1451443487313757394, guid: a0569c31be8fc4039a33e3ca90eb0c35, type: 3}
+--- !u!1 &953035324
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 953035326}
+  - component: {fileID: 953035325}
+  m_Layer: 0
+  m_Name: PartyManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &953035325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953035324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cdebf9f1eb9cd740a0bda753e50d791, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PartyManager
+  partyDurationMinutes: 10
+  defaultGuestLimit: 20
+  currentParty:
+    dayNumber: 0
+    guestLimit: 0
+    currentGuests: []
+    popularity: 0
+    troubleMaker: 0
+    cashValue: 0
+    state: 0
+    partyStartTime: 0
+    partyEndTime: 0
+    inGameTimeStart: 0
+    inGameTimeEnd: 0
+  currentDay: 1
+  persistAcrossScenes: 1
+--- !u!4 &953035326
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953035324}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.35915, y: 1.30787, z: -1.0899}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &972107860
 GameObject:
   m_ObjectHideFlags: 0
@@ -26254,3 +26314,4 @@ SceneRoots:
   - {fileID: 2023108639}
   - {fileID: 2760477044720773439}
   - {fileID: 1976059282}
+  - {fileID: 953035326}
