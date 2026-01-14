@@ -25,3 +25,5 @@ MonoBehaviour:
     abilityValue: 15
     effectsOn: 2
     AbilityType: 0
+  baseArrivalChance: 20
+  popularityModifier: 0.05

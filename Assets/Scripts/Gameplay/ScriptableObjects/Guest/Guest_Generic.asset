@@ -20,3 +20,5 @@ MonoBehaviour:
   troubleMaker: 0
   cashvalue: 20
   abilities: []
+  baseArrivalChance: 100
+  popularityModifier: 0

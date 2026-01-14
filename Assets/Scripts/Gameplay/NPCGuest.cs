@@ -2,10 +2,12 @@ using UnityEngine;
 
 public enum GuestClass
 {
-    None,
+    First = 0,
+    None = First,
     Nerd,
     MeanGirl,
-    Jock
+    Jock,
+    Count = Jock
 }
 
 /// <summary>
@@ -18,6 +20,19 @@ public class NPCGuest : BaseCharacter
     [Header("Guest Class Information")]
     public GuestClass guestClass;
 
+    public GuestSO GuestData => guestData;
+
+    protected override void Awake()
+    {
+        // Only initialize if guestData is already set (from Inspector)
+        // If guestData is null, it will be set programmatically via InitializeFromSO()
+        if (guestData != null)
+        {
+            base.Awake();
+        }
+        // If guestData is null, skip base.Awake() - InitializeFromSO() will call InitializeCharacter() later
+    }
+
     protected override void InitializeCharacter()
     {
         base.InitializeCharacter();
@@ -26,10 +41,31 @@ public class NPCGuest : BaseCharacter
         {
             // Create stats instance from ScriptableObject data
             stats = guestData.CreateStatsInstance();
+            guestClass = guestData.guestClass;
         }
         else
         {
+            // Only warn if this is being called and guestData is still null
+            // (This shouldn't happen if InitializeFromSO was called properly)
             Debug.LogWarning($"NPCGuest on {gameObject.name} has no GuestSO assigned!", this);
         }
+    }
+
+    /// <summary>
+    /// Initialize this guest from a GuestSO (used when spawning guests at party start)
+    /// </summary>
+    public void InitializeFromSO(GuestSO guestSO)
+    {
+        if (guestSO == null)
+        {
+            Debug.LogError("Cannot initialize NPCGuest: GuestSO is null!", this);
+            return;
+        }
+
+        guestData = guestSO;
+        guestClass = guestSO.guestClass;
+        
+        // Initialize character stats
+        InitializeCharacter();
     }
 }

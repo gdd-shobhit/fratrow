@@ -21,6 +21,7 @@ public class Party
     public PartyState state = PartyState.NotStarted;
     public float partyStartTime; // Real-time when party started
     public float partyEndTime;   // Real-time when party should end
+    public float timeSinceGuestSpawned;
     
     // In-game time tracking (10pm = 22:00, 2am = 02:00)
     public float inGameTimeStart = 22.0f; // 10:00 PM
@@ -32,6 +33,19 @@ public class Party
         guestLimit = limit;
         state = PartyState.NotStarted;
         currentGuests = new List<NPCGuest>();
+    }
+
+    /// <summary>
+    /// Start the party!
+    /// </summary>
+    public void Start()
+    {
+        state = PartyState.Active;
+        partyStartTime = Time.time;
+        float durationInSeconds = PartyManager.Instance.GetPartyDurationInMinutes() * 60f;
+        partyEndTime = Time.time + durationInSeconds; // Convert minutes to seconds
+
+        Debug.Log($"Party started for Day {PartyManager.Instance.CurrentDay}! Guest limit: {guestLimit}. Party will last {PartyManager.Instance.GetPartyDurationInMinutes()} minutes ({durationInSeconds} seconds). Start: {partyStartTime:F2}, End: {partyEndTime:F2}");
     }
     
     /// <summary>
@@ -73,9 +87,20 @@ public class Party
     }
 
     /// <summary>
+    /// End the party
+    /// </summary>
+    public void End()
+    {
+        DistributePartyEndRewards();
+        // TODO: Achievements hookups
+
+        // TODO: Leaderboard implementation. Distribution of everything else
+    }
+
+    /// <summary>
     /// Distribute the rewards after the party
     /// </summary>
-    public void DistributePartyEndRewards()
+    private void DistributePartyEndRewards()
     {
         if(state != PartyState.Ended)
         {
@@ -88,10 +113,6 @@ public class Party
         GameManager.Instance.AddTotalPopularityValue(popularity);
 
         Debug.Log($"Party rewards distributed: +{cashValue} Cash, +{popularity} Popularity");
-
-        // TODO: Achievements hookups
-
-        // TODO: Leaderboard implementation. Distribution of everything else
     }
 
     /// <summary>

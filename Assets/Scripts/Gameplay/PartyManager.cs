@@ -19,19 +19,15 @@ public class PartyManager : MonoBehaviour
     {
         get
         {
-            if (_applicationQuitting)
-            {
-                Debug.LogWarning("PartyManager instance already destroyed. Application is quitting.");
-                return null;
-            }
-
             if (_instance == null)
             {
                 // Try to find existing instance in scene
-                _instance = FindFirstObjectByType<PartyManager>();
-
-                // If no instance exists, create one
-                if (_instance == null)
+                PartyManager found = FindFirstObjectByType<PartyManager>();
+                if (found != null)
+                {
+                    _instance = found;
+                }
+                else
                 {
                     GameObject partyManagerObject = new GameObject("PartyManager");
                     _instance = partyManagerObject.AddComponent<PartyManager>();
@@ -50,19 +46,25 @@ public class PartyManager : MonoBehaviour
     
     [Header("Current Party")]
     [SerializeField] private Party currentParty;
-    
+    [SerializeField] private float timeBetweenEachGuestArrival = 15.0f;
+
     [Header("Game State")]
     [SerializeField] private int currentDay = 1;
-    
+
     /// <summary>
     /// Whether this PartyManager should persist across scene loads.
     /// </summary>
     [SerializeField] private bool persistAcrossScenes = true;
 
     // Properties
+    public GameObject guestPrefab;
     public Party CurrentParty => currentParty;
     public int CurrentDay => currentDay;
     public bool IsPartyActive => currentParty != null && currentParty.state == PartyState.Active;
+    public float TimeBetweenEachGuestArrival => timeBetweenEachGuestArrival;
+
+    // Accessors
+    public float GetPartyDurationInMinutes() { return partyDurationMinutes; }
 
     private void Awake()
     {
@@ -100,6 +102,22 @@ public class PartyManager : MonoBehaviour
 
     private void Update()
     {
+        if (currentParty != null && currentParty.state == PartyState.Active)
+        {
+            currentParty.timeSinceGuestSpawned += Time.deltaTime;
+            
+            // Check if it's time to spawn another guest
+            if (currentParty.timeSinceGuestSpawned >= timeBetweenEachGuestArrival)
+            {
+                // Check if we haven't reached the guest limit
+                if (currentParty.currentGuests.Count < currentParty.guestLimit)
+                {
+                    currentParty.timeSinceGuestSpawned = 0.0f;
+                    SelectAndSpawnGuests();
+                }
+            }
+        }
+        
         // Check if current party should end
         if (IsPartyActive && currentParty.IsPartyOver())
         {
@@ -129,14 +147,12 @@ public class PartyManager : MonoBehaviour
         
         // Create new party
         currentParty = new Party(currentDay, limit);
-        currentParty.state = PartyState.Active;
-        currentParty.partyStartTime = Time.time;
-        float durationInSeconds = partyDurationMinutes * 60f;
-        currentParty.partyEndTime = Time.time + durationInSeconds; // Convert minutes to seconds
+        currentParty.Start();
         
-        Debug.Log($"Party started for Day {currentDay}! Guest limit: {limit}. Party will last {partyDurationMinutes} minutes ({durationInSeconds} seconds). Start: {currentParty.partyStartTime:F2}, End: {currentParty.partyEndTime:F2}");
+        // Reset guest spawn timer
+        currentParty.timeSinceGuestSpawned = 0.0f;
         
-        // TODO: Step 2 - Trigger guest arrival logic here
+        // First guest will spawn after timeBetweenEachGuestArrival seconds in Update()
     }
 
     /// <summary>
@@ -153,7 +169,7 @@ public class PartyManager : MonoBehaviour
         // Get the time BEFORE changing state (GetCurrentInGameTime returns start time if not Active)
         float inGameTime = currentParty.GetCurrentInGameTime();
         currentParty.state = PartyState.Ended;
-        currentParty.DistributePartyEndRewards();
+        currentParty.End();
 
         Debug.Log($"Party ended for Day {currentParty.dayNumber}! Final in-game time: {inGameTime:F2}:00");
         
@@ -188,5 +204,99 @@ public class PartyManager : MonoBehaviour
         int displayHours = hours > 12 ? hours - 12 : (hours == 0 ? 12 : hours);
         
         return $"{displayHours:D2}:{minutes:D2} {period}";
+    }
+
+    /// <summary>
+    /// Select and spawn one guest based on probability system.
+    /// Randomly selects one guest type and rolls probability for arrival.
+    /// Spawns either the selected guest or a "None" guest if probability fails.
+    /// </summary>
+    private void SelectAndSpawnGuests()
+    {
+        if (currentParty == null || GameManager.Instance == null)
+        {
+            Debug.LogError("Cannot select guests: Party or GameManager is null!");
+            return;
+        }
+
+        // Check if we've reached the guest limit
+        if (currentParty.currentGuests.Count >= currentParty.guestLimit)
+        {
+            Debug.Log($"Party reached guest limit ({currentParty.guestLimit}). Cannot spawn more guests.");
+            return;
+        }
+
+        // Get current party popularity (updates as guests arrive)
+        float partyPopularity = currentParty.popularity;
+        
+        // Get guest dictionary from GameManager
+        Dictionary<GuestClass, GuestSO> guestDict = GameManager.Instance.guestClassesDict;
+        
+        if (guestDict == null || guestDict.Count == 0)
+        {
+            Debug.LogWarning("No guests available in GameManager dictionary!");
+            return;
+        }
+
+        // Randomly select one guest type other than none
+        // TODO: Don't make it random, each class would have its own probability based on the party popularity
+        GuestClass selectedGuestClass = (GuestClass)(Random.Range((int)(GuestClass.First + 1), (int)GuestClass.Count));
+        GuestSO selectedGuestSO = guestDict[selectedGuestClass];
+
+        // Calculate modified arrival chance based on party popularity
+        float arrivalChance = selectedGuestSO.GetModifiedArrivalChance(partyPopularity);
+        
+        // Roll probability (0-100)
+        float roll = Random.Range(0f, 100f);
+        
+        if (roll <= arrivalChance)
+        {
+            // Guest arrives! Spawn them
+            SpawnGuest(selectedGuestSO);
+            Debug.Log($"{selectedGuestSO.guestName} arrived! (Roll: {roll:F2} <= {arrivalChance:F2}%)");
+        }
+        else
+        {
+            // Guest doesn't arrive - spawn "None" guest instead
+            SpawnGuest(guestDict[GuestClass.None]);
+            Debug.Log($"{selectedGuestSO.guestName} didn't arrive. (Roll: {roll:F2} > {arrivalChance:F2}%) - Spawning None guest");
+        }
+    }
+
+    /// <summary>
+    /// Spawn a guest from a GuestSO
+    /// </summary>
+    private void SpawnGuest(GuestSO guestSO)
+    {
+        if (guestSO == null || currentParty == null)
+            return;
+
+        // Create a GameObject for the guest
+        GameObject guestObject = Instantiate(guestPrefab);
+        NPCGuest npcGuest = guestObject.AddComponent<NPCGuest>();
+        
+        // Initialize the guest with the ScriptableObject data
+        npcGuest.InitializeFromSO(guestSO);
+        
+        // Add to party
+        if (currentParty.AddGuest(npcGuest))
+        {
+            // Update party stats based on guest
+            currentParty.popularity += guestSO.popularity;
+            currentParty.troubleMaker += guestSO.troubleMaker;
+            currentParty.cashValue += guestSO.cashvalue;
+        }
+
+        if (npcGuest.Abilities.Count > 0)
+        {
+            //TODO: Implement abilities
+            foreach (Ability ability in npcGuest.Abilities)
+            {
+                if (ability != null && ability.AbilityType == AbilityType.Passive)
+                {
+                    // TODO: Give passive boost
+                }
+            }
+        }
     }
 }

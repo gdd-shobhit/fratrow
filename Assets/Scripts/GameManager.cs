@@ -26,12 +26,6 @@ public class GameManager : MonoBehaviour
     {
         get
         {
-            if (_applicationQuitting)
-            {
-                Debug.LogWarning("GameManager instance already destroyed. Application is quitting.");
-                return null;
-            }
-
             if (_instance == null)
             {
                 // Try to find existing instance in scene
