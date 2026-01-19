@@ -127,8 +127,7 @@ public class PartyManager : MonoBehaviour
 
     private void Start()
     {
-        StartParty(defaultGuestLimit);
-
+        // Start code goes here
     }
 
     /// <summary>
@@ -136,6 +135,12 @@ public class PartyManager : MonoBehaviour
     /// </summary>
     public void StartParty(int guestLimit = -1)
     {
+        // If start party was called with default parameter
+        if(guestLimit < 0)
+        {
+            guestLimit = defaultGuestLimit;
+        }
+
         if (IsPartyActive)
         {
             Debug.LogWarning("Cannot start a new party while one is already active!");

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuestSO
   guestName: The Nerd
   guestClass: 1
-  description: Godamn, a nerd
+  description: Godamn, who invited this nerd.
   health: 70
-  popularity: 5
+  popularity: -5
   troubleMaker: 0
   cashvalue: 40
   abilities:

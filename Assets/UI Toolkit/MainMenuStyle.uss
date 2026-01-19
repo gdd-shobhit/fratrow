@@ -1,0 +1,30 @@
+:root {
+}
+
+
+
+
+
+
+
+
+
+.button {
+    font-size: 32px;
+    -unity-font-definition: url("project://database/Assets/Space_Exploration_GUI_Kit/Fonts/Font%20Sources/static/Asap_SemiCondensed-SemiBold.ttf?fileID=12800000&guid=53c38cca34deaed409f0e16ea9c6afe0&type=3#Asap_SemiCondensed-SemiBold");
+    -unity-text-outline-width: 0;
+    text-shadow: 5px 5px 0 rgb(255, 255, 255);
+    width: 200px;
+    height: 89px;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    justify-content: flex-end;
+    align-items: center;
+    align-self: center;
+    align-content: center;
+}
