@@ -102,7 +102,15 @@ public class PartyManager : MonoBehaviour
 
     private void Update()
     {
-        if (currentParty != null && currentParty.state == PartyState.Active)
+        // Only server handles party timing and guest spawning
+        var networkManager = Unity.Netcode.NetworkManager.Singleton;
+        bool isServer = networkManager != null && networkManager.IsServer;
+        
+        // If networking is enabled, only server spawns guests
+        // Otherwise, allow single-player mode
+        bool canSpawnGuests = networkManager == null || isServer;
+
+        if (currentParty != null && currentParty.state == PartyState.Active && canSpawnGuests)
         {
             currentParty.timeSinceGuestSpawned += Time.deltaTime;
             
@@ -118,8 +126,8 @@ public class PartyManager : MonoBehaviour
             }
         }
         
-        // Check if current party should end
-        if (IsPartyActive && currentParty.IsPartyOver())
+        // Check if current party should end (server-only in multiplayer)
+        if (IsPartyActive && currentParty.IsPartyOver() && canSpawnGuests)
         {
             EndParty();
         }
@@ -276,12 +284,42 @@ public class PartyManager : MonoBehaviour
         if (guestSO == null || currentParty == null)
             return;
 
+        var networkManager = Unity.Netcode.NetworkManager.Singleton;
+        bool isServer = networkManager != null && networkManager.IsServer;
+
         // Create a GameObject for the guest
-        GameObject guestObject = Instantiate(guestPrefab);
-        NPCGuest npcGuest = guestObject.AddComponent<NPCGuest>();
+        GameObject guestObject;
+        
+        // If networking is enabled, use NetworkObject.Instantiate
+        if (networkManager != null && isServer)
+        {
+            guestObject = Unity.Netcode.NetworkObject.Instantiate(guestPrefab);
+        }
+        else
+        {
+            // Single-player mode
+            guestObject = Instantiate(guestPrefab);
+        }
+
+        NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();
+        if (npcGuest == null)
+        {
+            npcGuest = guestObject.AddComponent<NPCGuest>();
+        }
         
         // Initialize the guest with the ScriptableObject data
         npcGuest.InitializeFromSO(guestSO);
+        
+        // If networked, initialize NetworkedNPCGuest component
+        if (networkManager != null && isServer)
+        {
+            var networkedGuest = guestObject.GetComponent<NetworkedNPCGuest>();
+            if (networkedGuest == null)
+            {
+                networkedGuest = guestObject.AddComponent<NetworkedNPCGuest>();
+            }
+            networkedGuest.InitializeGuestData(guestSO);
+        }
         
         // Add to party
         if (currentParty.AddGuest(npcGuest))
@@ -290,6 +328,18 @@ public class PartyManager : MonoBehaviour
             currentParty.popularity += guestSO.popularity;
             currentParty.troubleMaker += guestSO.troubleMaker;
             currentParty.cashValue += guestSO.cashvalue;
+
+            // If networked, sync party stats via NetworkedParty
+            if (networkManager != null && isServer)
+            {
+                var networkedParty = FindFirstObjectByType<NetworkedParty>();
+                if (networkedParty != null)
+                {
+                    var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
+                    ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
+                    networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
+                }
+            }
         }
 
         if (npcGuest.Abilities.Count > 0)

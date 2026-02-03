@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour
     // Metrics for how the team is doing
     private float totalPopularity;
     private float totalCashvalue;
+    private float totalTroubleMaking;
 
     /// <summary>
     /// Public accessor for the singleton instance.
@@ -124,5 +125,9 @@ public class GameManager : MonoBehaviour
     public void AddTotalPopularityValue(float inPopularityValue)
     {
         this.totalPopularity += inPopularityValue;
+    }
+    public void AddTotalTroubleMaking(float inTroubleMaking)
+    {
+        this.totalTroubleMaking += inTroubleMaking;
     }
 }

@@ -142,6 +142,16 @@ public abstract class BaseCharacter : MonoBehaviour
     }
 
     /// <summary>
+    /// Set the three main stats (e.g. when syncing from network).
+    /// </summary>
+    public virtual void SetCharacterStats(float popularity, float troubleMaker, float cashValue)
+    {
+        stats.popularity = popularity;
+        stats.troubleMaker = troubleMaker;
+        stats.cashvalue = cashValue;
+    }
+
+    /// <summary>
     /// Modify a stat by the given amount
     /// </summary>
     public virtual void ModifyStat(StatType statType, float amount)

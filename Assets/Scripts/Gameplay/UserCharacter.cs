@@ -16,6 +16,8 @@ public class UserCharacter : BaseCharacter
     [SerializeField] private PlayerClassSO userData;
     public PlayerClass currentClass;
 
+    public PlayerClassSO UserData => userData;
+
     protected override void InitializeCharacter()
     {
         base.InitializeCharacter();
@@ -27,7 +29,25 @@ public class UserCharacter : BaseCharacter
         }
         else
         {
-            Debug.LogWarning($"NPCGuest on {gameObject.name} has no PlayerClassSO assigned!", this);
+            Debug.LogWarning($"UserCharacter on {gameObject.name} has no PlayerClassSO assigned!", this);
         }
+    }
+
+    /// <summary>
+    /// Initialize this character from a PlayerClassSO (used when spawning players)
+    /// </summary>
+    public void InitializeFromSO(PlayerClassSO playerClassSO)
+    {
+        if (playerClassSO == null)
+        {
+            Debug.LogError("Cannot initialize UserCharacter: PlayerClassSO is null!", this);
+            return;
+        }
+
+        userData = playerClassSO;
+        currentClass = playerClassSO.playerClass;
+        
+        // Initialize character stats
+        InitializeCharacter();
     }
 }

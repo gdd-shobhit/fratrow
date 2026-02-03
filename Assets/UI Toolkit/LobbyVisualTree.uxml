@@ -1,0 +1,34 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/MainMenuStyle.uss?fileID=7433441132597879392&amp;guid=a19dac0e7ce2b3944858e48ca0245d28&amp;type=3#MainMenuStyle"/>
+    <ui:VisualElement name="Container" style="flex-grow: 1; align-self: flex-start; width: 1922px; background-image: url(&quot;project://database/Assets/Images/background1.png?fileID=2800000&amp;guid=3f3e3088c5ba0fd4a808660dbaf73335&amp;type=3#background1&quot;); -unity-background-scale-mode: stretch-to-fill;">
+        <ui:Label text="Lobby" name="Header" class="header" style="-unity-font-definition: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Fonts/Font%20Sources/static/Asap_SemiExpanded-SemiBold.ttf?fileID=12800000&amp;guid=caec50c9db582f64b82e758a38546e15&amp;type=3#Asap_SemiExpanded-SemiBold&quot;); font-size: 80px; -unity-text-align: upper-center; -unity-text-outline-width: 4px; text-shadow: 5px 5px 10px rgb(255, 255, 255); color: rgb(255, 0, 116); letter-spacing: 1px; word-spacing: 2px; background-color: rgba(255, 255, 255, 0); background-image: none;"/>
+        
+        <!-- Session Code Display -->
+        <ui:VisualElement name="SessionCodeContainer" style="flex-direction: row; align-items: center; justify-content: center; margin-top: 20px;">
+            <ui:Label text="Session Code:" name="SessionCodeLabel" style="font-size: 24px; color: white; margin-right: 10px;"/>
+            <ui:Label text="----" name="SessionCode" style="font-size: 32px; font-weight: bold; color: rgb(255, 255, 0); background-color: rgba(0, 0, 0, 0.5); padding: 10px 20px; border-radius: 5px;"/>
+        </ui:VisualElement>
+
+        <!-- Player List -->
+        <ui:VisualElement name="PlayerListContainer" style="flex-grow: 1; align-items: center; margin-top: 40px;">
+            <ui:Label text="Players" name="PlayerListHeader" style="font-size: 36px; color: white; margin-bottom: 20px;"/>
+            <ui:VisualElement name="PlayerList" style="flex-direction: column; align-items: center; width: 800px; background-color: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px;">
+                <!-- Player slots will be populated dynamically -->
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Player Class Selection -->
+        <ui:VisualElement name="ClassSelectionContainer" style="flex-direction: row; align-items: center; justify-content: center; margin-top: 30px;">
+            <ui:Label text="Select Class:" name="ClassSelectionLabel" style="font-size: 24px; color: white; margin-right: 20px;"/>
+            <ui:DropdownField name="ClassDropdown" choices="President,SocialChair,Chad,RichGuy" value="President" style="width: 200px;"/>
+        </ui:VisualElement>
+
+        <!-- Ready Button -->
+        <ui:VisualElement name="ButtonContainer" style="flex-grow: 1; justify-content: center; width: 1922px; margin-top: 30px;">
+            <ui:Button text="Ready" name="ReadyButton" class="button" style="align-self: center; align-content: center; background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-green-extra-large.png?fileID=2800000&amp;guid=c8dd6d8869346624c8adc63daa4146b9&amp;type=3#short-green-extra-large&quot;); margin-right: 20px;"/>
+            <ui:Button text="Start Game" name="StartGameButton" class="button" style="align-self: center; align-content: center; background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-yellow-extra-large.png?fileID=2800000&amp;guid=c8dd6d8869346624c8adc63daa4146b9&amp;type=3#short-yellow-extra-large&quot;); margin-right: 20px;"/>
+            <ui:Button text="Invite Friends" name="InviteButton" class="button" style="background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-blue-extra-large.png?fileID=2800000&amp;guid=c1186c6c57955e74286697f5a74fa36d&amp;type=3#short-blue-extra-large&quot;); margin-right: 20px;"/>
+            <ui:Button text="Leave Lobby" name="LeaveButton" class="button" style="background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-red-extra-large.png?fileID=2800000&amp;guid=c1186c6c57955e74286697f5a74fa36d&amp;type=3#short-red-extra-large&quot;);"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
