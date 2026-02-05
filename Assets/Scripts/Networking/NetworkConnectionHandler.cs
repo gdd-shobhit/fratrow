@@ -57,16 +57,8 @@ public class NetworkConnectionHandler : MonoBehaviour
     private void HandleServerStarted()
     {
         Debug.Log("[NetworkConnectionHandler] Server started.");
-        
-        // Register server player in lobby
-        if (LobbyManager.Instance != null)
-        {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                LobbyManager.Instance.OnClientConnected(networkManager.LocalClientId);
-            }
-        }
+        // Host is registered by LobbyManager.OnNetworkSpawn -> RegisterServerPlayer().
+        // Do not call OnClientConnected(host) here or it would overwrite the host entry with isHost=false.
     }
 
     private void HandleClientConnected(ulong clientId)

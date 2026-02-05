@@ -8,6 +8,37 @@ using UnityEngine;
 public class LobbyRPCs : NetworkBehaviour
 {
     /// <summary>
+    /// RPC to update a player's display name.
+    /// Called by client, executed on server, then synced to all clients.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetPlayerNameRPC(ulong clientId, string playerName)
+    {
+        if (playerName == null) playerName = $"Player {clientId}";
+        if (string.IsNullOrWhiteSpace(playerName)) playerName = $"Player {clientId}";
+        playerName = playerName.Trim();
+        if (playerName.Length > 24) playerName = playerName.Substring(0, 24);
+
+        Debug.Log($"[LobbyRPCs] Player {clientId} name set to: {playerName}");
+
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.SetPlayerName(clientId, playerName);
+        }
+
+        SetPlayerNameClientRPC(clientId, playerName);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetPlayerNameClientRPC(ulong clientId, string playerName)
+    {
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.HandlePlayerNameChanged(clientId, playerName);
+        }
+    }
+
+    /// <summary>
     /// RPC to update a player's class selection.
     /// Called by client, executed on server, then synced to all clients.
     /// </summary>

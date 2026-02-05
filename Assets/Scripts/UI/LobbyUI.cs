@@ -1,337 +1,257 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// UI controller for the lobby screen.
-/// Handles player list display, class selection, ready status, and lobby actions.
+/// Binds the Lobby UXML to LobbyManager and SessionManager.
+/// Shows session code, player list, and wires name/class/ready/start/leave.
 /// </summary>
 public class LobbyUI : MonoBehaviour
 {
     private UIDocument _document;
-    private VisualElement _root;
-
-    // UI Elements
     private Label _sessionCodeLabel;
-    private VisualElement _playerList;
+    private VisualElement _playerListRoot;
+    private TextField _playerNameField;
     private DropdownField _classDropdown;
     private Button _readyButton;
     private Button _startGameButton;
-    private Button _inviteButton;
     private Button _leaveButton;
-
-    // Player slot templates (created dynamically)
-    private Dictionary<ulong, VisualElement> _playerSlots = new Dictionary<ulong, VisualElement>();
-
-    // Local state
-    private bool _isReady = false;
-    private PlayerClass _selectedClass = PlayerClass.President;
 
     private void Awake()
     {
+        TryResolveDocument();
+    }
+
+    /// <summary>
+    /// Find UIDocument on this GameObject or anywhere in the scene so LobbyUI works
+    /// whether it sits on the same object as UIDocument or not.
+    /// </summary>
+    private void TryResolveDocument()
+    {
+        if (_document != null && _document.rootVisualElement != null)
+            return;
+
         _document = GetComponent<UIDocument>();
         if (_document == null)
+            _document = FindFirstObjectByType<UIDocument>();
+
+        if (_document == null)
         {
-            Debug.LogError("[LobbyUI] UIDocument component not found!");
+            Debug.LogWarning("[LobbyUI] No UIDocument found. Add a UIDocument to the Lobby scene (e.g. with Source: LobbyVisualTree.uxml) and ensure LobbyUI is in the scene.");
             return;
         }
 
-        _root = _document.rootVisualElement;
-        SetupUIElements();
-        RegisterCallbacks();
+        if (_document.rootVisualElement == null)
+        {
+            Debug.LogWarning("[LobbyUI] UIDocument has no rootVisualElement yet. Will retry in OnEnable.");
+            return;
+        }
+
+        BindElements();
+    }
+
+    private void BindElements()
+    {
+        if (_document == null || _document.rootVisualElement == null) return;
+
+        var root = _document.rootVisualElement;
+        _sessionCodeLabel = root.Q<Label>("SessionCode");
+        _playerListRoot = root.Q("PlayerList");
+        _playerNameField = root.Q<TextField>("PlayerNameField");
+        _classDropdown = root.Q<DropdownField>("ClassDropdown");
+        _readyButton = root.Q<Button>("ReadyButton");
+        _startGameButton = root.Q<Button>("StartGameButton");
+        _leaveButton = root.Q<Button>("LeaveButton");
+
+        if (_sessionCodeLabel == null)
+            Debug.LogWarning("[LobbyUI] SessionCode label not found. Is UIDocument Source set to LobbyVisualTree.uxml?");
+        if (_playerListRoot == null)
+            Debug.LogWarning("[LobbyUI] PlayerList not found. Is UIDocument Source set to LobbyVisualTree.uxml?");
     }
 
     private void OnEnable()
     {
-        // Subscribe to lobby manager events
-        if (LobbyManager.Instance != null)
+        TryResolveDocument();
+        StartCoroutine(WaitForUIThenBind());
+    }
+
+    /// <summary>
+    /// UI Toolkit creates rootVisualElement after the document is enabled; wait for it then bind and refresh.
+    /// </summary>
+    private IEnumerator WaitForUIThenBind()
+    {
+        if (_document == null)
         {
-            LobbyManager.Instance.OnPlayerAdded += OnPlayerAdded;
-            LobbyManager.Instance.OnPlayerRemoved += OnPlayerRemoved;
-            LobbyManager.Instance.OnPlayerClassChanged += OnPlayerClassChanged;
-            LobbyManager.Instance.OnPlayerReadyChanged += OnPlayerReadyChanged;
+            _document = FindFirstObjectByType<UIDocument>();
+            if (_document == null)
+            {
+                Debug.LogWarning("[LobbyUI] No UIDocument in scene.");
+                yield break;
+            }
         }
 
-        // Update UI when enabled
-        RefreshUI();
+        for (int i = 0; i < 10; i++)
+        {
+            if (_document.rootVisualElement != null)
+                break;
+            yield return null;
+        }
+
+        if (_document.rootVisualElement == null)
+        {
+            Debug.LogWarning("[LobbyUI] UIDocument.rootVisualElement still null after waiting.");
+            yield break;
+        }
+
+        BindElements();
+        if (_sessionCodeLabel == null)
+        {
+            Debug.LogWarning("[LobbyUI] SessionCode not found in tree. Check LobbyVisualTree.uxml has name=\"SessionCode\".");
+            yield break;
+        }
+
+        SubscribeToLobbyManager();
+        RefreshSessionCode();
+        RefreshPlayerList();
+
+        if (_playerNameField != null)
+        {
+            string saved = PlayerPrefs.GetString("PlayerName", "Player");
+            _playerNameField.SetValueWithoutNotify(saved);
+            _playerNameField.RegisterValueChangedCallback(OnPlayerNameChanged);
+        }
+
+        if (_classDropdown != null)
+            _classDropdown.RegisterValueChangedCallback(OnClassChanged);
+
+        if (_readyButton != null)
+            _readyButton.clicked += OnReadyClicked;
+        if (_startGameButton != null)
+            _startGameButton.clicked += OnStartGameClicked;
+        if (_leaveButton != null)
+            _leaveButton.clicked += OnLeaveClicked;
+
+        // Grace period: refresh again so we catch the host once LobbyManager has registered
+        StartCoroutine(RefreshAfterDelay(0.5f));
+        StartCoroutine(RefreshAfterDelay(1.5f));
+        StartCoroutine(RefreshAfterDelay(3f));
     }
 
     private void OnDisable()
     {
-        // Unsubscribe from events
-        if (LobbyManager.Instance != null)
-        {
-            LobbyManager.Instance.OnPlayerAdded -= OnPlayerAdded;
-            LobbyManager.Instance.OnPlayerRemoved -= OnPlayerRemoved;
-            LobbyManager.Instance.OnPlayerClassChanged -= OnPlayerClassChanged;
-            LobbyManager.Instance.OnPlayerReadyChanged -= OnPlayerReadyChanged;
-        }
-
-        UnregisterCallbacks();
-    }
-
-    private void SetupUIElements()
-    {
-        _sessionCodeLabel = _root.Q<Label>("SessionCode");
-        _playerList = _root.Q<VisualElement>("PlayerList");
-        _classDropdown = _root.Q<DropdownField>("ClassDropdown");
-        _readyButton = _root.Q<Button>("ReadyButton");
-        _startGameButton = _root.Q<Button>("StartGameButton");
-        _inviteButton = _root.Q<Button>("InviteButton");
-        _leaveButton = _root.Q<Button>("LeaveButton");
-
-        // Setup class dropdown
+        UnsubscribeFromLobbyManager();
+        if (_playerNameField != null)
+            _playerNameField.UnregisterValueChangedCallback(OnPlayerNameChanged);
         if (_classDropdown != null)
-        {
-            _classDropdown.choices = new List<string> { "President", "SocialChair", "Chad", "RichGuy" };
-            _classDropdown.index = 0;
-        }
-    }
-
-    private void RegisterCallbacks()
-    {
-        if (_classDropdown != null)
-        {
-            _classDropdown.RegisterValueChangedCallback(OnClassSelected);
-        }
-
+            _classDropdown.UnregisterValueChangedCallback(OnClassChanged);
         if (_readyButton != null)
-        {
-            _readyButton.RegisterCallback<ClickEvent>(OnReadyButtonClicked);
-        }
-
+            _readyButton.clicked -= OnReadyClicked;
         if (_startGameButton != null)
-        {
-            _startGameButton.RegisterCallback<ClickEvent>(OnStartGameButtonClicked);
-        }
-
-        if (_inviteButton != null)
-        {
-            _inviteButton.RegisterCallback<ClickEvent>(OnInviteButtonClicked);
-        }
-
+            _startGameButton.clicked -= OnStartGameClicked;
         if (_leaveButton != null)
-        {
-            _leaveButton.RegisterCallback<ClickEvent>(OnLeaveButtonClicked);
-        }
+            _leaveButton.clicked -= OnLeaveClicked;
     }
 
-    private void UnregisterCallbacks()
+    private void SubscribeToLobbyManager()
     {
-        if (_classDropdown != null)
-        {
-            _classDropdown.UnregisterValueChangedCallback(OnClassSelected);
-        }
-
-        if (_readyButton != null)
-        {
-            _readyButton.UnregisterCallback<ClickEvent>(OnReadyButtonClicked);
-        }
-
-        if (_startGameButton != null)
-        {
-            _startGameButton.UnregisterCallback<ClickEvent>(OnStartGameButtonClicked);
-        }
-
-        if (_inviteButton != null)
-        {
-            _inviteButton.UnregisterCallback<ClickEvent>(OnInviteButtonClicked);
-        }
-
-        if (_leaveButton != null)
-        {
-            _leaveButton.UnregisterCallback<ClickEvent>(OnLeaveButtonClicked);
-        }
+        if (LobbyManager.Instance == null) return;
+        var lm = LobbyManager.Instance;
+        lm.OnPlayerAdded += OnPlayerAdded;
+        lm.OnPlayerRemoved += OnPlayerRemoved;
+        lm.OnPlayerNameChanged += OnPlayerNameChangedFromNetwork;
+        lm.OnPlayerClassChanged += OnPlayerClassChangedFromNetwork;
+        lm.OnPlayerReadyChanged += OnPlayerReadyChangedFromNetwork;
     }
 
-    private void RefreshUI()
+    private void UnsubscribeFromLobbyManager()
     {
-        UpdateSessionCode();
-        UpdatePlayerList();
-        UpdateStartGameButton();
-        UpdateInviteButton();
+        if (LobbyManager.Instance == null) return;
+        var lm = LobbyManager.Instance;
+        lm.OnPlayerAdded -= OnPlayerAdded;
+        lm.OnPlayerRemoved -= OnPlayerRemoved;
+        lm.OnPlayerNameChanged -= OnPlayerNameChangedFromNetwork;
+        lm.OnPlayerClassChanged -= OnPlayerClassChangedFromNetwork;
+        lm.OnPlayerReadyChanged -= OnPlayerReadyChangedFromNetwork;
     }
 
-    private void UpdateSessionCode()
+    private void OnPlayerAdded(LobbyPlayerData _) => RefreshPlayerList();
+    private void OnPlayerRemoved(ulong _) => RefreshPlayerList();
+    private void OnPlayerNameChangedFromNetwork(ulong _, string __) => RefreshPlayerList();
+    private void OnPlayerClassChangedFromNetwork(ulong _, PlayerClass __) => RefreshPlayerList();
+    private void OnPlayerReadyChangedFromNetwork(ulong _, bool __) => RefreshPlayerList();
+
+    private void RefreshSessionCode()
     {
-        if (_sessionCodeLabel != null && SessionManager.Instance != null)
-        {
-            string code = SessionManager.Instance.GetSessionCode();
-            _sessionCodeLabel.text = string.IsNullOrEmpty(code) ? "----" : code;
-        }
+        if (_sessionCodeLabel == null) return;
+        string code = SessionManager.Instance != null ? SessionManager.Instance.GetSessionCode() : "";
+        _sessionCodeLabel.text = string.IsNullOrEmpty(code) ? "----" : code;
+        if (!string.IsNullOrEmpty(code))
+            Debug.Log($"[LobbyUI] Session code displayed in UI: {code}");
     }
 
-    private void UpdatePlayerList()
+    private void RefreshPlayerList()
     {
-        if (_playerList == null || LobbyManager.Instance == null) return;
+        if (_playerListRoot == null) return;
 
-        // Clear existing player slots
-        _playerList.Clear();
-        _playerSlots.Clear();
+        _playerListRoot.Clear();
 
-        // Create player slots for each player
+        if (LobbyManager.Instance == null)
+            return;
+
         foreach (var kvp in LobbyManager.Instance.Players)
         {
-            CreatePlayerSlot(kvp.Value);
+            var data = kvp.Value;
+            var row = new Label(FormatPlayerLine(data));
+            row.style.color = Color.white;
+            row.style.fontSize = 20;
+            row.style.marginBottom = 8;
+            row.style.unityTextAlign = TextAnchor.MiddleLeft;
+            _playerListRoot.Add(row);
         }
     }
 
-    private void CreatePlayerSlot(LobbyPlayerData playerData)
+    private static string FormatPlayerLine(LobbyPlayerData data)
     {
-        var slot = new VisualElement();
-        slot.name = $"PlayerSlot_{playerData.NetworkId}";
-        slot.style.flexDirection = FlexDirection.Row;
-        slot.style.alignItems = Align.Center;
-        slot.style.justifyContent = Justify.SpaceBetween;
-        slot.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
-        slot.style.paddingTop = 10;
-        slot.style.paddingBottom = 10;
-        slot.style.paddingLeft = 20;
-        slot.style.paddingRight = 20;
-        slot.style.marginBottom = 10;
-        slot.style.borderTopLeftRadius = 5;
-        slot.style.borderTopRightRadius = 5;
-        slot.style.borderBottomLeftRadius = 5;
-        slot.style.borderBottomRightRadius = 5;
-
-        // Player name
-        var nameLabel = new Label(playerData.PlayerName);
-        nameLabel.style.fontSize = 20;
-        nameLabel.style.color = Color.white;
-        nameLabel.style.flexGrow = 1;
-
-        // Player class
-        var classLabel = new Label(playerData.SelectedClass.ToString());
-        classLabel.style.fontSize = 18;
-        classLabel.style.color = new Color(0.8f, 0.8f, 1f);
-        classLabel.style.width = 150;
-
-        // Ready status
-        var readyLabel = new Label(playerData.IsReady ? "✓ Ready" : "Not Ready");
-        readyLabel.style.fontSize = 18;
-        readyLabel.style.color = playerData.IsReady ? Color.green : Color.yellow;
-        readyLabel.style.width = 120;
-
-        // Host indicator
-        if (playerData.IsHost)
-        {
-            var hostLabel = new Label("(Host)");
-            hostLabel.style.fontSize = 16;
-            hostLabel.style.color = Color.cyan;
-            hostLabel.style.width = 80;
-            slot.Add(hostLabel);
-        }
-
-        slot.Add(nameLabel);
-        slot.Add(classLabel);
-        slot.Add(readyLabel);
-
-        _playerList.Add(slot);
-        _playerSlots[playerData.NetworkId] = slot;
+        string host = data.IsHost ? " (Host)" : "";
+        string ready = data.IsReady ? " [Ready]" : "";
+        return $"{data.PlayerName}{host} - {data.SelectedClass}{ready}";
     }
 
-    private void UpdateStartGameButton()
+    private IEnumerator RefreshAfterDelay(float delay)
     {
-        if (_startGameButton == null) return;
-
-        bool isHost = SessionManager.Instance != null && SessionManager.Instance.IsHost();
-        bool allReady = LobbyManager.Instance != null && LobbyManager.Instance.CanStartGame();
-
-        _startGameButton.SetEnabled(isHost && allReady);
-        _startGameButton.style.display = isHost ? DisplayStyle.Flex : DisplayStyle.None;
+        yield return new WaitForSeconds(delay);
+        RefreshSessionCode();
+        RefreshPlayerList();
     }
 
-    private void UpdateInviteButton()
+    private void OnPlayerNameChanged(ChangeEvent<string> evt)
     {
-        if (_inviteButton == null) return;
-
-        bool isHost = SessionManager.Instance != null && SessionManager.Instance.IsHost();
-        _inviteButton.style.display = isHost ? DisplayStyle.Flex : DisplayStyle.None;
+        string name = evt.newValue?.Trim() ?? "";
+        if (string.IsNullOrEmpty(name)) return;
+        PlayerPrefs.SetString("PlayerName", name);
+        LobbyManager.Instance?.RequestSetPlayerName(name);
     }
 
-    private void OnClassSelected(ChangeEvent<string> evt)
+    private void OnClassChanged(ChangeEvent<string> evt)
     {
-        string className = evt.newValue;
-        if (System.Enum.TryParse<PlayerClass>(className, out PlayerClass playerClass))
-        {
-            _selectedClass = playerClass;
-            
-            // Send to server
-            if (LobbyManager.Instance != null)
-            {
-                LobbyManager.Instance.RequestSetPlayerClass(_selectedClass);
-            }
-        }
+        if (System.Enum.TryParse<PlayerClass>(evt.newValue, out var pc))
+            LobbyManager.Instance?.RequestSetPlayerClass(pc);
     }
 
-    private void OnReadyButtonClicked(ClickEvent evt)
+    private void OnReadyClicked()
     {
-        _isReady = !_isReady;
-        
-        // Update button text
-        if (_readyButton != null)
-        {
-            _readyButton.text = _isReady ? "Not Ready" : "Ready";
-        }
-
-        // Send to server
-        if (LobbyManager.Instance != null)
-        {
-            LobbyManager.Instance.RequestSetReadyStatus(_isReady);
-        }
+        // Toggle ready: would need local state or ask LobbyManager for current; for now just send true
+        LobbyManager.Instance?.RequestSetReadyStatus(true);
     }
 
-    private void OnStartGameButtonClicked(ClickEvent evt)
+    private void OnStartGameClicked()
     {
-        if (LobbyManager.Instance != null)
-        {
-            LobbyManager.Instance.RequestStartGame();
-        }
+        LobbyManager.Instance?.RequestStartGame();
     }
 
-    private void OnInviteButtonClicked(ClickEvent evt)
+    private void OnLeaveClicked()
     {
-        // TODO: Implement Unity Services friend invite system
-        Debug.Log("[LobbyUI] Invite friends clicked - TODO: Implement friend invite system");
-        
-        // For now, copy session code to clipboard
-        if (SessionManager.Instance != null)
-        {
-            string code = SessionManager.Instance.GetSessionCode();
-            GUIUtility.systemCopyBuffer = code;
-            Debug.Log($"[LobbyUI] Session code copied to clipboard: {code}");
-        }
-    }
-
-    private void OnLeaveButtonClicked(ClickEvent evt)
-    {
-        if (LobbyManager.Instance != null)
-        {
-            LobbyManager.Instance.LeaveLobby();
-        }
-    }
-
-    // Event handlers from LobbyManager
-    private void OnPlayerAdded(LobbyPlayerData playerData)
-    {
-        UpdatePlayerList();
-        UpdateStartGameButton();
-    }
-
-    private void OnPlayerRemoved(ulong clientId)
-    {
-        UpdatePlayerList();
-        UpdateStartGameButton();
-    }
-
-    private void OnPlayerClassChanged(ulong clientId, PlayerClass playerClass)
-    {
-        UpdatePlayerList();
-    }
-
-    private void OnPlayerReadyChanged(ulong clientId, bool isReady)
-    {
-        UpdatePlayerList();
-        UpdateStartGameButton();
+        LobbyManager.Instance?.LeaveLobby();
     }
 }

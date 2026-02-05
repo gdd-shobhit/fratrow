@@ -32,6 +32,7 @@ public class LobbyManager : NetworkBehaviour
     public event System.Action<ulong> OnPlayerRemoved;
     public event System.Action<ulong, PlayerClass> OnPlayerClassChanged;
     public event System.Action<ulong, bool> OnPlayerReadyChanged;
+    public event System.Action<ulong, string> OnPlayerNameChanged;
 
     // Scene names
     private const string LOBBY_SCENE_NAME = "Lobby"; // Update with actual scene name
@@ -85,7 +86,7 @@ public class LobbyManager : NetworkBehaviour
         if (networkManager == null) return;
 
         var localClientId = networkManager.LocalClientId;
-        var playerName = System.Environment.UserName; // TODO: Get from player settings/prefs
+        var playerName = UnityEngine.PlayerPrefs.GetString("PlayerName", "Host");
 
         var playerData = new LobbyPlayerData(playerName, PlayerClass.President, localClientId, true);
         _players[localClientId] = playerData;
@@ -101,10 +102,18 @@ public class LobbyManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        var networkManager = NetworkManager.Singleton;
+        if (networkManager != null && clientId == networkManager.LocalClientId)
+        {
+            // Host is already registered in RegisterServerPlayer(); don't overwrite with isHost=false
+            Debug.Log("[LobbyManager] Host already registered, skipping OnClientConnected for self.");
+            return;
+        }
+
         Debug.Log($"[LobbyManager] Client connected: {clientId}");
 
-        // Create player data for new client
-        var playerName = $"Player {clientId}"; // TODO: Get actual player name
+        // Create player data for new client (name will be updated when they send SetPlayerNameRPC)
+        var playerName = $"Player {clientId}";
         var playerData = new LobbyPlayerData(playerName, PlayerClass.President, clientId, false);
         _players[clientId] = playerData;
 
@@ -141,6 +150,35 @@ public class LobbyManager : NetworkBehaviour
 
             OnPlayerRemoved?.Invoke(clientId);
         }
+    }
+
+    /// <summary>
+    /// Set a player's display name. Server-side only.
+    /// </summary>
+    public void SetPlayerName(ulong clientId, string playerName)
+    {
+        if (!IsServer) return;
+        if (string.IsNullOrWhiteSpace(playerName)) return;
+
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].PlayerName = playerName.Trim();
+            if (_players[clientId].PlayerName.Length > 24)
+                _players[clientId].PlayerName = _players[clientId].PlayerName.Substring(0, 24);
+            Debug.Log($"[LobbyManager] Player {clientId} name set to: {_players[clientId].PlayerName}");
+        }
+    }
+
+    /// <summary>
+    /// Client-side callback when player name changes (called from LobbyRPCs).
+    /// </summary>
+    public void HandlePlayerNameChanged(ulong clientId, string playerName)
+    {
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].PlayerName = playerName ?? $"Player {clientId}";
+        }
+        OnPlayerNameChanged?.Invoke(clientId, playerName);
     }
 
     /// <summary>
@@ -260,13 +298,29 @@ public class LobbyManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        foreach (var kvp in _players)
+        // Snapshot the list so we don't modify _players while iterating (RPCs can trigger callbacks that modify it)
+        var snapshot = new List<LobbyPlayerData>(_players.Values);
+        foreach (var playerData in snapshot)
         {
-            var playerData = kvp.Value;
             if (_lobbyRPCs != null)
             {
-                _lobbyRPCs.PlayerJoinedLobbyRPC(playerData.NetworkId, playerData.PlayerName, 
+                _lobbyRPCs.PlayerJoinedLobbyRPC(playerData.NetworkId, playerData.PlayerName,
                     playerData.SelectedClass, playerData.IsHost);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request to set this client's display name. Client-side method.
+    /// </summary>
+    public void RequestSetPlayerName(string playerName)
+    {
+        if (_lobbyRPCs != null)
+        {
+            var networkManager = NetworkManager.Singleton;
+            if (networkManager != null)
+            {
+                _lobbyRPCs.SetPlayerNameRPC(networkManager.LocalClientId, playerName ?? "");
             }
         }
     }

@@ -6,7 +6,10 @@ Steps to get the lobby on screen and make multiplayer work.
 
 ## 1. Unity Services (one-time)
 
-1. **Window → Unity Services** – sign in and create/link a project.
+1. **Open the Services window** (path depends on your Unity version):
+   - **Window → General → Services**, or
+   - **Edit → Project Settings**, then select **Services** in the left sidebar.
+   Sign in with your Unity account and create or link a cloud project.
 2. **Enable services** in the dashboard:
    - **Authentication** (required for multiplayer).
    - **Multiplayer** (or Relay / session services your project uses).
@@ -90,10 +93,15 @@ When you click **Start** on the main menu:
 
 ## 6. Player Prefab (for when you go to Game)
 
-1. Use your existing **player** prefab (the one that has `UserCharacter` etc.).
-2. Add **Network Object** (Netcode) to the root.
-3. Add **Networked User Character** (your script).
-4. In **Network Manager** in the main menu scene, assign this prefab to **Player Prefab**.
+**If you see "PlayerPrefab has no NetworkObject assigned":** the prefab used as Player Prefab must have a **Network Object** component on its root.
+
+1. In the **Project** window, open **Assets/Prefabs/Player.prefab** (double‑click to open in Prefab mode, or drag it into the Hierarchy to edit).
+2. With the **root** of the prefab selected (the top object, e.g. "Player"):
+   - **Add Component** → search for **Network Object** (Netcode for GameObjects) → add it.
+   - **Add Component** → add **Networked User Character** (your script).
+   - If the prefab doesn’t have **User Character** yet, add that too (your gameplay script).
+3. **Save** the prefab (Ctrl+S in Prefab mode, or **Overrides → Apply All** if you edited an instance).
+4. In the **Main Menu** scene, select **NetworkManager** and in the Inspector set **Player Prefab** to this **Player** prefab.
 
 When the game starts and the game scene loads, the server can spawn this player prefab for each client.
 

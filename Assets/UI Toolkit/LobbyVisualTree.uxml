@@ -6,6 +6,10 @@
             <ui:Label text="Session Code:" name="SessionCodeLabel" style="font-size: 24px; color: white; margin-right: 10px;"/>
             <ui:Label text="----" name="SessionCode" style="font-size: 32px; font-weight: bold; color: rgb(255, 255, 0); background-color: rgba(0, 0, 0, 0.5); padding: 10px 20px; border-radius: 5px;"/>
         </ui:VisualElement>
+        <ui:VisualElement name="PlayerNameContainer" style="flex-direction: row; align-items: center; justify-content: center; margin-top: 16px;">
+            <ui:Label text="Your Name:" name="PlayerNameLabel" style="font-size: 24px; color: white; margin-right: 10px;"/>
+            <ui:TextField name="PlayerNameField" value="" max-length="24" style="width: 240px; font-size: 18px;"/>
+        </ui:VisualElement>
         <ui:VisualElement name="PlayerListContainer" style="flex-grow: 1; align-items: center; margin-top: 40px;">
             <ui:Label text="Players" name="PlayerListHeader" style="font-size: 36px; color: white; margin-bottom: 20px;"/>
             <ui:VisualElement name="PlayerList" style="flex-direction: column; align-items: center; width: 800px; background-color: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px;"/>
