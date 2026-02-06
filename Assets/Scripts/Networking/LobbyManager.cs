@@ -35,7 +35,6 @@ public class LobbyManager : NetworkBehaviour
     public event System.Action<ulong, string> OnPlayerNameChanged;
 
     // Scene names
-    private const string LOBBY_SCENE_NAME = "Lobby"; // Update with actual scene name
     private const string GAME_SCENE_NAME = "Game"; // Update with actual scene name
 
     public IReadOnlyDictionary<ulong, LobbyPlayerData> Players => _players;

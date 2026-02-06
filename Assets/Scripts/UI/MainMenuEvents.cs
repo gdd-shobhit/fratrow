@@ -22,20 +22,8 @@ public class MainMenuEvents : MonoBehaviour
             startButton.RegisterCallback<ClickEvent>(OnStartButtonClicked);
         }
 
-        // Create Join button if it doesn't exist
+        // Get Join button from UXML (now defined in MainMenuVisualTree.uxml)
         joinButton = document.rootVisualElement.Q("Join") as Button;
-        if (joinButton == null)
-        {
-            var buttonContainer = startButton?.parent;
-            if (buttonContainer != null)
-            {
-                joinButton = new Button();
-                joinButton.text = "Join";
-                joinButton.name = "Join";
-                joinButton.style.marginLeft = 20;
-                buttonContainer.Add(joinButton);
-            }
-        }
 
         if (joinButton != null)
         {
