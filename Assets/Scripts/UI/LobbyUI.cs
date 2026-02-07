@@ -26,6 +26,11 @@ public class LobbyUI : MonoBehaviour
     private Button _meshRightArrow;
     private Label _meshLabel;
 
+    // Stat sliders (read-only, show selected class stats)
+    private Slider _popularitySlider;
+    private Slider _troubleMakerSlider;
+    private Slider _cashSlider;
+
     private void Awake()
     {
         TryResolveDocument();
@@ -78,6 +83,10 @@ public class LobbyUI : MonoBehaviour
         _meshLeftArrow = root.Q<Button>("MeshLeftArrow");
         _meshRightArrow = root.Q<Button>("MeshRightArrow");
         _meshLabel = root.Q<Label>("MeshLabel");
+
+        _popularitySlider = root.Q<Slider>("Popularity");
+        _troubleMakerSlider = root.Q<Slider>("TroubleMaker");
+        _cashSlider = root.Q<Slider>("Cash");
 
         if (_sessionCodeLabel == null)
             Debug.LogWarning("[LobbyUI] SessionCode label not found. Is UIDocument Source set to LobbyVisualTree.uxml?");
@@ -157,6 +166,7 @@ public class LobbyUI : MonoBehaviour
             _meshRightArrow.clicked += OnMeshRightClicked;
 
         RefreshAppearanceLabels();
+        SetupStatSliders();
 
         // Grace period: refresh again so we catch the host once LobbyManager has registered
         //StartCoroutine(RefreshAfterDelay(0.5f));
@@ -185,6 +195,12 @@ public class LobbyUI : MonoBehaviour
             _meshLeftArrow.clicked -= OnMeshLeftClicked;
         if (_meshRightArrow != null)
             _meshRightArrow.clicked -= OnMeshRightClicked;
+        if (_popularitySlider != null)
+            _popularitySlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
+        if (_troubleMakerSlider != null)
+            _troubleMakerSlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
+        if (_cashSlider != null)
+            _cashSlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
     }
 
     private void SubscribeToLobbyManager()
@@ -213,10 +229,19 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerMaterialChanged -= OnPlayerMaterialChangedFromNetwork;
     }
 
-    private void OnPlayerAdded(LobbyPlayerData _) => RefreshPlayerList();
+    private void OnPlayerAdded(LobbyPlayerData _)
+    {
+        RefreshPlayerList();
+        RefreshStatSliders();
+    }
     private void OnPlayerRemoved(ulong _) => RefreshPlayerList();
     private void OnPlayerNameChangedFromNetwork(ulong _, string __) => RefreshPlayerList();
-    private void OnPlayerClassChangedFromNetwork(ulong _, PlayerClass __) => RefreshPlayerList();
+    private void OnPlayerClassChangedFromNetwork(ulong clientId, PlayerClass _)
+    {
+        RefreshPlayerList();
+        if (IsLocalPlayer(clientId))
+            RefreshStatSliders();
+    }
     private void OnPlayerReadyChangedFromNetwork(ulong _, bool __) => RefreshPlayerList();
 
     private void OnPlayerMeshChangedFromNetwork(ulong clientId, int _)
@@ -350,6 +375,58 @@ public class LobbyUI : MonoBehaviour
         return $"{data.PlayerName}{host} - {data.SelectedClass}{ready}";
     }
 
+    private void SetupStatSliders()
+    {
+        if (_popularitySlider != null)
+        {
+            _popularitySlider.lowValue = 0f;
+            _popularitySlider.highValue = 100f;
+            _popularitySlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
+        }
+        if (_troubleMakerSlider != null)
+        {
+            _troubleMakerSlider.lowValue = -100f;
+            _troubleMakerSlider.highValue = 100f;
+            _troubleMakerSlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
+        }
+        if (_cashSlider != null)
+        {
+            _cashSlider.lowValue = 0f;
+            _cashSlider.highValue = 100f;
+            _cashSlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
+        }
+        RefreshStatSliders();
+    }
+
+    private void OnStatSliderValueChanged(ChangeEvent<float> evt)
+    {
+        // Immediately revert any user change - sliders are read-only
+        RefreshStatSliders();
+    }
+
+    private void RefreshStatSliders()
+    {
+        PlayerClass selectedClass = PlayerClass.President;
+        if (LobbyManager.Instance != null && NetworkManager.Singleton != null &&
+            LobbyManager.Instance.Players.TryGetValue(NetworkManager.Singleton.LocalClientId, out var data))
+        {
+            selectedClass = data.SelectedClass;
+        }
+
+        if (GameManager.Instance == null || GameManager.Instance.playerClassesDict == null)
+            return;
+
+        if (!GameManager.Instance.playerClassesDict.TryGetValue(selectedClass, out var classSO))
+            return;
+
+        if (_popularitySlider != null)
+            _popularitySlider.SetValueWithoutNotify(classSO.popularity);
+        if (_troubleMakerSlider != null)
+            _troubleMakerSlider.SetValueWithoutNotify(classSO.troubleMaker);
+        if (_cashSlider != null)
+            _cashSlider.SetValueWithoutNotify(classSO.cashvalue);
+    }
+
     private IEnumerator RefreshAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -369,7 +446,10 @@ public class LobbyUI : MonoBehaviour
     private void OnClassChanged(ChangeEvent<string> evt)
     {
         if (System.Enum.TryParse<PlayerClass>(evt.newValue, out var pc))
+        {
             LobbyManager.Instance?.RequestSetPlayerClass(pc);
+            RefreshStatSliders();
+        }
     }
 
     private void OnReadyClicked()
