@@ -187,6 +187,119 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b513849cee22c944b7169835a0501ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuEvents
+--- !u!1 &420723012
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 420723016}
+  - component: {fileID: 420723015}
+  - component: {fileID: 420723014}
+  - component: {fileID: 420723013}
+  m_Layer: 0
+  m_Name: Plane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!64 &420723013
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420723012}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &420723014
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420723012}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &420723015
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420723012}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &420723016
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420723012}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.92691, y: -3.29869, z: 13.26217}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &481182134
 GameObject:
   m_ObjectHideFlags: 0
@@ -431,6 +544,7 @@ MonoBehaviour:
   timeBetweenEachGuestArrival: 5
   currentDay: 1
   persistAcrossScenes: 1
+  guestSpawnLocation: {fileID: 0}
   guestPrefab: {fileID: 7938427163358765138, guid: 56a7e9ddbed6323428fed69ec475b034, type: 3}
 --- !u!4 &566876624
 Transform:
@@ -519,6 +633,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LobbyManager
   ShowTopMostFoldoutHeaderGroup: 1
+  playerMeshVisualList:
+  - {fileID: 4011855729142578783, guid: 2165616b63aca644c8983f129c8a6fc6, type: 3}
+  - {fileID: 626043638658649181, guid: 1fea9d91227e9814f869406681786d5a, type: 3}
+  - {fileID: 5139570391112233068, guid: 747869c6557e3714c804c4355b044e9e, type: 3}
+  - {fileID: 4140202638052186367, guid: 9cb6519e2b32c2344bb30ac086e5243d, type: 3}
+  - {fileID: -8625805555470642597, guid: 15a125bdadec28c469e2a8964e8ca130, type: 3}
+  - {fileID: -726835051158667631, guid: 65c0fe84e937cd64e9c996ac4e58144f, type: 3}
+  - {fileID: -1719732492130724269, guid: e135098a3d2506c47b77c212f14da368, type: 3}
+  - {fileID: 3657109327712839793, guid: 0f4082164db668c46bf0846efc198b6e, type: 3}
+  - {fileID: 4810452512824803883, guid: 25c8b59e7b2a3c245947c2145611fd7d, type: 3}
+  - {fileID: -4163388941435915644, guid: 3eefd3770fa1c40438ae7ad20689f794, type: 3}
+  - {fileID: -7996180461341273032, guid: b9e7a7355c011594b9c66a6c571b9283, type: 3}
+  - {fileID: 6195736971425606912, guid: 6e0bc8a366645d143aea4fb3e27db972, type: 3}
+  - {fileID: 2183193208683725900, guid: e333cda59afd1344aaa3c889c47776e4, type: 3}
+  - {fileID: -7761706009895435070, guid: 9f5275d6d399fa548924eb1e4356ceea, type: 3}
+  - {fileID: -5773239197539644195, guid: 63013d26f33557a41b6ca1dda069b741, type: 3}
+  - {fileID: -3625228233366820932, guid: 8c51ebd468b345d4e9c95be9ed1aaabc, type: 3}
+  - {fileID: -96166183737667640, guid: 8192e40207e9cb146a4ec75a26d31a99, type: 3}
+  - {fileID: 5451311424095430359, guid: fba7f43569532a64fa22cf51a342963d, type: 3}
+  playerSkinMaterialList:
+  - {fileID: 2100000, guid: b5196b4ed11c46f4eadd08cb98b4aba3, type: 2}
+  - {fileID: 2100000, guid: 0fba143db0f355241ab2d08e01431d8c, type: 2}
+  - {fileID: 2100000, guid: 49e897dae1818784ca3a53274beef6d3, type: 2}
+  - {fileID: 2100000, guid: 64aa29e5478aa4645b59bf62f2c55b3c, type: 2}
+  - {fileID: 2100000, guid: f56a89ba069e28e4abf51cd9baa9ea4f, type: 2}
+  - {fileID: 2100000, guid: 88aedb11cda552c4daa6d3c81a6f1421, type: 2}
+  - {fileID: 2100000, guid: f050b687c59d0c0499bdd4231def29e9, type: 2}
+  - {fileID: 2100000, guid: deb63c3b802fe6840b1674dcf1704536, type: 2}
+  - {fileID: 2100000, guid: 63cc073c21d50c8478f795b34d842527, type: 2}
 --- !u!114 &662079390
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -787,7 +930,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1975850739}
-    PlayerPrefab: {fileID: 4947123285241571570, guid: a79e9189f081d0b4baa293f80b8a6a45, type: 3}
+    PlayerPrefab: {fileID: 0}
     Prefabs:
       NetworkPrefabsLists:
       - {fileID: 11400000, guid: 4f82ff82d503d834eb54c230df9f1e7a, type: 2}
@@ -840,3 +983,4 @@ SceneRoots:
   - {fileID: 662079387}
   - {fileID: 1975850741}
   - {fileID: 520015187}
+  - {fileID: 420723016}

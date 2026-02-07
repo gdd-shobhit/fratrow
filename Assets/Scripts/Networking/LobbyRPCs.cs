@@ -137,17 +137,63 @@ public class LobbyRPCs : NetworkBehaviour
     }
 
     /// <summary>
+    /// RPC to update a player's mesh selection.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetMeshIndexRPC(ulong clientId, int meshIndex)
+    {
+        int clampedIndex = 0;
+        if (LobbyManager.Instance != null)
+        {
+            clampedIndex = LobbyManager.Instance.SetPlayerMeshIndex(clientId, meshIndex);
+        }
+        SetMeshIndexClientRPC(clientId, clampedIndex);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetMeshIndexClientRPC(ulong clientId, int meshIndex)
+    {
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.HandlePlayerMeshChanged(clientId, meshIndex);
+        }
+    }
+
+    /// <summary>
+    /// RPC to update a player's material selection.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SetMaterialIndexRPC(ulong clientId, int materialIndex)
+    {
+        int clampedIndex = 0;
+        if (LobbyManager.Instance != null)
+        {
+            clampedIndex = LobbyManager.Instance.SetPlayerMaterialIndex(clientId, materialIndex);
+        }
+        SetMaterialIndexClientRPC(clientId, clampedIndex);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetMaterialIndexClientRPC(ulong clientId, int materialIndex)
+    {
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.HandlePlayerMaterialChanged(clientId, materialIndex);
+        }
+    }
+
+    /// <summary>
     /// RPC to notify all clients when a player joins the lobby.
     /// Called by server when a new player connects.
     /// </summary>
     [Rpc(SendTo.ClientsAndHost)]
-    public void PlayerJoinedLobbyRPC(ulong clientId, string playerName, PlayerClass playerClass, bool isHost)
+    public void PlayerJoinedLobbyRPC(ulong clientId, string playerName, PlayerClass playerClass, bool isHost, int meshIndex = 0, int materialIndex = 0)
     {
         Debug.Log($"[LobbyRPCs] Player joined lobby: {playerName} (ID: {clientId}, Class: {playerClass}, Host: {isHost})");
         
         if (LobbyManager.Instance != null)
         {
-            LobbyManager.Instance.OnPlayerJoined(clientId, playerName, playerClass, isHost);
+            LobbyManager.Instance.OnPlayerJoined(clientId, playerName, playerClass, isHost, meshIndex, materialIndex);
         }
     }
 

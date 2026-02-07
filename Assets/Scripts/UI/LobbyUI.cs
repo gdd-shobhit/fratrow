@@ -1,7 +1,7 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Binds the Lobby UXML to LobbyManager and SessionManager.
@@ -17,6 +17,14 @@ public class LobbyUI : MonoBehaviour
     private Button _readyButton;
     private Button _startGameButton;
     private Button _leaveButton;
+
+    // Appearance cyclers
+    private Button _skinLeftArrow;
+    private Button _skinRightArrow;
+    private Label _skinLabel;
+    private Button _meshLeftArrow;
+    private Button _meshRightArrow;
+    private Label _meshLabel;
 
     private void Awake()
     {
@@ -63,6 +71,13 @@ public class LobbyUI : MonoBehaviour
         _readyButton = root.Q<Button>("ReadyButton");
         _startGameButton = root.Q<Button>("StartGameButton");
         _leaveButton = root.Q<Button>("LeaveButton");
+
+        _skinLeftArrow = root.Q<Button>("SkinLeftArrow");
+        _skinRightArrow = root.Q<Button>("SkinRightArrow");
+        _skinLabel = root.Q<Label>("SkinLabel");
+        _meshLeftArrow = root.Q<Button>("MeshLeftArrow");
+        _meshRightArrow = root.Q<Button>("MeshRightArrow");
+        _meshLabel = root.Q<Label>("MeshLabel");
 
         if (_sessionCodeLabel == null)
             Debug.LogWarning("[LobbyUI] SessionCode label not found. Is UIDocument Source set to LobbyVisualTree.uxml?");
@@ -132,10 +147,21 @@ public class LobbyUI : MonoBehaviour
         if (_leaveButton != null)
             _leaveButton.clicked += OnLeaveClicked;
 
+        if (_skinLeftArrow != null)
+            _skinLeftArrow.clicked += OnSkinLeftClicked;
+        if (_skinRightArrow != null)
+            _skinRightArrow.clicked += OnSkinRightClicked;
+        if (_meshLeftArrow != null)
+            _meshLeftArrow.clicked += OnMeshLeftClicked;
+        if (_meshRightArrow != null)
+            _meshRightArrow.clicked += OnMeshRightClicked;
+
+        RefreshAppearanceLabels();
+
         // Grace period: refresh again so we catch the host once LobbyManager has registered
-        StartCoroutine(RefreshAfterDelay(0.5f));
-        StartCoroutine(RefreshAfterDelay(1.5f));
-        StartCoroutine(RefreshAfterDelay(3f));
+        //StartCoroutine(RefreshAfterDelay(0.5f));
+        //StartCoroutine(RefreshAfterDelay(1.5f));
+        //StartCoroutine(RefreshAfterDelay(3f));
     }
 
     private void OnDisable()
@@ -151,6 +177,14 @@ public class LobbyUI : MonoBehaviour
             _startGameButton.clicked -= OnStartGameClicked;
         if (_leaveButton != null)
             _leaveButton.clicked -= OnLeaveClicked;
+        if (_skinLeftArrow != null)
+            _skinLeftArrow.clicked -= OnSkinLeftClicked;
+        if (_skinRightArrow != null)
+            _skinRightArrow.clicked -= OnSkinRightClicked;
+        if (_meshLeftArrow != null)
+            _meshLeftArrow.clicked -= OnMeshLeftClicked;
+        if (_meshRightArrow != null)
+            _meshRightArrow.clicked -= OnMeshRightClicked;
     }
 
     private void SubscribeToLobbyManager()
@@ -162,6 +196,8 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerNameChanged += OnPlayerNameChangedFromNetwork;
         lm.OnPlayerClassChanged += OnPlayerClassChangedFromNetwork;
         lm.OnPlayerReadyChanged += OnPlayerReadyChangedFromNetwork;
+        lm.OnPlayerMeshChanged += OnPlayerMeshChangedFromNetwork;
+        lm.OnPlayerMaterialChanged += OnPlayerMaterialChangedFromNetwork;
     }
 
     private void UnsubscribeFromLobbyManager()
@@ -173,6 +209,8 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerNameChanged -= OnPlayerNameChangedFromNetwork;
         lm.OnPlayerClassChanged -= OnPlayerClassChangedFromNetwork;
         lm.OnPlayerReadyChanged -= OnPlayerReadyChangedFromNetwork;
+        lm.OnPlayerMeshChanged -= OnPlayerMeshChangedFromNetwork;
+        lm.OnPlayerMaterialChanged -= OnPlayerMaterialChangedFromNetwork;
     }
 
     private void OnPlayerAdded(LobbyPlayerData _) => RefreshPlayerList();
@@ -180,6 +218,100 @@ public class LobbyUI : MonoBehaviour
     private void OnPlayerNameChangedFromNetwork(ulong _, string __) => RefreshPlayerList();
     private void OnPlayerClassChangedFromNetwork(ulong _, PlayerClass __) => RefreshPlayerList();
     private void OnPlayerReadyChangedFromNetwork(ulong _, bool __) => RefreshPlayerList();
+
+    private void OnPlayerMeshChangedFromNetwork(ulong clientId, int _)
+    {
+        RefreshPlayerList();
+        if (IsLocalPlayer(clientId))
+            RefreshAppearanceLabels();
+    }
+
+    private void OnPlayerMaterialChangedFromNetwork(ulong clientId, int _)
+    {
+        RefreshPlayerList();
+        if (IsLocalPlayer(clientId))
+            RefreshAppearanceLabels();
+    }
+
+    private static bool IsLocalPlayer(ulong clientId)
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.LocalClientId == clientId;
+    }
+
+    private void RefreshAppearanceLabels()
+    {
+        if (LobbyManager.Instance == null) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+        if (!LobbyManager.Instance.Players.TryGetValue(nm.LocalClientId, out var data))
+            return;
+
+        var meshList = LobbyManager.Instance.MeshList;
+        var materialList = LobbyManager.Instance.MaterialList;
+
+        if (_skinLabel != null && materialList != null && materialList.Count > 0)
+        {
+            int idx = ((data.SelectedMaterialIndex % materialList.Count) + materialList.Count) % materialList.Count;
+            _skinLabel.text = materialList[idx] != null ? materialList[idx].name : $"Fit {idx + 1}";
+        }
+
+        if (_meshLabel != null && meshList != null && meshList.Count > 0)
+        {
+            int idx = ((data.SelectedMeshIndex % meshList.Count) + meshList.Count) % meshList.Count;
+            _meshLabel.text = meshList[idx] != null ? meshList[idx].name : $"Body {idx + 1}";
+        }
+    }
+
+    private void OnSkinLeftClicked()
+    {
+        CycleMaterial(-1);
+    }
+
+    private void OnSkinRightClicked()
+    {
+        CycleMaterial(1);
+    }
+
+    private void OnMeshLeftClicked()
+    {
+        CycleMesh(-1);
+    }
+
+    private void OnMeshRightClicked()
+    {
+        CycleMesh(1);
+    }
+
+    private void CycleMaterial(int delta)
+    {
+        if (LobbyManager.Instance == null) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+        var materialList = LobbyManager.Instance.MaterialList;
+        if (materialList == null || materialList.Count == 0) return;
+        if (!LobbyManager.Instance.Players.TryGetValue(nm.LocalClientId, out var data))
+            return;
+
+        int newIndex = ((data.SelectedMaterialIndex + delta) % materialList.Count + materialList.Count) % materialList.Count;
+        LobbyManager.Instance.RequestSetMaterialIndex(newIndex);
+        RefreshAppearanceLabels();
+    }
+
+    private void CycleMesh(int delta)
+    {
+        if (LobbyManager.Instance == null) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+        var meshList = LobbyManager.Instance.MeshList;
+        if (meshList == null || meshList.Count == 0) return;
+        if (!LobbyManager.Instance.Players.TryGetValue(nm.LocalClientId, out var data))
+            return;
+
+        int newIndex = ((data.SelectedMeshIndex + delta) % meshList.Count + meshList.Count) % meshList.Count;
+        LobbyManager.Instance.RequestSetMeshIndex(newIndex);
+        RefreshAppearanceLabels();
+    }
 
     private void RefreshSessionCode()
     {
@@ -223,6 +355,7 @@ public class LobbyUI : MonoBehaviour
         yield return new WaitForSeconds(delay);
         RefreshSessionCode();
         RefreshPlayerList();
+        RefreshAppearanceLabels();
     }
 
     private void OnPlayerNameChanged(ChangeEvent<string> evt)

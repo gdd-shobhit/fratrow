@@ -56,6 +56,8 @@ public class PartyManager : MonoBehaviour
     /// </summary>
     [SerializeField] private bool persistAcrossScenes = true;
 
+    [SerializeField] private Transform guestSpawnLocation;
+
     // Properties
     public GameObject guestPrefab;
     public Party CurrentParty => currentParty;
@@ -293,12 +295,12 @@ public class PartyManager : MonoBehaviour
         // If networking is enabled, use NetworkObject.Instantiate
         if (networkManager != null && isServer)
         {
-            guestObject = Unity.Netcode.NetworkObject.Instantiate(guestPrefab);
+            guestObject = Unity.Netcode.NetworkObject.Instantiate(guestPrefab, guestSpawnLocation);
         }
         else
         {
             // Single-player mode
-            guestObject = Instantiate(guestPrefab);
+            guestObject = Instantiate(guestPrefab, guestSpawnLocation);
         }
 
         NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();

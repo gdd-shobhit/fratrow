@@ -127,6 +127,7 @@ namespace StarterAssets
             // set sphere position, with offset
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
             Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+            Debug.Log("Jumped = " + _input.jump);
         }
 
         private void CameraRotation()
@@ -214,6 +215,8 @@ namespace StarterAssets
                 {
                     _verticalVelocity = -2f;
                 }
+
+                Debug.Log("Jumped = " + _input.jump);
 
                 // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)

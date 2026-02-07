@@ -13,6 +13,8 @@ public class LobbyPlayerData
     public bool IsReady;
     public ulong NetworkId;
     public bool IsHost;
+    public int SelectedMeshIndex;
+    public int SelectedMaterialIndex;
 
     public LobbyPlayerData()
     {
@@ -21,6 +23,8 @@ public class LobbyPlayerData
         IsReady = false;
         NetworkId = 0;
         IsHost = false;
+        SelectedMeshIndex = 0;
+        SelectedMaterialIndex = 0;
     }
 
     public LobbyPlayerData(string playerName, PlayerClass playerClass, ulong networkId, bool isHost)
@@ -30,6 +34,8 @@ public class LobbyPlayerData
         IsReady = false;
         NetworkId = networkId;
         IsHost = isHost;
+        SelectedMeshIndex = 0;
+        SelectedMaterialIndex = 0;
     }
 
     /// <summary>
@@ -43,7 +49,9 @@ public class LobbyPlayerData
             SelectedClass = this.SelectedClass,
             IsReady = this.IsReady,
             NetworkId = this.NetworkId,
-            IsHost = this.IsHost
+            IsHost = this.IsHost,
+            SelectedMeshIndex = this.SelectedMeshIndex,
+            SelectedMaterialIndex = this.SelectedMaterialIndex
         };
     }
 

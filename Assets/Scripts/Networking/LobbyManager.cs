@@ -33,6 +33,15 @@ public class LobbyManager : NetworkBehaviour
     public event System.Action<ulong, PlayerClass> OnPlayerClassChanged;
     public event System.Action<ulong, bool> OnPlayerReadyChanged;
     public event System.Action<ulong, string> OnPlayerNameChanged;
+    public event System.Action<ulong, int> OnPlayerMeshChanged;
+    public event System.Action<ulong, int> OnPlayerMaterialChanged;
+
+    // Other properties
+    [SerializeField] private List<Mesh> playerMeshVisualList;
+    [SerializeField] private List<Material> playerSkinMaterialList;
+
+    public IReadOnlyList<Mesh> MeshList => playerMeshVisualList ?? new List<Mesh>();
+    public IReadOnlyList<Material> MaterialList => playerSkinMaterialList ?? new List<Material>();
 
     // Scene names
     private const string GAME_SCENE_NAME = "Game"; // Update with actual scene name
@@ -119,7 +128,7 @@ public class LobbyManager : NetworkBehaviour
         // Notify all clients
         if (_lobbyRPCs != null)
         {
-            _lobbyRPCs.PlayerJoinedLobbyRPC(clientId, playerData.PlayerName, playerData.SelectedClass, false);
+            _lobbyRPCs.PlayerJoinedLobbyRPC(clientId, playerData.PlayerName, playerData.SelectedClass, false, playerData.SelectedMeshIndex, playerData.SelectedMaterialIndex);
         }
 
         OnPlayerAdded?.Invoke(playerData);
@@ -269,11 +278,77 @@ public class LobbyManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// Set a player's mesh selection. Server-side only. Returns the clamped index that was set.
+    /// </summary>
+    public int SetPlayerMeshIndex(ulong clientId, int meshIndex)
+    {
+        if (!IsServer) return 0;
+
+        var count = MeshList?.Count ?? 0;
+        if (count == 0) return 0;
+        meshIndex = ((meshIndex % count) + count) % count; // Wrap to valid range
+
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].SelectedMeshIndex = meshIndex;
+            Debug.Log($"[LobbyManager] Player {clientId} mesh set to index {meshIndex}");
+            return meshIndex;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Set a player's material selection. Server-side only. Returns the clamped index that was set.
+    /// </summary>
+    public int SetPlayerMaterialIndex(ulong clientId, int materialIndex)
+    {
+        if (!IsServer) return 0;
+
+        var count = MaterialList?.Count ?? 0;
+        if (count == 0) return 0;
+        materialIndex = ((materialIndex % count) + count) % count; // Wrap to valid range
+
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].SelectedMaterialIndex = materialIndex;
+            Debug.Log($"[LobbyManager] Player {clientId} material set to index {materialIndex}");
+            return materialIndex;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Client-side callback when player mesh changes (called from LobbyRPCs).
+    /// </summary>
+    public void HandlePlayerMeshChanged(ulong clientId, int meshIndex)
+    {
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].SelectedMeshIndex = meshIndex;
+        }
+        OnPlayerMeshChanged?.Invoke(clientId, meshIndex);
+    }
+
+    /// <summary>
+    /// Client-side callback when player material changes (called from LobbyRPCs).
+    /// </summary>
+    public void HandlePlayerMaterialChanged(ulong clientId, int materialIndex)
+    {
+        if (_players.ContainsKey(clientId))
+        {
+            _players[clientId].SelectedMaterialIndex = materialIndex;
+        }
+        OnPlayerMaterialChanged?.Invoke(clientId, materialIndex);
+    }
+
+    /// <summary>
     /// Client-side callback when a player joins.
     /// </summary>
-    public void OnPlayerJoined(ulong clientId, string playerName, PlayerClass playerClass, bool isHost)
+    public void OnPlayerJoined(ulong clientId, string playerName, PlayerClass playerClass, bool isHost, int meshIndex = 0, int materialIndex = 0)
     {
         var playerData = new LobbyPlayerData(playerName, playerClass, clientId, isHost);
+        playerData.SelectedMeshIndex = meshIndex;
+        playerData.SelectedMaterialIndex = materialIndex;
         _players[clientId] = playerData;
         OnPlayerAdded?.Invoke(playerData);
     }
@@ -304,7 +379,7 @@ public class LobbyManager : NetworkBehaviour
             if (_lobbyRPCs != null)
             {
                 _lobbyRPCs.PlayerJoinedLobbyRPC(playerData.NetworkId, playerData.PlayerName,
-                    playerData.SelectedClass, playerData.IsHost);
+                    playerData.SelectedClass, playerData.IsHost, playerData.SelectedMeshIndex, playerData.SelectedMaterialIndex);
             }
         }
     }
@@ -350,6 +425,36 @@ public class LobbyManager : NetworkBehaviour
             if (networkManager != null)
             {
                 _lobbyRPCs.SetReadyStatusRPC(networkManager.LocalClientId, isReady);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request to set this client's mesh selection. Client-side method.
+    /// </summary>
+    public void RequestSetMeshIndex(int meshIndex)
+    {
+        if (_lobbyRPCs != null)
+        {
+            var networkManager = NetworkManager.Singleton;
+            if (networkManager != null)
+            {
+                _lobbyRPCs.SetMeshIndexRPC(networkManager.LocalClientId, meshIndex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request to set this client's material selection. Client-side method.
+    /// </summary>
+    public void RequestSetMaterialIndex(int materialIndex)
+    {
+        if (_lobbyRPCs != null)
+        {
+            var networkManager = NetworkManager.Singleton;
+            if (networkManager != null)
+            {
+                _lobbyRPCs.SetMaterialIndexRPC(networkManager.LocalClientId, materialIndex);
             }
         }
     }
