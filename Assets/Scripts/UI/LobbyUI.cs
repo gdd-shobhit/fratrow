@@ -394,6 +394,26 @@ public class LobbyUI : MonoBehaviour
             row.style.unityTextAlign = TextAnchor.MiddleLeft;
             _playerListRoot.Add(row);
         }
+
+        RefreshStartGameButton();
+    }
+
+    private void RefreshStartGameButton()
+    {
+        if (_startGameButton == null) return;
+
+        var nm = NetworkManager.Singleton;
+        bool isHost = nm != null && nm.IsHost;
+
+        if (!isHost)
+        {
+            _startGameButton.style.display = DisplayStyle.None;
+            return;
+        }
+
+        _startGameButton.style.display = DisplayStyle.Flex;
+        bool canStart = LobbyManager.Instance != null && LobbyManager.Instance.CanStartGame();
+        _startGameButton.SetEnabled(canStart);
     }
 
     private static string FormatPlayerLine(LobbyPlayerData data)

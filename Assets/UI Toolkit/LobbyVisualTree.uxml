@@ -13,15 +13,15 @@
                 <ui:VisualElement name="PlayerList" style="flex-direction: column; align-items: center; width: 80%; background-color: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; align-self: center; align-content: center; justify-content: space-between;"/>
             </ui:VisualElement>
             <ui:VisualElement name="AppearanceContainer" style="flex-grow: 1; height: 500px; align-self: center; align-content: auto; justify-content: center; align-items: center; flex-direction: column; width: 30%; flex-shrink: 1; flex-wrap: nowrap; margin-top: 10px; margin-right: 10px; margin-bottom: 10px; margin-left: 10px;">
-                <ui:VisualElement name="Name" style="flex-grow: 1; flex-direction: row; align-self: auto; width: 400px; height: 50px; flex-wrap: wrap; justify-content: flex-start; align-content: auto; align-items: center;">
-                    <ui:Label text="Your Name:" name="PlayerNameLabel" style="font-size: 24px; color: white; margin-right: 10px; height: 37px;"/>
-                    <ui:TextField name="PlayerNameField" value="" max-length="24" style="width: 240px; font-size: 18px;"/>
+                <ui:VisualElement name="Name" style="flex-grow: 1; flex-direction: row; align-self: auto; width: 50%; height: 50%; flex-wrap: wrap; justify-content: flex-start; align-content: auto; align-items: center;">
+                    <ui:Label text="Your Name:" name="PlayerNameLabel" style="font-size: 24px; color: white; margin-right: 10px; height: 47px;"/>
+                    <ui:TextField name="PlayerNameField" value="" max-length="24" style="width: 240px; font-size: 18px; -unity-text-outline-width: 1px; -unity-font-style: bold; overflow: hidden; color: rgb(0, 0, 0); height: 54px;"/>
                 </ui:VisualElement>
-                <ui:VisualElement name="ClassSelectionContainer" style="flex-direction: row; align-items: center; justify-content: flex-start; margin-top: 30px; margin-bottom: 30px; align-content: auto; align-self: auto;">
+                <ui:VisualElement name="ClassSelectionContainer" style="flex-direction: row; align-items: center; justify-content: flex-start; margin-top: 30px; margin-bottom: 30px; align-content: auto; align-self: auto; width: 50%; height: 50%;">
                     <ui:Label text="Select Class:" name="ClassSelectionLabel" style="font-size: 24px; color: white; margin-right: 20px; height: 34px;"/>
                     <ui:DropdownField name="ClassDropdown" choices="President,SocialChair,Chad,RichGuy" value="President" data-source="" style="width: 200px; background-image: none;"/>
                 </ui:VisualElement>
-                <ui:VisualElement name="PlayerStats" style="flex-grow: 1; width: 20%; translate: 5% 4%;">
+                <ui:VisualElement name="PlayerStats" style="flex-grow: 1; width: 40%; translate: 0% 0%; align-items: flex-start; justify-content: flex-start; align-self: center;">
                     <ui:Label text="Popularity" name="Label"/>
                     <ui:Slider label="Slider" value="80" high-value="100" name="Popularity" fill="true" show-input-field="false" inverted="true" low-value="0" class="HUDSlider bar" style="background-image: none; background-color: rgba(0, 0, 0, 0); flex-direction: row-reverse; margin-bottom: 20px; margin-top: 20px;">
                         <ui:Image name="Image_Pop" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/gem-1-512.png?fileID=2800000&amp;guid=e93aaa7f86f3d884ca8cefa5d8dfa6b2&amp;type=3#gem-1-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2 2;"/>
@@ -33,12 +33,12 @@
                         <ui:Image name="Image" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-512.png?fileID=2800000&amp;guid=df65a0df46f6dc04687bb5db74c11068&amp;type=3#coin-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2;"/>
                     </ui:Slider>
                 </ui:VisualElement>
-                <ui:VisualElement name="SkinCycler" style="flex-grow: 1; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-self: center; align-content: center; align-items: center; width: auto; flex-shrink: 0;">
+                <ui:VisualElement name="SkinCycler" style="flex-grow: 1; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-self: center; align-content: center; align-items: center; width: 50%; flex-shrink: 0; height: 15%; margin-top: 5px; margin-right: 5px; margin-bottom: 5px; margin-left: 5px;">
                     <ui:Button text="" name="SkinLeftArrow" class="CyclerArrow CyclerArrowLeft"/>
                     <ui:Label text="Select Fit" name="SkinLabel"/>
                     <ui:Button text="" name="SkinRightArrow" class="CyclerArrow CyclerArrowRight"/>
                 </ui:VisualElement>
-                <ui:VisualElement name="BodyCycler" style="flex-grow: 1; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-self: center; align-content: center; align-items: center; flex-shrink: 1;">
+                <ui:VisualElement name="BodyCycler" style="flex-grow: 1; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-self: center; align-content: center; align-items: center; flex-shrink: 1; height: 15%; width: 50%;">
                     <ui:Button text="" name="MeshLeftArrow" class="CyclerArrow CyclerArrowLeft"/>
                     <ui:Label text="Select Body Type" name="MeshLabel"/>
                     <ui:Button text="" name="MeshRightArrow" class="CyclerArrow CyclerArrowRight"/>
