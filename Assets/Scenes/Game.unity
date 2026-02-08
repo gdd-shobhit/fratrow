@@ -971,7 +971,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7019485897165914677, guid: 8e5bed6b8dcfed240a38affefd9c58f6, type: 3}
       propertyPath: m_CullingMask.m_Bits
-      value: 8062
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 7019485897165914677, guid: 8e5bed6b8dcfed240a38affefd9c58f6, type: 3}
       propertyPath: m_projectionMatrixMode
@@ -1206,7 +1206,7 @@ GameObject:
   - component: {fileID: 1904936755}
   - component: {fileID: 1904936754}
   - component: {fileID: 1904936753}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: Entrance
   m_TagString: Untagged
   m_Icon: {fileID: 0}

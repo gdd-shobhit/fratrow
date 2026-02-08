@@ -33,6 +33,8 @@ public class LobbyUI : MonoBehaviour
 
     private void Awake()
     {
+        var nm = NetworkManager.Singleton;
+        Debug.Log($"[LobbyUI] Awake (scene: {gameObject.scene.name}) NetworkManager={nm != null} IsClient={nm?.IsClient} LobbyManager.Instance={LobbyManager.Instance != null}");
         TryResolveDocument();
     }
 
@@ -138,6 +140,7 @@ public class LobbyUI : MonoBehaviour
         SubscribeToLobbyManager();
         RefreshSessionCode();
         RefreshPlayerList();
+        StartCoroutine(DelayedRefreshAfterJoin());
 
         if (_playerNameField != null)
         {
@@ -147,7 +150,10 @@ public class LobbyUI : MonoBehaviour
         }
 
         if (_classDropdown != null)
+        {
+            RefreshClassDropdown();
             _classDropdown.RegisterValueChangedCallback(OnClassChanged);
+        }
 
         if (_readyButton != null)
             _readyButton.clicked += OnReadyClicked;
@@ -167,11 +173,20 @@ public class LobbyUI : MonoBehaviour
 
         RefreshAppearanceLabels();
         SetupStatSliders();
+    }
 
-        // Grace period: refresh again so we catch the host once LobbyManager has registered
-        //StartCoroutine(RefreshAfterDelay(0.5f));
-        //StartCoroutine(RefreshAfterDelay(1.5f));
-        //StartCoroutine(RefreshAfterDelay(3f));
+    /// <summary>
+    /// Catches lobby state that arrived before we subscribed. Client receives PlayerJoinedLobbyRPC
+    /// asynchronously; if they arrive before LobbyUI subscribes, we miss OnPlayerAdded. This delayed
+    /// refresh ensures we display the lobby state shortly after join.
+    /// </summary>
+    private IEnumerator DelayedRefreshAfterJoin()
+    {
+        yield return new WaitForSeconds(0.5f);
+        RefreshPlayerList();
+        RefreshClassDropdown();
+        RefreshStatSliders();
+        RefreshAppearanceLabels();
     }
 
     private void OnDisable()
@@ -205,8 +220,9 @@ public class LobbyUI : MonoBehaviour
 
     private void SubscribeToLobbyManager()
     {
-        if (LobbyManager.Instance == null) return;
         var lm = LobbyManager.Instance;
+        Debug.Log($"[LobbyUI] SubscribeToLobbyManager: LobbyManager.Instance={lm != null}");
+        if (lm == null) return;
         lm.OnPlayerAdded += OnPlayerAdded;
         lm.OnPlayerRemoved += OnPlayerRemoved;
         lm.OnPlayerNameChanged += OnPlayerNameChangedFromNetwork;
@@ -229,10 +245,12 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerMaterialChanged -= OnPlayerMaterialChangedFromNetwork;
     }
 
-    private void OnPlayerAdded(LobbyPlayerData _)
+    private void OnPlayerAdded(LobbyPlayerData data)
     {
+        Debug.Log($"[LobbyUI] OnPlayerAdded event: {data?.PlayerName} (clientId={data?.NetworkId})");
         RefreshPlayerList();
         RefreshStatSliders();
+        RefreshClassDropdown();
     }
     private void OnPlayerRemoved(ulong _) => RefreshPlayerList();
     private void OnPlayerNameChangedFromNetwork(ulong _, string __) => RefreshPlayerList();
@@ -240,7 +258,10 @@ public class LobbyUI : MonoBehaviour
     {
         RefreshPlayerList();
         if (IsLocalPlayer(clientId))
+        {
             RefreshStatSliders();
+            RefreshClassDropdown();
+        }
     }
     private void OnPlayerReadyChangedFromNetwork(ulong _, bool __) => RefreshPlayerList();
 
@@ -353,10 +374,17 @@ public class LobbyUI : MonoBehaviour
 
         _playerListRoot.Clear();
 
-        if (LobbyManager.Instance == null)
+        var lm = LobbyManager.Instance;
+        if (lm == null)
+        {
+            Debug.Log("[LobbyUI] RefreshPlayerList: LobbyManager.Instance is null");
             return;
+        }
 
-        foreach (var kvp in LobbyManager.Instance.Players)
+        var count = lm.Players.Count;
+        Debug.Log($"[LobbyUI] RefreshPlayerList: playerCount={count}");
+
+        foreach (var kvp in lm.Players)
         {
             var data = kvp.Value;
             var row = new Label(FormatPlayerLine(data));
@@ -419,20 +447,21 @@ public class LobbyUI : MonoBehaviour
         if (!GameManager.Instance.playerClassesDict.TryGetValue(selectedClass, out var classSO))
             return;
 
+        // Sliders use inverted="true" for visual design - invert value so 20 displays as 20, not 80
         if (_popularitySlider != null)
-            _popularitySlider.SetValueWithoutNotify(classSO.popularity);
+            _popularitySlider.SetValueWithoutNotify(InvertForSlider(classSO.popularity, 0f, 100f));
         if (_troubleMakerSlider != null)
-            _troubleMakerSlider.SetValueWithoutNotify(classSO.troubleMaker);
+            _troubleMakerSlider.SetValueWithoutNotify(InvertForSlider(classSO.troubleMaker, -100f, 100f));
         if (_cashSlider != null)
-            _cashSlider.SetValueWithoutNotify(classSO.cashvalue);
+            _cashSlider.SetValueWithoutNotify(InvertForSlider(classSO.cashvalue, 0f, 100f));
     }
 
-    private IEnumerator RefreshAfterDelay(float delay)
+    /// <summary>
+    /// Inverts value for display on inverted sliders: actual 20 should show visually as 20.
+    /// </summary>
+    private static float InvertForSlider(float actualValue, float lowValue, float highValue)
     {
-        yield return new WaitForSeconds(delay);
-        RefreshSessionCode();
-        RefreshPlayerList();
-        RefreshAppearanceLabels();
+        return highValue + lowValue - actualValue;
     }
 
     private void OnPlayerNameChanged(ChangeEvent<string> evt)
@@ -449,7 +478,24 @@ public class LobbyUI : MonoBehaviour
         {
             LobbyManager.Instance?.RequestSetPlayerClass(pc);
             RefreshStatSliders();
+            RefreshClassDropdown();
         }
+    }
+
+    private void RefreshClassDropdown()
+    {
+        if (_classDropdown == null) return;
+
+        PlayerClass selectedClass = PlayerClass.President;
+        if (LobbyManager.Instance != null && NetworkManager.Singleton != null &&
+            LobbyManager.Instance.Players.TryGetValue(NetworkManager.Singleton.LocalClientId, out var data))
+        {
+            selectedClass = data.SelectedClass;
+        }
+
+        string value = selectedClass.ToString();
+        _classDropdown.SetValueWithoutNotify(value);
+        _classDropdown.MarkDirtyRepaint();
     }
 
     private void OnReadyClicked()

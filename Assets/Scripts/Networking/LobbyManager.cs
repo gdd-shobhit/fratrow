@@ -28,6 +28,9 @@ public class LobbyManager : NetworkBehaviour
     private LobbyRPCs _lobbyRPCs;
 
     // Events
+    /// <summary>Fired when LobbySystems spawns on the client (Main Menu flow). Subscribe to load Lobby scene.</summary>
+    public static event System.Action OnClientLobbySystemsSpawned;
+
     public event System.Action<LobbyPlayerData> OnPlayerAdded;
     public event System.Action<ulong> OnPlayerRemoved;
     public event System.Action<ulong, PlayerClass> OnPlayerClassChanged;
@@ -52,6 +55,10 @@ public class LobbyManager : NetworkBehaviour
 
     private void Awake()
     {
+        var nm = NetworkManager.Singleton;
+        var nmState = nm != null ? $"IsServer={nm.IsServer}, IsClient={nm.IsClient}" : "NetworkManager=null";
+        Debug.Log($"[LobbyManager] Awake on {gameObject.name} (scene: {gameObject.scene.name}) {nmState}");
+
         if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
@@ -59,24 +66,68 @@ public class LobbyManager : NetworkBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Resolve LobbyRPCs in Awake so clients can send RPCs before OnNetworkSpawn runs
+        _lobbyRPCs = GetComponent<LobbyRPCs>();
+        if (_lobbyRPCs == null)
+        {
+            _lobbyRPCs = gameObject.AddComponent<LobbyRPCs>();
+        }
+        Debug.Log($"[LobbyManager] Awake done, _lobbyRPCs={(_lobbyRPCs != null ? "ok" : "null")}");
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        // Get or create LobbyRPCs component
-        _lobbyRPCs = GetComponent<LobbyRPCs>();
+        var no = NetworkObject;
+        var noSpawned = no != null && no.IsSpawned;
+        Debug.Log($"[LobbyManager] OnNetworkSpawn IsServer={IsServer} IsClient={IsClient} NetworkObject.IsSpawned={noSpawned} LocalClientId={NetworkManager.Singleton?.LocalClientId}");
+
+        // Ensure LobbyRPCs is set (in case Awake ran before LobbyRPCs was added)
         if (_lobbyRPCs == null)
         {
-            _lobbyRPCs = gameObject.AddComponent<LobbyRPCs>();
+            _lobbyRPCs = GetComponent<LobbyRPCs>();
+            if (_lobbyRPCs == null)
+            {
+                _lobbyRPCs = gameObject.AddComponent<LobbyRPCs>();
+            }
         }
-
-        // If we're the server, register existing players
         if (IsServer)
         {
             RegisterServerPlayer();
         }
+        else if (IsClient)
+        {
+            Debug.Log("[LobbyManager] Client: starting ClientRequestLobbyStateDelayed");
+            OnClientLobbySystemsSpawned?.Invoke();
+            // Client: request full lobby state from server (avoids timing/race issues)
+            StartCoroutine(ClientRequestLobbyStateDelayed());
+        }
+    }
+
+    private System.Collections.IEnumerator ClientRequestLobbyStateDelayed()
+    {
+        // Wait a few frames so we're fully spawned before requesting state
+        yield return null;
+        yield return null;
+
+        var nm = NetworkManager.Singleton;
+        Debug.Log($"[LobbyManager] ClientRequestLobbyStateDelayed: _lobbyRPCs={(_lobbyRPCs != null ? "ok" : "null")} nm={nm != null} LocalClientId={nm?.LocalClientId} NetworkObject.IsSpawned={NetworkObject?.IsSpawned}");
+
+        if (_lobbyRPCs == null)
+        {
+            Debug.LogWarning("[LobbyManager] ClientRequestLobbyStateDelayed: _lobbyRPCs is null, cannot request state");
+            yield break;
+        }
+        if (nm == null)
+        {
+            Debug.LogWarning("[LobbyManager] ClientRequestLobbyStateDelayed: NetworkManager is null");
+            yield break;
+        }
+
+        Debug.Log($"[LobbyManager] Client {nm.LocalClientId} requesting lobby state from server");
+        _lobbyRPCs.RequestLobbyStateRPC(nm.LocalClientId);
     }
 
     public override void OnNetworkDespawn()
@@ -346,11 +397,13 @@ public class LobbyManager : NetworkBehaviour
     /// </summary>
     public void OnPlayerJoined(ulong clientId, string playerName, PlayerClass playerClass, bool isHost, int meshIndex = 0, int materialIndex = 0)
     {
+        Debug.Log($"[LobbyManager] OnPlayerJoined (client-side) clientId={clientId} playerName={playerName} IsClient={IsClient} _players.Count before={_players.Count}");
         var playerData = new LobbyPlayerData(playerName, playerClass, clientId, isHost);
         playerData.SelectedMeshIndex = meshIndex;
         playerData.SelectedMaterialIndex = materialIndex;
         _players[clientId] = playerData;
         OnPlayerAdded?.Invoke(playerData);
+        Debug.Log($"[LobbyManager] OnPlayerJoined done, _players.Count={_players.Count}");
     }
 
     /// <summary>
@@ -367,10 +420,14 @@ public class LobbyManager : NetworkBehaviour
 
     /// <summary>
     /// Send current lobby state to a specific client. Server-side only.
+    /// Called when a client connects and when a client requests state (RequestLobbyStateRPC).
     /// </summary>
-    private void SendLobbyStateToClient(ulong clientId)
+    public void SendLobbyStateToClient(ulong clientId)
     {
         if (!IsServer) return;
+
+        var count = _players.Count;
+        Debug.Log($"[LobbyManager] SendLobbyStateToClient target={clientId} playerCount={count} _lobbyRPCs={(_lobbyRPCs != null ? "ok" : "null")}");
 
         // Snapshot the list so we don't modify _players while iterating (RPCs can trigger callbacks that modify it)
         var snapshot = new List<LobbyPlayerData>(_players.Values);
@@ -385,17 +442,37 @@ public class LobbyManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// Returns true if RPCs can be sent (client must have NetworkObject spawned).
+    /// </summary>
+    private bool CanSendRPC()
+    {
+        if (_lobbyRPCs == null)
+        {
+            Debug.Log("[LobbyManager] CanSendRPC: false (_lobbyRPCs null)");
+            return false;
+        }
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsClient)
+        {
+            Debug.Log($"[LobbyManager] CanSendRPC: false (nm={nm != null} IsClient={nm?.IsClient})");
+            return false;
+        }
+        var ok = NetworkObject != null && NetworkObject.IsSpawned;
+        if (!ok)
+            Debug.Log($"[LobbyManager] CanSendRPC: false (NetworkObject={NetworkObject != null} IsSpawned={NetworkObject?.IsSpawned})");
+        return ok;
+    }
+
+    /// <summary>
     /// Request to set this client's display name. Client-side method.
     /// </summary>
     public void RequestSetPlayerName(string playerName)
     {
-        if (_lobbyRPCs != null)
+        if (!CanSendRPC()) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
         {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                _lobbyRPCs.SetPlayerNameRPC(networkManager.LocalClientId, playerName ?? "");
-            }
+            _lobbyRPCs.SetPlayerNameRPC(nm.LocalClientId, playerName ?? "");
         }
     }
 
@@ -404,13 +481,11 @@ public class LobbyManager : NetworkBehaviour
     /// </summary>
     public void RequestSetPlayerClass(PlayerClass playerClass)
     {
-        if (_lobbyRPCs != null)
+        if (!CanSendRPC()) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
         {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                _lobbyRPCs.SetPlayerClassRPC(networkManager.LocalClientId, playerClass);
-            }
+            _lobbyRPCs.SetPlayerClassRPC(nm.LocalClientId, playerClass);
         }
     }
 
@@ -419,13 +494,11 @@ public class LobbyManager : NetworkBehaviour
     /// </summary>
     public void RequestSetReadyStatus(bool isReady)
     {
-        if (_lobbyRPCs != null)
+        if (!CanSendRPC()) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
         {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                _lobbyRPCs.SetReadyStatusRPC(networkManager.LocalClientId, isReady);
-            }
+            _lobbyRPCs.SetReadyStatusRPC(nm.LocalClientId, isReady);
         }
     }
 
@@ -434,13 +507,11 @@ public class LobbyManager : NetworkBehaviour
     /// </summary>
     public void RequestSetMeshIndex(int meshIndex)
     {
-        if (_lobbyRPCs != null)
+        if (!CanSendRPC()) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
         {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                _lobbyRPCs.SetMeshIndexRPC(networkManager.LocalClientId, meshIndex);
-            }
+            _lobbyRPCs.SetMeshIndexRPC(nm.LocalClientId, meshIndex);
         }
     }
 
@@ -449,13 +520,11 @@ public class LobbyManager : NetworkBehaviour
     /// </summary>
     public void RequestSetMaterialIndex(int materialIndex)
     {
-        if (_lobbyRPCs != null)
+        if (!CanSendRPC()) return;
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
         {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager != null)
-            {
-                _lobbyRPCs.SetMaterialIndexRPC(networkManager.LocalClientId, materialIndex);
-            }
+            _lobbyRPCs.SetMaterialIndexRPC(nm.LocalClientId, materialIndex);
         }
     }
 

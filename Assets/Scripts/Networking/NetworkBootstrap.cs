@@ -1,8 +1,10 @@
+using System.Collections;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Handles initialization of Unity Services and NetCode networking.
@@ -36,6 +38,10 @@ public class NetworkBootstrap : MonoBehaviour
     private bool _isInitialized = false;
     public bool IsInitialized => _isInitialized;
 
+    [Header("Server-spawned objects")]
+    [Tooltip("Prefab to spawn when server starts. Must be in Network Prefabs List. Leave empty to skip.")]
+    [SerializeField] private GameObject lobbySystemsPrefab;
+
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -45,6 +51,40 @@ public class NetworkBootstrap : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
+        {
+            nm.OnServerStarted += OnServerStarted;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
+        {
+            nm.OnServerStarted -= OnServerStarted;
+        }
+    }
+
+    private void OnServerStarted()
+    {
+        if (lobbySystemsPrefab == null) return;
+
+        var no = lobbySystemsPrefab.GetComponent<NetworkObject>();
+        if (no == null)
+        {
+            Debug.LogError("[NetworkBootstrap] LobbySystems prefab has no NetworkObject!");
+            return;
+        }
+
+        var instance = Instantiate(lobbySystemsPrefab);
+        instance.GetComponent<NetworkObject>().Spawn();
+        Debug.Log("[NetworkBootstrap] LobbySystems spawned on server");
     }
 
     /// <summary>
@@ -142,6 +182,45 @@ public class NetworkBootstrap : MonoBehaviour
 
         Debug.Log("[NetworkBootstrap] Starting as client...");
         networkManager.StartClient();
+    }
+
+    /// <summary>
+    /// Start as client, then load Lobby scene when LobbySystems spawns (event-driven).
+    /// Subscribes to LobbyManager.OnClientLobbySystemsSpawned so no polling.
+    /// </summary>
+    public void StartClientAndLoadLobbyWhenReady()
+    {
+        LobbyManager.OnClientLobbySystemsSpawned += OnClientLobbySystemsSpawned;
+        StartClient();
+        StartCoroutine(TimeoutLoadLobbyFallback());
+    }
+
+    private void OnClientLobbySystemsSpawned()
+    {
+        LobbyManager.OnClientLobbySystemsSpawned -= OnClientLobbySystemsSpawned;
+        _lobbyLoadPending = false;
+        Debug.Log("[NetworkBootstrap] LobbySystems spawned, loading Lobby scene");
+        SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+    }
+
+    private bool _lobbyLoadPending = true;
+
+    private IEnumerator TimeoutLoadLobbyFallback()
+    {
+        float timeout = 30f;
+        float elapsed = 0f;
+        while (_lobbyLoadPending && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        if (_lobbyLoadPending)
+        {
+            _lobbyLoadPending = false;
+            LobbyManager.OnClientLobbySystemsSpawned -= OnClientLobbySystemsSpawned;
+            Debug.LogWarning("[NetworkBootstrap] Timeout waiting for LobbySystems spawn, loading Lobby anyway");
+            SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+        }
     }
 
     /// <summary>

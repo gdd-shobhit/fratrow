@@ -1,14 +1,18 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.UIElements;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 public class MainMenuEvents : MonoBehaviour
 {
     private UIDocument document;
     private Button startButton;
     private Button joinButton;
+    private VisualElement joinPanel;
+    private TextField sessionCodeField;
+    private Button joinConfirmButton;
+    private Button joinCancelButton;
 
     private List<Button> menuButtons = new List<Button>();
 
@@ -22,12 +26,23 @@ public class MainMenuEvents : MonoBehaviour
             startButton.RegisterCallback<ClickEvent>(OnStartButtonClicked);
         }
 
-        // Get Join button from UXML (now defined in MainMenuVisualTree.uxml)
         joinButton = document.rootVisualElement.Q("Join") as Button;
+        joinPanel = document.rootVisualElement.Q("JoinPanel");
+        sessionCodeField = document.rootVisualElement.Q<TextField>("SessionCodeField");
+        joinConfirmButton = document.rootVisualElement.Q<Button>("JoinConfirmButton");
+        joinCancelButton = document.rootVisualElement.Q<Button>("JoinCancelButton");
 
         if (joinButton != null)
         {
             joinButton.RegisterCallback<ClickEvent>(OnJoinButtonClicked);
+        }
+        if (joinConfirmButton != null)
+        {
+            joinConfirmButton.RegisterCallback<ClickEvent>(OnJoinConfirmClicked);
+        }
+        if (joinCancelButton != null)
+        {
+            joinCancelButton.RegisterCallback<ClickEvent>(OnJoinCancelClicked);
         }
 
         menuButtons = document.rootVisualElement.Query<Button>().ToList();
@@ -46,6 +61,14 @@ public class MainMenuEvents : MonoBehaviour
         if (joinButton != null)
         {
             joinButton.UnregisterCallback<ClickEvent>(OnJoinButtonClicked);
+        }
+        if (joinConfirmButton != null)
+        {
+            joinConfirmButton.UnregisterCallback<ClickEvent>(OnJoinConfirmClicked);
+        }
+        if (joinCancelButton != null)
+        {
+            joinCancelButton.UnregisterCallback<ClickEvent>(OnJoinCancelClicked);
         }
         for (int i = 0; i < menuButtons.Count; ++i)
         {
@@ -89,15 +112,38 @@ public class MainMenuEvents : MonoBehaviour
         SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
     }
 
-    private async void OnJoinButtonClicked(ClickEvent evt)
+    private void OnJoinButtonClicked(ClickEvent evt)
     {
-        Debug.Log("[MainMenuEvents] Join button clicked - Opening join dialog...");
+        if (joinPanel != null)
+        {
+            joinPanel.style.display = DisplayStyle.Flex;
+            if (sessionCodeField != null)
+            {
+                sessionCodeField.value = "";
+                sessionCodeField.Focus();
+            }
+        }
+    }
 
-        // TODO: Show UI dialog to enter session code
-        // For now, we'll use a simple input field or hardcoded test
-        string sessionCode = ""; // Get from UI input - TODO: Implement UI input
+    private void OnJoinCancelClicked(ClickEvent evt)
+    {
+        if (joinPanel != null)
+        {
+            joinPanel.style.display = DisplayStyle.None;
+        }
+    }
 
-        // Initialize network services
+    private async void OnJoinConfirmClicked(ClickEvent evt)
+    {
+        string sessionCode = sessionCodeField != null ? sessionCodeField.value?.Trim().ToUpperInvariant() ?? "" : "";
+        if (string.IsNullOrEmpty(sessionCode))
+        {
+            Debug.LogWarning("[MainMenuEvents] Please enter a session code.");
+            return;
+        }
+
+        Debug.Log($"[MainMenuEvents] Joining session: {sessionCode}");
+
         if (NetworkBootstrap.Instance != null)
         {
             bool initialized = await NetworkBootstrap.Instance.InitializeServicesAsync();
@@ -108,25 +154,30 @@ public class MainMenuEvents : MonoBehaviour
             }
         }
 
-        // Join session
-        if (SessionManager.Instance != null && !string.IsNullOrEmpty(sessionCode))
+        if (SessionManager.Instance != null)
         {
             bool sessionJoined = await SessionManager.Instance.JoinSessionAsync(sessionCode);
             if (!sessionJoined)
             {
-                Debug.LogError("[MainMenuEvents] Failed to join session!");
+                Debug.LogError("[MainMenuEvents] Failed to join session! Check the code and try again.");
                 return;
             }
         }
 
-        // Start as client
-        if (NetworkBootstrap.Instance != null)
+        if (joinPanel != null)
         {
-            NetworkBootstrap.Instance.StartClient();
+            joinPanel.style.display = DisplayStyle.None;
         }
 
-        // Load lobby scene
-        SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+        if (NetworkBootstrap.Instance != null)
+        {
+            // Uses NetworkBootstrap (persists across scene load) so coroutine survives Main Menu destruction
+            NetworkBootstrap.Instance.StartClientAndLoadLobbyWhenReady();
+        }
+        else
+        {
+            SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+        }
     }
 
     private void OnAllButtonsClicked(ClickEvent evt)

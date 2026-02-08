@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -59,6 +61,17 @@ public class LobbyPlayerPreview : MonoBehaviour
         lm.OnPlayerMaterialChanged += OnPlayerMaterialChanged;
 
         RefreshAllSlots();
+        StartCoroutine(DelayedRefreshAfterJoin());
+    }
+
+    /// <summary>
+    /// Catches lobby state that arrives after we subscribe. On client, PlayerJoinedLobbyRPC can arrive
+    /// after Lobby loads; this delayed refresh ensures the preview models appear shortly after join.
+    /// </summary>
+    private IEnumerator DelayedRefreshAfterJoin()
+    {
+        yield return new WaitForSeconds(0.5f);
+        RefreshAllSlots();
     }
 
     private void OnDisable()
@@ -84,11 +97,8 @@ public class LobbyPlayerPreview : MonoBehaviour
 
     private void OnPlayerRemoved(ulong clientId)
     {
-        int slot = GetSlotForClient(clientId);
-        if (slot >= 0 && slot < _playerSlots.Length && _playerSlots[slot] != null)
-        {
-            _playerSlots[slot].SetActive(false);
-        }
+        // Reassign all slots so remaining players fill first N slots (slot 0, 1, ...)
+        RefreshAllSlots();
     }
 
     private void OnPlayerMeshChanged(ulong clientId, int _)
@@ -112,12 +122,16 @@ public class LobbyPlayerPreview : MonoBehaviour
     }
 
     /// <summary>
-    /// Maps clientId to slot: 0 -> Player1, 1 -> Player2, etc.
+    /// Maps clientId to slot by lobby order: first player = slot 0, second = slot 1, etc.
+    /// This ensures reconnecting clients reclaim the first available slot instead of using their new clientId.
     /// </summary>
-    private static int GetSlotForClient(ulong clientId)
+    private int GetSlotForClient(ulong clientId)
     {
-        if (clientId > 3) return -1;
-        return (int)clientId;
+        if (LobbyManager.Instance == null || _playerSlots == null) return -1;
+        var sortedIds = LobbyManager.Instance.Players.Keys.OrderBy(id => id).ToList();
+        int index = sortedIds.IndexOf(clientId);
+        if (index < 0 || index >= _playerSlots.Length) return -1;
+        return index;
     }
 
     private void RefreshAllSlots()
@@ -158,7 +172,7 @@ public class LobbyPlayerPreview : MonoBehaviour
             {
                 int idx = ClampIndex(data.SelectedMaterialIndex, materialList.Count);
                 if (materialList[idx] != null)
-                    r.material = materialList[idx];
+                    r.sharedMaterial = materialList[idx];
             }
         }
 
@@ -180,7 +194,7 @@ public class LobbyPlayerPreview : MonoBehaviour
             if (materialList[idx] != null)
             {
                 foreach (var mr in meshRenderers)
-                    mr.material = materialList[idx];
+                    mr.sharedMaterial = materialList[idx];
             }
         }
     }

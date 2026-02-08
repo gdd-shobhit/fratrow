@@ -7,6 +7,13 @@ using UnityEngine;
 /// </summary>
 public class LobbyRPCs : NetworkBehaviour
 {
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        var nm = NetworkManager.Singleton;
+        Debug.Log($"[LobbyRPCs] OnNetworkSpawn IsServer={IsServer} IsClient={IsClient} LocalClientId={nm?.LocalClientId} NetworkObject.IsSpawned={NetworkObject?.IsSpawned}");
+    }
+
     /// <summary>
     /// RPC to update a player's display name.
     /// Called by client, executed on server, then synced to all clients.
@@ -183,17 +190,42 @@ public class LobbyRPCs : NetworkBehaviour
     }
 
     /// <summary>
+    /// RPC for client to request full lobby state from server.
+    /// Client calls this when ready (e.g. after spawn) so server sends lobby state.
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestLobbyStateRPC(ulong clientId)
+    {
+        var lm = LobbyManager.Instance;
+        Debug.Log($"[LobbyRPCs] RequestLobbyStateRPC received on SERVER from clientId={clientId} LobbyManager.Instance={lm != null}");
+        if (lm != null)
+        {
+            lm.SendLobbyStateToClient(clientId);
+        }
+        else
+        {
+            Debug.LogError("[LobbyRPCs] RequestLobbyStateRPC: LobbyManager.Instance is null on server!");
+        }
+    }
+
+    /// <summary>
     /// RPC to notify all clients when a player joins the lobby.
     /// Called by server when a new player connects.
     /// </summary>
     [Rpc(SendTo.ClientsAndHost)]
     public void PlayerJoinedLobbyRPC(ulong clientId, string playerName, PlayerClass playerClass, bool isHost, int meshIndex = 0, int materialIndex = 0)
     {
-        Debug.Log($"[LobbyRPCs] Player joined lobby: {playerName} (ID: {clientId}, Class: {playerClass}, Host: {isHost})");
+        var nm = NetworkManager.Singleton;
+        var isClientReceiving = nm != null && nm.IsClient;
+        Debug.Log($"[LobbyRPCs] PlayerJoinedLobbyRPC received (IsClient={isClientReceiving}) {playerName} (ID: {clientId}) LobbyManager.Instance={LobbyManager.Instance != null}");
         
         if (LobbyManager.Instance != null)
         {
             LobbyManager.Instance.OnPlayerJoined(clientId, playerName, playerClass, isHost, meshIndex, materialIndex);
+        }
+        else
+        {
+            Debug.LogError("[LobbyRPCs] PlayerJoinedLobbyRPC: LobbyManager.Instance is null - cannot add player!");
         }
     }
 
