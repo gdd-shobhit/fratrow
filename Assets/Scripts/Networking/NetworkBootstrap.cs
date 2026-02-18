@@ -110,8 +110,16 @@ public class NetworkBootstrap : MonoBehaviour
                 Debug.Log("[NetworkBootstrap] Unity Services Core initialized.");
             }
 
-            // Sign in anonymously if not already authenticated
-            if (!AuthenticationService.Instance.IsSignedIn)
+            // ParrelSync clone must use a different player identity so we're not "already a member of the lobby"
+            if (ParrelSyncRuntime.IsParrelSyncClone)
+            {
+                if (AuthenticationService.Instance.IsSignedIn)
+                    AuthenticationService.Instance.SignOut();
+                AuthenticationService.Instance.ClearSessionToken();
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log($"[NetworkBootstrap] ParrelSync clone signed in with new anonymous ID. Player ID: {AuthenticationService.Instance.PlayerId}");
+            }
+            else if (!AuthenticationService.Instance.IsSignedIn)
             {
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
                 Debug.Log($"[NetworkBootstrap] Signed in anonymously. Player ID: {AuthenticationService.Instance.PlayerId}");

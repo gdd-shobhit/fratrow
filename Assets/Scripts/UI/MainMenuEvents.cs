@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using UnityEngine.SceneManagement;
 
 public class MainMenuEvents : MonoBehaviour
 {
@@ -78,6 +78,11 @@ public class MainMenuEvents : MonoBehaviour
 
     private async void OnStartButtonClicked(ClickEvent evt)
     {
+        if (ParrelSyncRuntime.IsParrelSyncClone)
+        {
+            Debug.Log("[MainMenuEvents] ParrelSync clone cannot host – use Join to connect to the host.");
+            return;
+        }
         Debug.Log("[MainMenuEvents] Start button clicked - Creating session as host...");
 
         // Initialize network services
@@ -171,11 +176,8 @@ public class MainMenuEvents : MonoBehaviour
 
         if (NetworkBootstrap.Instance != null)
         {
-            // Uses NetworkBootstrap (persists across scene load) so coroutine survives Main Menu destruction
-            NetworkBootstrap.Instance.StartClientAndLoadLobbyWhenReady();
-        }
-        else
-        {
+            // Wait for LobbySystems to spawn on client before loading Lobby scene (avoids LobbyManager null)
+            NetworkBootstrap.Instance.StartClient();    
             SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
         }
     }
