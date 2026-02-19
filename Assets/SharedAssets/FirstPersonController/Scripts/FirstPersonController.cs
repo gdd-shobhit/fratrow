@@ -20,6 +20,8 @@ namespace StarterAssets
         public float RotationSpeed = 1.0f;
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
+        [Tooltip("Animator")]
+        public Animator _Animator;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -101,6 +103,7 @@ namespace StarterAssets
             _input = GetComponent<StarterAssetsInputs>();
 #if ENABLE_INPUT_SYSTEM
             _playerInput = GetComponent<PlayerInput>();
+            _Animator = GetComponent<Animator>();
 #else
             Debug.LogError( "Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
 #endif
@@ -127,7 +130,6 @@ namespace StarterAssets
             // set sphere position, with offset
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
             Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
-            Debug.Log("Jumped = " + _input.jump);
         }
 
         private void CameraRotation()
@@ -184,6 +186,9 @@ namespace StarterAssets
                 _speed = targetSpeed;
             }
 
+            Debug.Log("Speed is " + _speed / SprintSpeed);
+            _Animator.SetFloat("Speed", _speed/ SprintSpeed);
+
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
 
@@ -215,8 +220,6 @@ namespace StarterAssets
                 {
                     _verticalVelocity = -2f;
                 }
-
-                Debug.Log("Jumped = " + _input.jump);
 
                 // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)

@@ -22,8 +22,10 @@ public class PlayerSpawner : NetworkBehaviour
 
         if (IsServer)
         {
-            // Subscribe to client connection events
+            // Subscribe to client connection events (for late joiners)
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            // Spawn players for everyone already in the lobby (host + clients who connected before Game scene)
+            SpawnAllLobbyPlayers();
         }
     }
 
@@ -75,8 +77,8 @@ public class PlayerSpawner : NetworkBehaviour
             return;
         }
 
-        // Get spawn position
-        Vector3 spawnPosition = GetSpawnPosition();
+        // Get spawn position (pass clientId so we don't stack when no spawn points)
+        Vector3 spawnPosition = GetSpawnPosition(clientId);
         Quaternion spawnRotation = Quaternion.identity;
 
         // Spawn player as NetworkObject
@@ -143,16 +145,17 @@ public class PlayerSpawner : NetworkBehaviour
     }
 
     /// <summary>
-    /// Get spawn position for next player.
+    /// Get spawn position for next player. Uses clientId so players don't overlap when no spawn points are set.
     /// </summary>
-    private Vector3 GetSpawnPosition()
+    private Vector3 GetSpawnPosition(ulong clientId)
     {
         if (spawnPoints != null && spawnPoints.Length > 0)
         {
             if (useRandomSpawn)
             {
-                int randomIndex = Random.Range(0, spawnPoints.Length);
-                return spawnPoints[randomIndex].position;
+                // Use clientId as seed so each client gets a deterministic "random" slot (avoids overlap)
+                int index = (int)(clientId % (ulong)spawnPoints.Length);
+                return spawnPoints[index].position;
             }
             else
             {
@@ -163,8 +166,9 @@ public class PlayerSpawner : NetworkBehaviour
             }
         }
 
-        // Default spawn at origin if no spawn points
-        return Vector3.zero;
+        // No spawn points: offset by clientId so host and clients don't stack at origin
+        float spacing = 3f;
+        return new Vector3((int)clientId * spacing, 0f, 0f);
     }
 
     /// <summary>
@@ -188,7 +192,7 @@ public class PlayerSpawner : NetworkBehaviour
             ulong clientId = kvp.Key;
             LobbyPlayerData playerData = kvp.Value;
 
-            // Spawn player with their selected class
+            // Spawn player with their selected class (position varies per clientId)
             SpawnPlayer(clientId, playerData.SelectedClass);
         }
     }
