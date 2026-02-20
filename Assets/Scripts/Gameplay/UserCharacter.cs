@@ -18,6 +18,8 @@ public class UserCharacter : BaseCharacter
 
     public PlayerClassSO UserData => userData;
 
+    public SkinnedMeshRenderer userMesh;
+
     protected override void InitializeCharacter()
     {
         base.InitializeCharacter();

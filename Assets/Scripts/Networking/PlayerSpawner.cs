@@ -83,6 +83,7 @@ public class PlayerSpawner : NetworkBehaviour
 
         // Spawn player as NetworkObject
         GameObject playerObject = NetworkObject.Instantiate(playerPrefab, spawnPosition, spawnRotation);
+
         NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
         
         if (networkObject != null)
@@ -92,6 +93,15 @@ public class PlayerSpawner : NetworkBehaviour
 
             // Initialize player character with class data
             InitializePlayerCharacter(playerObject, clientId, playerClass);
+
+            // Set player cosmetics
+            LobbyPlayerData lobbyPlayerData = LobbyManager.Instance.Players[clientId];
+            UserCharacter userCharacter = playerObject.GetComponent<UserCharacter>();
+            if (userCharacter != null)
+            {
+                userCharacter.userMesh.sharedMesh = LobbyManager.Instance.MeshList[lobbyPlayerData.SelectedMeshIndex];
+                userCharacter.userMesh.sharedMaterial = LobbyManager.Instance.MaterialList[lobbyPlayerData.SelectedMaterialIndex];
+            }
 
             Debug.Log($"[PlayerSpawner] Spawned player for client {clientId} with class {playerClass} at {spawnPosition}");
         }
@@ -122,20 +132,21 @@ public class PlayerSpawner : NetworkBehaviour
                 // Initialize character with class data
                 userCharacter.InitializeFromSO(playerClassSO);
 
-                // Initialize NetworkedUserCharacter component
-                NetworkedUserCharacter networkedCharacter = playerObject.GetComponent<NetworkedUserCharacter>();
-                if (networkedCharacter == null)
-                {
-                    networkedCharacter = playerObject.AddComponent<NetworkedUserCharacter>();
-                }
+                // TODO: Figure out what data should be networked. We might just need to send data back to server and not receieve
 
-                // Sync stats to network (use public BaseCharacter properties)
-                networkedCharacter.InitializePlayerDataServerRPC(
-                    playerClass,
-                    userCharacter.Popularity,
-                    userCharacter.TroubleMaker,
-                    userCharacter.CashValue
-                );
+                //NetworkedUserCharacter networkedCharacter = playerObject.GetComponent<NetworkedUserCharacter>();
+                //if (networkedCharacter == null)
+                //{
+                //    networkedCharacter = playerObject.AddComponent<NetworkedUserCharacter>();
+                //}
+
+                //// Sync stats to network (use public BaseCharacter properties)
+                //networkedCharacter.InitializePlayerDataServerRPC(
+                //    playerClass,
+                //    userCharacter.Popularity,
+                //    userCharacter.TroubleMaker,
+                //    userCharacter.CashValue
+                //);
             }
             else
             {
