@@ -247,7 +247,7 @@ public class LobbyUI : MonoBehaviour
 
     private void OnPlayerAdded(LobbyPlayerData data)
     {
-        Debug.Log($"[LobbyUI] OnPlayerAdded event: {data?.PlayerName} (clientId={data?.NetworkId})");
+        Debug.Log($"[LobbyUI] OnPlayerAdded event: {data.PlayerName} (clientId={data.NetworkId})");
         RefreshPlayerList();
         RefreshStatSliders();
         RefreshClassDropdown();

@@ -1,4 +1,6 @@
+using System;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +15,11 @@ public class NetworkedGameManager : NetworkBehaviour
     private NetworkVariable<float> _totalPopularity = new NetworkVariable<float>(0f);
     private NetworkVariable<float> _totalCashValue = new NetworkVariable<float>(0f);
     private NetworkVariable<float> _totalTroubleMaking = new NetworkVariable<float>(0f);
+
+    // Public getters for network variables
+    public float TotalPopularity => _totalPopularity.Value;
+    public float TotalCashValue => _totalCashValue.Value;
+    public float TotalTroubleMaking => _totalTroubleMaking.Value;
 
     private GameManager _gameManager;
 
@@ -128,8 +135,52 @@ public class NetworkedGameManager : NetworkBehaviour
         // Note: GameManager might not have setters, so this might be read-only on clients
     }
 
-    // Public getters for network variables
-    public float TotalPopularity => _totalPopularity.Value;
-    public float TotalCashValue => _totalCashValue.Value;
-    public float TotalTroubleMaking => _totalTroubleMaking.Value;
+    public void HandlePlayerSpawned(ulong clientId, LobbyPlayerData lobbyPlayerData)
+    {
+        GameObject playerObject = GetPlayerObject(clientId);
+        if (playerObject == null) return;
+
+        UserCharacter userCharacter = playerObject.GetComponent<UserCharacter>();
+        if (userCharacter != null)
+        {
+            userCharacter.SetPlayerName(lobbyPlayerData.PlayerName);
+            userCharacter.currentClass = lobbyPlayerData.SelectedClass;
+            userCharacter.userMesh.sharedMesh = LobbyManager.Instance.MeshList[lobbyPlayerData.SelectedMeshIndex];
+            userCharacter.userMesh.sharedMaterial = LobbyManager.Instance.MaterialList[lobbyPlayerData.SelectedMaterialIndex];
+            userCharacter.UpdateUIName();
+        }
+
+        if(IsOwner)
+        {
+            playerObject.GetComponentInChildren<Camera>().enabled = true;
+        }
+    }
+
+    /// <summary>
+    /// Get the in-game player GameObject for a client. Server uses GameManager.playersInGame;
+    /// clients find it via SpawnManager by OwnerClientId.
+    /// </summary>
+    private GameObject GetPlayerObject(ulong clientId)
+    {
+        if (_gameManager?.playersInGame == null) return null;
+
+        // Server: we have it in GameManager (PlayerSpawner added it)
+        if (IsServer && _gameManager.playersInGame.TryGetValue(clientId, out GameObject playerObject))
+        {
+            // Only return if the reference is still valid (not destroyed)
+            if (playerObject != null) return playerObject;
+        }
+
+        // Client (or late host): find spawned object owned by this client (player prefab has UserCharacter)
+        if (NetworkManager.Singleton?.SpawnManager?.SpawnedObjectsList == null) return null;
+
+        foreach (var no in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
+        {
+            if (no.OwnerClientId != clientId) continue;
+            if (no.GetComponent<UserCharacter>() == null) continue;
+            return no.gameObject;
+        }
+
+        return null;
+    }
 }

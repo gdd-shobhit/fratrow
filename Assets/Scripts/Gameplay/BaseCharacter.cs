@@ -12,6 +12,7 @@ public enum StatType
 [System.Serializable]
 public class BaseCharacterStats
 {
+    public string name;
     public float health;
     public float popularity;
     public float troubleMaker;
@@ -91,6 +92,7 @@ public abstract class BaseCharacter : MonoBehaviour
     [SerializeField] protected BaseCharacterStats stats = new BaseCharacterStats();
 
     // Properties for accessing stats
+    public string Name => stats.name;
     public float Health => stats.health;
     public float Popularity => stats.popularity;
     public float TroubleMaker => stats.troubleMaker;

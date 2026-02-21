@@ -83,6 +83,7 @@ public class PlayerSpawner : NetworkBehaviour
 
         // Spawn player as NetworkObject
         GameObject playerObject = NetworkObject.Instantiate(playerPrefab, spawnPosition, spawnRotation);
+        GameManager.Instance.playersInGame.Add(clientId, playerObject);
 
         NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
         
@@ -93,16 +94,7 @@ public class PlayerSpawner : NetworkBehaviour
 
             // Initialize player character with class data
             InitializePlayerCharacter(playerObject, clientId, playerClass);
-
-            // Set player cosmetics
-            LobbyPlayerData lobbyPlayerData = LobbyManager.Instance.Players[clientId];
-            UserCharacter userCharacter = playerObject.GetComponent<UserCharacter>();
-            if (userCharacter != null)
-            {
-                userCharacter.userMesh.sharedMesh = LobbyManager.Instance.MeshList[lobbyPlayerData.SelectedMeshIndex];
-                userCharacter.userMesh.sharedMaterial = LobbyManager.Instance.MaterialList[lobbyPlayerData.SelectedMaterialIndex];
-            }
-
+            
             Debug.Log($"[PlayerSpawner] Spawned player for client {clientId} with class {playerClass} at {spawnPosition}");
         }
         else
@@ -131,22 +123,7 @@ public class PlayerSpawner : NetworkBehaviour
             {
                 // Initialize character with class data
                 userCharacter.InitializeFromSO(playerClassSO);
-
-                // TODO: Figure out what data should be networked. We might just need to send data back to server and not receieve
-
-                //NetworkedUserCharacter networkedCharacter = playerObject.GetComponent<NetworkedUserCharacter>();
-                //if (networkedCharacter == null)
-                //{
-                //    networkedCharacter = playerObject.AddComponent<NetworkedUserCharacter>();
-                //}
-
-                //// Sync stats to network (use public BaseCharacter properties)
-                //networkedCharacter.InitializePlayerDataServerRPC(
-                //    playerClass,
-                //    userCharacter.Popularity,
-                //    userCharacter.TroubleMaker,
-                //    userCharacter.CashValue
-                //);
+                SetPlayerDataOnClientRPC(clientId, LobbyManager.Instance.Players[clientId]);
             }
             else
             {
@@ -205,6 +182,15 @@ public class PlayerSpawner : NetworkBehaviour
 
             // Spawn player with their selected class (position varies per clientId)
             SpawnPlayer(clientId, playerData.SelectedClass);
+        }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetPlayerDataOnClientRPC(ulong clientId, LobbyPlayerData lobbyPlayerData)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.GetComponent<NetworkedGameManager>().HandlePlayerSpawned(clientId, lobbyPlayerData);
         }
     }
 }

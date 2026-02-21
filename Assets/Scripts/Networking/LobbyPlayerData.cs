@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -6,7 +7,7 @@ using UnityEngine;
 /// Used to synchronize player information across the network.
 /// </summary>
 [Serializable]
-public class LobbyPlayerData
+public struct LobbyPlayerData : INetworkSerializable
 {
     public string PlayerName;
     public PlayerClass SelectedClass;
@@ -15,17 +16,6 @@ public class LobbyPlayerData
     public bool IsHost;
     public int SelectedMeshIndex;
     public int SelectedMaterialIndex;
-
-    public LobbyPlayerData()
-    {
-        PlayerName = "Player";
-        SelectedClass = PlayerClass.President;
-        IsReady = false;
-        NetworkId = 0;
-        IsHost = false;
-        SelectedMeshIndex = 0;
-        SelectedMaterialIndex = 0;
-    }
 
     public LobbyPlayerData(string playerName, PlayerClass playerClass, ulong networkId, bool isHost)
     {
@@ -53,6 +43,17 @@ public class LobbyPlayerData
             SelectedMeshIndex = this.SelectedMeshIndex,
             SelectedMaterialIndex = this.SelectedMaterialIndex
         };
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref PlayerName);
+        serializer.SerializeValue(ref SelectedClass, new FastBufferWriter.ForEnums());
+        serializer.SerializeValue(ref SelectedMeshIndex, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref SelectedMaterialIndex, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref IsReady, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref IsHost, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref NetworkId, new FastBufferWriter.ForPrimitives());
     }
 
     public override string ToString()

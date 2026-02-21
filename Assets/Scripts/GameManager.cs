@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
 
     public Dictionary<PlayerClass,PlayerClassSO> playerClassesDict;
     public Dictionary<GuestClass, GuestSO> guestClassesDict;
+    public Dictionary<ulong, GameObject> playersInGame;
 
     // Metrics for how the team is doing
     private float totalPopularity;
@@ -71,6 +72,8 @@ public class GameManager : MonoBehaviour
 
         playerClassesDict = new Dictionary<PlayerClass, PlayerClassSO>();
         guestClassesDict = new Dictionary<GuestClass, GuestSO>();
+        playersInGame = new Dictionary<ulong, GameObject>();
+
         // Intialize the dictionaries from our database of players and npc classes
         for (int i = 0; i < playerClasses.Count; i++)
         {

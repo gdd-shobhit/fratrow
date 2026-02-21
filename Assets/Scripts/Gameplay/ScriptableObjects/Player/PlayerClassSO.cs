@@ -28,6 +28,7 @@ public class PlayerClassSO : ScriptableObject
     {
         var stats = new BaseCharacterStats
         {
+            name = "defaultName",
             health = this.health,
             popularity = this.popularity,
             troubleMaker = this.troubleMaker,

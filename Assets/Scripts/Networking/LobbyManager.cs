@@ -221,10 +221,12 @@ public class LobbyManager : NetworkBehaviour
 
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].PlayerName = playerName.Trim();
-            if (_players[clientId].PlayerName.Length > 24)
-                _players[clientId].PlayerName = _players[clientId].PlayerName.Substring(0, 24);
-            Debug.Log($"[LobbyManager] Player {clientId} name set to: {_players[clientId].PlayerName}");
+            LobbyPlayerData data = _players[clientId];
+            data.PlayerName = playerName.Trim();
+            if (data.PlayerName.Length > 24)
+                data.PlayerName = data.PlayerName.Substring(0, 24);
+            _players[clientId] = data;
+            Debug.Log($"[LobbyManager] Player {clientId} name set to: {data.PlayerName}");
         }
     }
 
@@ -235,7 +237,9 @@ public class LobbyManager : NetworkBehaviour
     {
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].PlayerName = playerName ?? $"Player {clientId}";
+            LobbyPlayerData data = _players[clientId];
+            data.PlayerName = playerName ?? $"Player {clientId}";
+            _players[clientId] = data;
         }
         OnPlayerNameChanged?.Invoke(clientId, playerName);
     }
@@ -249,7 +253,9 @@ public class LobbyManager : NetworkBehaviour
 
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedClass = playerClass;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedClass = playerClass;
+            _players[clientId] = data;
             Debug.Log($"[LobbyManager] Player {clientId} class set to: {playerClass}");
         }
     }
@@ -263,7 +269,9 @@ public class LobbyManager : NetworkBehaviour
 
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].IsReady = isReady;
+            LobbyPlayerData data = _players[clientId];
+            data.IsReady = isReady;
+            _players[clientId] = data;
             Debug.Log($"[LobbyManager] Player {clientId} ready status: {isReady}");
         }
     }
@@ -311,7 +319,9 @@ public class LobbyManager : NetworkBehaviour
     {
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedClass = playerClass;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedClass = playerClass;
+            _players[clientId] = data;
         }
         OnPlayerClassChanged?.Invoke(clientId, playerClass);
     }
@@ -323,7 +333,9 @@ public class LobbyManager : NetworkBehaviour
     {
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].IsReady = isReady;
+            LobbyPlayerData data = _players[clientId];
+            data.IsReady = isReady;
+            _players[clientId] = data;
         }
         OnPlayerReadyChanged?.Invoke(clientId, isReady);
     }
@@ -341,7 +353,9 @@ public class LobbyManager : NetworkBehaviour
 
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedMeshIndex = meshIndex;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedMeshIndex = meshIndex;
+            _players[clientId] = data;
             Debug.Log($"[LobbyManager] Player {clientId} mesh set to index {meshIndex}");
             return meshIndex;
         }
@@ -361,7 +375,9 @@ public class LobbyManager : NetworkBehaviour
 
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedMaterialIndex = materialIndex;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedMaterialIndex = materialIndex;
+            _players[clientId] = data;
             Debug.Log($"[LobbyManager] Player {clientId} material set to index {materialIndex}");
             return materialIndex;
         }
@@ -375,7 +391,9 @@ public class LobbyManager : NetworkBehaviour
     {
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedMeshIndex = meshIndex;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedMeshIndex = meshIndex;
+            _players[clientId] = data;
         }
         OnPlayerMeshChanged?.Invoke(clientId, meshIndex);
     }
@@ -387,7 +405,9 @@ public class LobbyManager : NetworkBehaviour
     {
         if (_players.ContainsKey(clientId))
         {
-            _players[clientId].SelectedMaterialIndex = materialIndex;
+            LobbyPlayerData data = _players[clientId];
+            data.SelectedMaterialIndex = materialIndex;
+            _players[clientId] = data;
         }
         OnPlayerMaterialChanged?.Invoke(clientId, materialIndex);
     }

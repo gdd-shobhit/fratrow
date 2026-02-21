@@ -1,5 +1,7 @@
 using NUnit.Framework.Interfaces;
+using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public enum PlayerClass
@@ -19,15 +21,17 @@ public class UserCharacter : BaseCharacter
     public PlayerClassSO UserData => userData;
 
     public SkinnedMeshRenderer userMesh;
+    public TextMeshPro playerNameTextMeshPro;
+    public void SetPlayerName(string playerName) { stats.name = playerName; } 
 
     protected override void InitializeCharacter()
     {
         base.InitializeCharacter();
-
         if (userData != null)
         {
             // Create stats instance from ScriptableObject data
             stats = userData.CreateStatsInstance();
+            UpdateUIName();
         }
         else
         {
@@ -51,5 +55,10 @@ public class UserCharacter : BaseCharacter
         
         // Initialize character stats
         InitializeCharacter();
+    }
+
+    public void UpdateUIName()
+    {
+        playerNameTextMeshPro.text = Name;
     }
 }
