@@ -150,9 +150,11 @@ public class NetworkedGameManager : NetworkBehaviour
             userCharacter.UpdateUIName();
         }
 
-        if(IsOwner)
+        // Enable camera only on this machine's own player (client sees their camera, host sees theirs)
+        if (clientId == NetworkManager.Singleton.LocalClientId)
         {
-            playerObject.GetComponentInChildren<Camera>().enabled = true;
+            var cam = playerObject.GetComponentInChildren<Camera>();
+            if (cam != null) cam.enabled = true;
         }
     }
 
@@ -178,6 +180,7 @@ public class NetworkedGameManager : NetworkBehaviour
         {
             if (no.OwnerClientId != clientId) continue;
             if (no.GetComponent<UserCharacter>() == null) continue;
+
             return no.gameObject;
         }
 
