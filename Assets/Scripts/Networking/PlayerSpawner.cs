@@ -13,12 +13,24 @@ public class PlayerSpawner : NetworkBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private Transform[] spawnPoints;
     [SerializeField] private bool useRandomSpawn = true;
+    public bool IsTesting = false;
 
     private int _nextSpawnIndex = 0;
 
+    public void Start()
+    {
+
+    }
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        // Testing so i dont have to go through the whole flow
+        if (IsTesting)
+        {
+            SpawnPlayer(0, PlayerClass.President);
+            return;
+        }
 
         if (IsServer)
         {
