@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -40,7 +41,7 @@ public class NetworkedPartyManager : NetworkBehaviour
     /// <summary>
     /// Start a party. Server-only method.
     /// </summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void StartPartyServerRPC(int dayNumber, int guestLimit)
     {
         if (!IsServer) return;
