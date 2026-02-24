@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
@@ -122,6 +123,16 @@ namespace StarterAssets
             JumpAndGravity();
             GroundedCheck();
             Move();
+            DrinkCheck();
+        }
+
+        private void DrinkCheck()
+        {
+            if (_input.drink)
+            {
+                _animator.SetTrigger("Drink");
+                _animator.ResetTrigger("Drink");
+            }
         }
 
         private void LateUpdate()

@@ -135,7 +135,11 @@ public class PlayerSpawner : NetworkBehaviour
             {
                 // Initialize character with class data
                 userCharacter.InitializeFromSO(playerClassSO);
-                SetPlayerDataOnClientRPC(clientId, LobbyManager.Instance.Players[clientId]);
+
+                if(!IsTesting)
+                {
+                    SetPlayerDataOnClientRPC(clientId, LobbyManager.Instance.Players[clientId]);
+                }
             }
             else
             {

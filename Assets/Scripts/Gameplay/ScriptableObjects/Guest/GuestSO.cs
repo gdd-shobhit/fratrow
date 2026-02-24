@@ -9,6 +9,7 @@ public class GuestSO : ScriptableObject
     public GuestClass guestClass;
     [TextArea(3, 5)]
     public string description;
+    public GameObject prefab;
     
     [Header("Stats")]
     public float health;

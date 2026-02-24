@@ -560,7 +560,14 @@ MonoBehaviour:
   NetworkAnimatorExpanded: 0
   AuthorityMode: 1
   m_Animator: {fileID: 8446742108066757693}
-  TransitionStateInfoList: []
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: -453240694
+    DestinationState: 963803069
+    TransitionDuration: 0.25
+    TriggerNameHash: -864063531
+    TransitionIndex: 0
   AnimatorParameterEntries:
     ParameterEntries:
     - name: idle
@@ -583,6 +590,10 @@ MonoBehaviour:
       NameHash: -823668238
       Synchronize: 1
       ParameterType: 1
+    - name: Drink
+      NameHash: -864063531
+      Synchronize: 1
+      ParameterType: 9
   AnimatorParametersExpanded: 0
 --- !u!114 &5758962347969024342
 MonoBehaviour:
@@ -647,6 +658,7 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
+  drink: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1

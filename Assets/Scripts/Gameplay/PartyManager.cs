@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -29,10 +30,7 @@ public class PartyManager : MonoBehaviour
                 }
                 else
                 {
-                    GameObject partyManagerObject = new GameObject("PartyManager");
-                    _instance = partyManagerObject.AddComponent<PartyManager>();
-                    DontDestroyOnLoad(partyManagerObject);
-                    Debug.Log("PartyManager instance created.");
+                    Debug.Log("PartyManager not found");
                 }
             }
 
@@ -295,12 +293,12 @@ public class PartyManager : MonoBehaviour
         // If networking is enabled, use NetworkObject.Instantiate
         if (networkManager != null && isServer)
         {
-            guestObject = Unity.Netcode.NetworkObject.Instantiate(guestPrefab, guestSpawnLocation);
+            guestObject = Unity.Netcode.NetworkObject.Instantiate(guestSO.prefab, guestSpawnLocation);
         }
         else
         {
             // Single-player mode
-            guestObject = Instantiate(guestPrefab, guestSpawnLocation);
+            guestObject = Instantiate(guestSO.prefab, guestSpawnLocation);
         }
 
         NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();
@@ -321,6 +319,7 @@ public class PartyManager : MonoBehaviour
                 networkedGuest = guestObject.AddComponent<NetworkedNPCGuest>();
             }
             networkedGuest.InitializeGuestData(guestSO);
+            guestObject.GetComponent<NetworkObject>().Spawn(true);
         }
         
         // Add to party

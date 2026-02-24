@@ -30,6 +30,11 @@ public class NetworkedPartyManager : NetworkBehaviour
             GameObject partyObject = new GameObject("NetworkedParty");
             _networkedParty = partyObject.AddComponent<NetworkedParty>();
         }
+
+        if(IsServer && IsOwner)
+        {
+            StartPartyServerRPC(1, 20);
+        }
     }
 
     /// <summary>

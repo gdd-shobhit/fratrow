@@ -23,7 +23,7 @@ public class NetworkedParty : NetworkBehaviour
     private Party _localParty;
 
     // Network list for guest IDs (we'll track guest NetworkObjects)
-    private NetworkList<ulong> _guestNetworkIds;
+    private NetworkList<ulong> _guestNetworkIds = new NetworkList<ulong>();
 
     public override void OnNetworkSpawn()
     {
