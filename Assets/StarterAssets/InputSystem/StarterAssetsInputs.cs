@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -13,6 +14,7 @@ namespace StarterAssets
 		public bool jump;
 		public bool sprint;
         public bool drink;
+		public bool interact;
 
         [Header("Movement Settings")]
 		public bool analogMovement;
@@ -48,9 +50,15 @@ namespace StarterAssets
         {
             DrinkInput(value.isPressed);
         }
+        public void OnInteract(InputValue value)
+        {
+            InteractInput(value.isPressed);
+        }
 #endif
-
-
+        private void InteractInput(bool isPressed)
+        {
+            interact = isPressed;
+        }
         public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;

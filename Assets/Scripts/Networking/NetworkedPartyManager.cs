@@ -31,11 +31,6 @@ public class NetworkedPartyManager : NetworkBehaviour
             GameObject partyObject = new GameObject("NetworkedParty");
             _networkedParty = partyObject.AddComponent<NetworkedParty>();
         }
-
-        if(IsServer && IsOwner)
-        {
-            StartPartyServerRPC(1, 20);
-        }
     }
 
     /// <summary>
@@ -48,8 +43,7 @@ public class NetworkedPartyManager : NetworkBehaviour
 
         Debug.Log($"[NetworkedPartyManager] Server starting party - Day {dayNumber}, Guest Limit: {guestLimit}");
 
-        // Start party locally
-        if (_partyManager != null)
+        if(_partyManager != null)
         {
             _partyManager.StartParty(guestLimit);
         }
@@ -70,13 +64,10 @@ public class NetworkedPartyManager : NetworkBehaviour
         if (!IsServer) return;
 
         Debug.Log("[NetworkedPartyManager] Server ending party.");
-
-        // End party locally
         if (_partyManager != null)
         {
             _partyManager.EndParty();
         }
-
         // Sync via NetworkedParty
         if (_networkedParty != null)
         {

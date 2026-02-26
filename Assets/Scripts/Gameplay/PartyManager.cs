@@ -106,6 +106,10 @@ public class PartyManager : MonoBehaviour
         var networkManager = Unity.Netcode.NetworkManager.Singleton;
         bool isServer = networkManager != null && networkManager.IsServer;
         
+        if(!isServer)
+        {
+            return;
+        }
         // If networking is enabled, only server spawns guests
         // Otherwise, allow single-player mode
         bool canSpawnGuests = networkManager == null || isServer;
@@ -129,7 +133,7 @@ public class PartyManager : MonoBehaviour
         // Check if current party should end (server-only in multiplayer)
         if (IsPartyActive && currentParty.IsPartyOver() && canSpawnGuests)
         {
-            EndParty();
+            GetComponent<NetworkedPartyManager>().EndPartyServerRPC();
         }
     }
 
@@ -353,6 +357,13 @@ public class PartyManager : MonoBehaviour
                     // TODO: Give passive boost
                 }
             }
+        }
+    }
+    public void RequestStartParty()
+    {
+        if (!IsPartyActive)
+        {
+            GetComponent<NetworkedPartyManager>().StartPartyServerRPC(1, 20);
         }
     }
 }

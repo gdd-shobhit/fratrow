@@ -19,6 +19,7 @@ public class GuestSO : ScriptableObject
     public float troubleMaker;
     [Range(-100f, 100f)]
     public float cashvalue;
+    public bool isRecruitable;
     
     [Header("Abilities")]
     public List<Ability> abilities = new List<Ability>();
@@ -64,6 +65,7 @@ public class GuestSO : ScriptableObject
             popularity = this.popularity,
             troubleMaker = this.troubleMaker,
             cashvalue = this.cashvalue,
+            isRecruitable = this.isRecruitable,
             abilities = new List<Ability>(this.abilities)
         };
         return stats;

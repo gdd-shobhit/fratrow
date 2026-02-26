@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,6 +11,7 @@ using UnityEngine;
 public class NetworkedParty : NetworkBehaviour
 {
     // Network synchronized variables
+    //private NetworkVariable<Party> _networkedParty = new NetworkVariable<Party>();
     private NetworkVariable<int> _dayNumber = new NetworkVariable<int>(1);
     private NetworkVariable<int> _guestLimit = new NetworkVariable<int>(20);
     private NetworkVariable<float> _popularity = new NetworkVariable<float>(0f);
@@ -62,7 +65,7 @@ public class NetworkedParty : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void StartPartyServerRPC(int dayNumber, int guestLimit)
     {
-        if (!IsServer) return;
+        if (!IsServer || _partyState.Value == PartyState.Active) return;
 
         Debug.Log($"[NetworkedParty] Server starting party - Day {dayNumber}, Guest Limit: {guestLimit}");
 
@@ -83,20 +86,46 @@ public class NetworkedParty : NetworkBehaviour
         _cashValue.Value = 0f;
 
         // Notify clients
-        OnPartyStartedClientRPC();
+        OnPartyStartedClientRPC(guestLimit);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void OnPartyStartedClientRPC()
+    private void OnPartyStartedClientRPC(int guestLimit)
     {
         Debug.Log("[NetworkedParty] Party started on client.");
-        
+
+        // Start party locally if null
+        if(_localParty == null)
+        {
+            Debug.Log("[NetworkedParty] Party started on client " + NetworkManager.LocalClientId + ".local party was null.");
+            _localParty = new Party(_dayNumber.Value, guestLimit);
+            PartyManager.Instance.StartParty(guestLimit);
+            _localParty = PartyManager.Instance.CurrentParty;
+        }
+
         // Update local party if it exists
+        SyncFromServerParty();
+    }
+
+    private void SyncFromServerParty()
+    {
         if (_localParty != null)
         {
-            _localParty.state = PartyState.Active;
+            _localParty.state = _partyState.Value;
             _localParty.partyStartTime = _partyStartTime.Value;
             _localParty.partyEndTime = _partyEndTime.Value;
+
+            _localParty.dayNumber = _dayNumber.Value; 
+            _localParty.guestLimit= _guestLimit.Value;
+            _localParty.state = _partyState.Value;
+            _localParty.partyStartTime = _partyStartTime.Value;
+            _localParty.timeSinceGuestSpawned = _timeSinceGuestSpawned.Value;
+            _localParty.partyEndTime= _partyEndTime.Value;
+
+            // Reset stats
+            _localParty.popularity = _popularity.Value;
+            _localParty.troubleMaker = _troubleMaker.Value;
+            _localParty.cashValue = _cashValue.Value;
         }
     }
 
@@ -120,10 +149,10 @@ public class NetworkedParty : NetworkBehaviour
     private void OnPartyEndedClientRPC()
     {
         Debug.Log("[NetworkedParty] Party ended on client.");
-        
+
         if (_localParty != null)
         {
-            _localParty.state = PartyState.Ended;
+            _localParty.state = _partyState.Value;
             _localParty.End();
         }
     }

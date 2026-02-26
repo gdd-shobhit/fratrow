@@ -22,6 +22,8 @@ namespace StarterAssets
         public float RotationSpeed = 1.0f;
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
+        [Tooltip("Distance to interact with objects")]
+        public float InteractDistance = 10.0f;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -124,6 +126,7 @@ namespace StarterAssets
             GroundedCheck();
             Move();
             DrinkCheck();
+            InteractAction();
         }
 
         private void DrinkCheck()
@@ -288,5 +291,21 @@ namespace StarterAssets
             // when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
             Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
         }
+
+        private void InteractAction()
+        {
+            if(_input.interact)
+            {
+                Ray ray = new Ray(transform.position, transform.forward);
+                if(Physics.Raycast(ray, out RaycastHit hitInfo, InteractDistance))
+                {
+                    if(hitInfo.collider.gameObject.TryGetComponent(out IInteractable interactableObject))
+                    {
+                        interactableObject.Interact();
+                    }
+                }
+            }
+        }
+
     }
 }
