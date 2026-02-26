@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 /// <summary>
@@ -16,6 +17,7 @@ public class GameManager : MonoBehaviour
     public Dictionary<ulong, GameObject> playersInGame;
 
     // Metrics for how the team is doing
+    private Fraternity myFraternity;
     private float totalPopularity;
     private float totalCashvalue;
     private float totalTroubleMaking;
@@ -73,6 +75,7 @@ public class GameManager : MonoBehaviour
         playerClassesDict = new Dictionary<PlayerClass, PlayerClassSO>();
         guestClassesDict = new Dictionary<GuestClass, GuestSO>();
         playersInGame = new Dictionary<ulong, GameObject>();
+        myFraternity = new Fraternity();
 
         // Intialize the dictionaries from our database of players and npc classes
         for (int i = 0; i < playerClasses.Count; i++)
@@ -122,11 +125,13 @@ public class GameManager : MonoBehaviour
 
     public void AddTotalCashValue(float inCashValue)
     {
+        myFraternity.fraternityData.cashValue += (int)inCashValue;
         this.totalCashvalue += inCashValue;
     }
 
     public void AddTotalPopularityValue(float inPopularityValue)
     {
+        myFraternity.fraternityData.popularity += (int)inPopularityValue;
         this.totalPopularity += inPopularityValue;
     }
     public void AddTotalTroubleMaking(float inTroubleMaking)
