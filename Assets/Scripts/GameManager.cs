@@ -75,7 +75,7 @@ public class GameManager : MonoBehaviour
         playerClassesDict = new Dictionary<PlayerClass, PlayerClassSO>();
         guestClassesDict = new Dictionary<GuestClass, GuestSO>();
         playersInGame = new Dictionary<ulong, GameObject>();
-        myFraternity = new Fraternity();
+        myFraternity = gameObject.AddComponent<Fraternity>(); // addComponent here
 
         // Intialize the dictionaries from our database of players and npc classes
         for (int i = 0; i < playerClasses.Count; i++)

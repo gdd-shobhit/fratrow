@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ public class PartyManager : MonoBehaviour
     [Header("Party Settings")]
     [SerializeField] private float partyDurationMinutes = 10f; // Real-time minutes for a party
     [SerializeField] private int defaultGuestLimit = 20;
-    
+
     [Header("Current Party")]
     [SerializeField] private Party currentParty;
     [SerializeField] private float timeBetweenEachGuestArrival = 15.0f;
@@ -105,19 +106,11 @@ public class PartyManager : MonoBehaviour
         // Only server handles party timing and guest spawning
         var networkManager = Unity.Netcode.NetworkManager.Singleton;
         bool isServer = networkManager != null && networkManager.IsServer;
-        
-        if(!isServer)
-        {
-            return;
-        }
-        // If networking is enabled, only server spawns guests
-        // Otherwise, allow single-player mode
-        bool canSpawnGuests = networkManager == null || isServer;
 
-        if (currentParty != null && currentParty.state == PartyState.Active && canSpawnGuests)
+        if (currentParty != null && currentParty.state == PartyState.Active)
         {
             currentParty.timeSinceGuestSpawned += Time.deltaTime;
-            
+
             // Check if it's time to spawn another guest
             if (currentParty.timeSinceGuestSpawned >= timeBetweenEachGuestArrival)
             {
@@ -125,13 +118,13 @@ public class PartyManager : MonoBehaviour
                 if (currentParty.currentGuests.Count < currentParty.guestLimit)
                 {
                     currentParty.timeSinceGuestSpawned = 0.0f;
-                    SelectAndSpawnGuests();
+                    SelectAndSpawnGuests(isServer);
                 }
             }
         }
-        
+
         // Check if current party should end (server-only in multiplayer)
-        if (IsPartyActive && currentParty.IsPartyOver() && canSpawnGuests)
+        if (isServer && IsPartyActive && currentParty.IsPartyOver())
         {
             GetComponent<NetworkedPartyManager>().EndPartyServerRPC();
         }
@@ -148,7 +141,7 @@ public class PartyManager : MonoBehaviour
     public void StartParty(int guestLimit = -1)
     {
         // If start party was called with default parameter
-        if(guestLimit < 0)
+        if (guestLimit < 0)
         {
             guestLimit = defaultGuestLimit;
         }
@@ -161,14 +154,14 @@ public class PartyManager : MonoBehaviour
 
         // Use provided limit or default
         int limit = guestLimit > 0 ? guestLimit : defaultGuestLimit;
-        
+
         // Create new party
         currentParty = new Party(currentDay, limit);
         currentParty.Start();
-        
+
         // Reset guest spawn timer
         currentParty.timeSinceGuestSpawned = 0.0f;
-        
+
         // First guest will spawn after timeBetweenEachGuestArrival seconds in Update()
     }
 
@@ -189,9 +182,9 @@ public class PartyManager : MonoBehaviour
         currentParty.End();
 
         Debug.Log($"Party ended for Day {currentParty.dayNumber}! Final in-game time: {inGameTime:F2}:00");
-        
+
         // TODO: Clean up guests, calculate results, etc.
-        
+
         // Advance to next day
         currentDay++;
     }
@@ -216,10 +209,10 @@ public class PartyManager : MonoBehaviour
         float time = GetCurrentInGameTime();
         int hours = Mathf.FloorToInt(time);
         int minutes = Mathf.FloorToInt((time - hours) * 60f);
-        
+
         string period = hours >= 12 ? "PM" : "AM";
         int displayHours = hours > 12 ? hours - 12 : (hours == 0 ? 12 : hours);
-        
+
         return $"{displayHours:D2}:{minutes:D2} {period}";
     }
 
@@ -228,7 +221,7 @@ public class PartyManager : MonoBehaviour
     /// Randomly selects one guest type and rolls probability for arrival.
     /// Spawns either the selected guest or a "None" guest if probability fails.
     /// </summary>
-    private void SelectAndSpawnGuests()
+    private void SelectAndSpawnGuests(bool isServer)
     {
         if (currentParty == null || GameManager.Instance == null)
         {
@@ -245,10 +238,10 @@ public class PartyManager : MonoBehaviour
 
         // Get current party popularity (updates as guests arrive)
         float partyPopularity = currentParty.popularity;
-        
+
         // Get guest dictionary from GameManager
         Dictionary<GuestClass, GuestSO> guestDict = GameManager.Instance.guestClassesDict;
-        
+
         if (guestDict == null || guestDict.Count == 0)
         {
             Debug.LogWarning("No guests available in GameManager dictionary!");
@@ -262,10 +255,10 @@ public class PartyManager : MonoBehaviour
 
         // Calculate modified arrival chance based on party popularity
         float arrivalChance = selectedGuestSO.GetModifiedArrivalChance(partyPopularity);
-        
+
         // Roll probability (0-100)
         float roll = Random.Range(0f, 100f);
-        
+
         if (roll <= arrivalChance)
         {
             // Guest arrives! Spawn them
@@ -292,17 +285,12 @@ public class PartyManager : MonoBehaviour
         bool isServer = networkManager != null && networkManager.IsServer;
 
         // Create a GameObject for the guest
-        GameObject guestObject;
-        
+        GameObject guestObject = null;
+
         // If networking is enabled, use NetworkObject.Instantiate
         if (networkManager != null && isServer)
         {
             guestObject = Unity.Netcode.NetworkObject.Instantiate(guestSO.prefab, guestSpawnLocation);
-        }
-        else
-        {
-            // Single-player mode
-            guestObject = Instantiate(guestSO.prefab, guestSpawnLocation);
         }
 
         NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();
@@ -310,12 +298,13 @@ public class PartyManager : MonoBehaviour
         {
             npcGuest = guestObject.AddComponent<NPCGuest>();
         }
-        
-        // Initialize the guest with the ScriptableObject data
+
+        // Initialize the guest with the ScriptableObject data and add to party
         npcGuest.InitializeFromSO(guestSO);
-        
+        currentParty.AddGuest(npcGuest);
+
         // If networked, initialize NetworkedNPCGuest component
-        if (networkManager != null && isServer)
+        if (isServer)
         {
             var networkedGuest = guestObject.GetComponent<NetworkedNPCGuest>();
             if (networkedGuest == null)
@@ -324,30 +313,23 @@ public class PartyManager : MonoBehaviour
             }
             networkedGuest.InitializeGuestData(guestSO);
             guestObject.GetComponent<NetworkObject>().Spawn(true);
-        }
-        
-        // Add to party
-        if (currentParty.AddGuest(npcGuest))
-        {
+
             // Update party stats based on guest
             currentParty.popularity += guestSO.popularity;
             currentParty.troubleMaker += guestSO.troubleMaker;
             currentParty.cashValue += guestSO.cashvalue;
 
             // If networked, sync party stats via NetworkedParty
-            if (networkManager != null && isServer)
+            var networkedParty = FindFirstObjectByType<NetworkedParty>();
+            if (networkedParty != null)
             {
-                var networkedParty = FindFirstObjectByType<NetworkedParty>();
-                if (networkedParty != null)
-                {
-                    var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
-                    ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
-                    networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
-                }
+                var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
+                ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
+                networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
             }
         }
 
-        if (npcGuest.Abilities.Count > 0)
+        if (isServer && npcGuest.Abilities.Count > 0)
         {
             //TODO: Implement abilities
             foreach (Ability ability in npcGuest.Abilities)
@@ -358,9 +340,15 @@ public class PartyManager : MonoBehaviour
                 }
             }
         }
+
     }
     public void RequestStartParty()
     {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.Log("Client cannot start the game loop");
+            return;
+        }
         if (!IsPartyActive)
         {
             GetComponent<NetworkedPartyManager>().StartPartyServerRPC(1, 20);

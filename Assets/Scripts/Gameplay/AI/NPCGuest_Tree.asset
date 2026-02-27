@@ -17,7 +17,7 @@ MonoBehaviour:
   m_Nodes:
   - rid: 673467971933045209
   - rid: 673467971933045255
-  m_VersionTimestamp: 639077134280228579
+  m_VersionTimestamp: 639077895568383633
   m_SerializedVersion: 2
   m_DebugInfo: {fileID: 2342657527098423752}
   m_RuntimeGraph: {fileID: 648946542786345134}
@@ -338,12 +338,12 @@ MonoBehaviour:
   m_Name: NPCGuest_Tree Blackboard
   m_EditorClassIdentifier: Unity.Behavior.Authoring::Unity.Behavior.BehaviorBlackboardAuthoringAsset
   AssetID:
-    m_Value0: 0
-    m_Value1: 0
+    m_Value0: 11844188461025710247
+    m_Value1: 13171843811660431081
   m_Variables:
   - rid: 673467971933045211
   - rid: 673467971933045285
-  m_VersionTimestamp: 639077134219803955
+  m_VersionTimestamp: 639077895566954530
   m_CommandBuffer:
     m_Commands: []
   m_RuntimeBlackboardAsset: {fileID: 8565099702832922296}
@@ -369,7 +369,11 @@ MonoBehaviour:
         Name: PatrolPoints
         IsExposed: 1
         m_IsShared: 0
-        m_Value: []
+        m_Value:
+        - {fileID: 403316902655140411, guid: efb9da33ea323a74f9a69105fe0cb284, type: 3}
+        - {fileID: 89773989214634535, guid: 3bc31381c909be14da2901540a398545, type: 3}
+        - {fileID: 1073633768254113855, guid: abe952a7ab9f0aa40995275800090b32, type: 3}
+        - {fileID: 4986969261702427507, guid: 69ea3b5a66a26a84ca2ccad7e1ca4c46, type: 3}
 --- !u!114 &648946542786345134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -402,8 +406,8 @@ MonoBehaviour:
           rid: 673467971933045213
         BlackboardGroupReferences: []
         Root:
-          rid: 673467971933045297
-        m_VersionTimestamp: 639077134280228579
+          rid: 673467991275077910
+        m_VersionTimestamp: 639077895568383633
     - rid: 673467971933045213
       type: {class: BlackboardReference, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
@@ -414,25 +418,49 @@ MonoBehaviour:
       type: {class: Blackboard, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         m_Variables:
-        - rid: 673467971933045295
-        - rid: 673467971933045296
-    - rid: 673467971933045295
-      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
+        - rid: 673467991275077912
+        - rid: 673467991275077913
+    - rid: 673467991275077869
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
-          m_Value0: 1
+          m_Value0: 0
           m_Value1: 0
-        Name: Self
-        m_Value: {fileID: 0}
-    - rid: 673467971933045296
-      type: {class: 'BlackboardVariable`1[[System.Collections.Generic.List`1[[UnityEngine.GameObject, UnityEngine.CoreModule]], mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+        Name: 
+        m_Value: 1
+    - rid: 673467991275077870
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
-          m_Value0: 8249874998465365126
-          m_Value1: 12441563366762302789
-        Name: PatrolPoints
-        m_Value: []
-    - rid: 673467971933045297
+          m_Value0: 0
+          m_Value1: 0
+        Name: 
+        m_Value: 1
+    - rid: 673467991275077871
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 0
+          m_Value1: 0
+        Name: 
+        m_Value: 0.2
+    - rid: 673467991275077872
+      type: {class: 'BlackboardVariable`1[[System.String, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 0
+          m_Value1: 0
+        Name: 
+        m_Value: Speed
+    - rid: 673467991275077873
+      type: {class: 'BlackboardVariable`1[[System.Boolean, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 0
+          m_Value1: 0
+        Name: 
+        m_Value: 0
+    - rid: 673467991275077910
       type: {class: Start, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         ID:
@@ -443,10 +471,10 @@ MonoBehaviour:
         m_Parent:
           rid: -2
         m_Child:
-          rid: 673467971933045298
+          rid: 673467991275077911
         Repeat: 0
         AllowMultipleRepeatsPerTick: 0
-    - rid: 673467971933045298
+    - rid: 673467991275077911
       type: {class: PatrolAction, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         ID:
@@ -455,61 +483,41 @@ MonoBehaviour:
         Graph:
           rid: 673467971933045212
         m_Parent:
-          rid: 673467971933045297
+          rid: 673467991275077910
         Agent:
-          rid: 673467971933045295
+          rid: 673467991275077912
         Waypoints:
-          rid: 673467971933045296
+          rid: 673467991275077913
         Speed:
-          rid: 673467971933045299
+          rid: 673467991275077869
         WaypointWaitTime:
-          rid: 673467971933045300
+          rid: 673467991275077870
         DistanceThreshold:
-          rid: 673467971933045301
+          rid: 673467991275077871
         AnimatorSpeedParam:
-          rid: 673467971933045302
+          rid: 673467991275077872
         PreserveLatestPatrolPoint:
-          rid: 673467971933045303
-    - rid: 673467971933045299
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+          rid: 673467991275077873
+    - rid: 673467991275077912
+      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
-          m_Value0: 0
+          m_Value0: 1
           m_Value1: 0
-        Name: 
-        m_Value: 1
-    - rid: 673467971933045300
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+        Name: Self
+        m_Value: {fileID: 0}
+    - rid: 673467991275077913
+      type: {class: 'BlackboardVariable`1[[System.Collections.Generic.List`1[[UnityEngine.GameObject, UnityEngine.CoreModule]], mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
-          m_Value0: 0
-          m_Value1: 0
-        Name: 
-        m_Value: 1
-    - rid: 673467971933045301
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
-      data:
-        GUID:
-          m_Value0: 0
-          m_Value1: 0
-        Name: 
-        m_Value: 0.2
-    - rid: 673467971933045302
-      type: {class: 'BlackboardVariable`1[[System.String, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
-      data:
-        GUID:
-          m_Value0: 0
-          m_Value1: 0
-        Name: 
-        m_Value: Speed
-    - rid: 673467971933045303
-      type: {class: 'BlackboardVariable`1[[System.Boolean, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
-      data:
-        GUID:
-          m_Value0: 0
-          m_Value1: 0
-        Name: 
-        m_Value: 0
+          m_Value0: 8249874998465365126
+          m_Value1: 12441563366762302789
+        Name: PatrolPoints
+        m_Value:
+        - {fileID: 403316902655140411, guid: efb9da33ea323a74f9a69105fe0cb284, type: 3}
+        - {fileID: 89773989214634535, guid: 3bc31381c909be14da2901540a398545, type: 3}
+        - {fileID: 1073633768254113855, guid: abe952a7ab9f0aa40995275800090b32, type: 3}
+        - {fileID: 4986969261702427507, guid: 69ea3b5a66a26a84ca2ccad7e1ca4c46, type: 3}
 --- !u!114 &2342657527098423752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -535,10 +543,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c02bb70996b49eba31d0c206e28da24, type: 3}
   m_Name: NPCGuest_Tree Blackboard
   m_EditorClassIdentifier: Unity.Behavior::Unity.Behavior.RuntimeBlackboardAsset
-  VersionTimestamp: 639077134219803955
+  VersionTimestamp: 639077895566954530
   AssetID:
-    m_Value0: 0
-    m_Value1: 0
+    m_Value0: 11844188461025710247
+    m_Value1: 13171843811660431081
   m_Blackboard:
     m_Variables:
     - rid: 673467971933045217
@@ -562,4 +570,8 @@ MonoBehaviour:
           m_Value0: 8249874998465365126
           m_Value1: 12441563366762302789
         Name: PatrolPoints
-        m_Value: []
+        m_Value:
+        - {fileID: 403316902655140411, guid: efb9da33ea323a74f9a69105fe0cb284, type: 3}
+        - {fileID: 89773989214634535, guid: 3bc31381c909be14da2901540a398545, type: 3}
+        - {fileID: 1073633768254113855, guid: abe952a7ab9f0aa40995275800090b32, type: 3}
+        - {fileID: 4986969261702427507, guid: 69ea3b5a66a26a84ca2ccad7e1ca4c46, type: 3}

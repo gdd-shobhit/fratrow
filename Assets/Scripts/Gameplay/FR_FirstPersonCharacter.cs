@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
+
+
 namespace StarterAssets
 {
     [RequireComponent(typeof(CharacterController))]
@@ -23,7 +25,7 @@ namespace StarterAssets
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
         [Tooltip("Distance to interact with objects")]
-        public float InteractDistance = 10.0f;
+        public float InteractDistance = 50.0f;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -55,6 +57,11 @@ namespace StarterAssets
         [Tooltip("How far in degrees can you move the camera down")]
         public float BottomClamp = -90.0f;
 
+        [Header("Interaction")]
+        [Tooltip("LayerMaskForOutline")]
+        public int layerMaskOutline = 6;
+        private GameObject currentSelectedOutlineObject;
+
         // cinemachine
         private float _cinemachineTargetPitch;
 
@@ -74,7 +81,7 @@ namespace StarterAssets
 #endif
         private CharacterController _controller;
         private StarterAssetsInputs _input;
-        private GameObject _mainCamera;
+        public GameObject _mainCamera;
         private Animator _animator;
 
         private const float _threshold = 0.01f;
@@ -96,6 +103,7 @@ namespace StarterAssets
             // get a reference to our main camera
             if (_mainCamera == null)
             {
+                Debug.LogWarning("Camera was null. We need to fix this");
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
         }
@@ -208,7 +216,7 @@ namespace StarterAssets
                 _speed = targetSpeed;
             }
 
-            _animator.SetFloat("Speed", _speed/SprintSpeed);
+            _animator.SetFloat("Speed", _speed / SprintSpeed);
 
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
@@ -294,18 +302,53 @@ namespace StarterAssets
 
         private void InteractAction()
         {
-            if(_input.interact)
+            if (_mainCamera != null)
             {
-                Ray ray = new Ray(transform.position, transform.forward);
-                if(Physics.Raycast(ray, out RaycastHit hitInfo, InteractDistance))
+                if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.forward, out RaycastHit hitInfo, InteractDistance))
                 {
-                    if(hitInfo.collider.gameObject.TryGetComponent(out IInteractable interactableObject))
+                    if (hitInfo.collider.gameObject.TryGetComponent(out IInteractable interactableObject))
                     {
-                        interactableObject.Interact();
-                    }
+                        GameObject hitGameobject = hitInfo.transform.gameObject;
+                        currentSelectedOutlineObject = hitGameobject;
+
+                        if(IsClient)
+                        {
+                            Debug.Log(NetworkManager.Singleton.LocalClientId + " Client is raycasting to " + currentSelectedOutlineObject.name + " and layer is " + currentSelectedOutlineObject.layer);
+                        }   
+                        // Select
+                        if (currentSelectedOutlineObject.layer != LayerMask.NameToLayer("Outline"))
+                        {
+                            SetGameLayerRecursive(currentSelectedOutlineObject, LayerMask.NameToLayer("Outline"));
+                        }
+                        if (_input.interact)
+                        {
+                            interactableObject.Interact();
+                            _input.interact = false;
+                            return;
+                        }
+                        return;
+                    }               
+                }
+
+                if (currentSelectedOutlineObject != null)
+                {
+                    SetGameLayerRecursive(currentSelectedOutlineObject, LayerMask.NameToLayer("Default"));
+                    currentSelectedOutlineObject = null;
                 }
             }
         }
 
+        private void SetGameLayerRecursive(GameObject _go, int _layer)
+        {
+            _go.layer = _layer;
+            foreach (Transform child in _go.transform)
+            {
+                child.gameObject.layer = _layer;
+
+                Transform _HasChildren = child.GetComponentInChildren<Transform>();
+                if (_HasChildren != null)
+                    SetGameLayerRecursive(child.gameObject, _layer);
+            }
+        }
     }
 }

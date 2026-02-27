@@ -142,6 +142,8 @@ GameObject:
   - component: {fileID: 2150001794393668739}
   - component: {fileID: -1809274827843778261}
   - component: {fileID: -1037072122561564937}
+  - component: {fileID: -4111251608978186045}
+  - component: {fileID: -4723653199504614358}
   m_Layer: 0
   m_Name: casual_Male_G
   m_TagString: Untagged
@@ -331,8 +333,7 @@ MonoBehaviour:
   m_Graph: {fileID: 648946542786345134, guid: a7d037f0a6025fa4e97ef2c628cacbb6, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 673467971933045160
-  - rid: 673467971933045306
-  m_OriginalGraph: {fileID: -926887065787009233, guid: 3a031c2744472fe43b703eacf279188f, type: 2}
+  m_OriginalGraph: {fileID: 0}
   m_IsInitialised: 0
   m_IsStarted: 0
   NetcodeRunOnlyOnOwner: 1
@@ -347,17 +348,49 @@ MonoBehaviour:
           m_Value1: 0
         Name: Self
         m_Value: {fileID: 1616406060653692748}
-    - rid: 673467971933045306
-      type: {class: 'BlackboardVariable`1[[System.Collections.Generic.List`1[[UnityEngine.GameObject, UnityEngine.CoreModule]], mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
-      data:
-        GUID:
-          m_Value0: 8249874998465365126
-          m_Value1: 12441563366762302789
-        Name: PatrolPoints
-        m_Value:
-        - {fileID: 0}
-        - {fileID: 0}
-        - {fileID: 0}
+--- !u!65 &-4111251608978186045
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616406060653692748}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 2.5103538, z: 1}
+  m_Center: {x: 0, y: 0.7551769, z: 0}
+--- !u!114 &-4723653199504614358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616406060653692748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d99c156a211b63842a2e0f5370a779c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCGuest
+  stats:
+    name: 
+    health: 0
+    popularity: 0
+    troubleMaker: 0
+    cashvalue: 0
+    isRecruitable: 0
+    abilities: []
+  guestData: {fileID: 0}
+  guestClass: 0
 --- !u!1 &1719302345640664642
 GameObject:
   m_ObjectHideFlags: 0

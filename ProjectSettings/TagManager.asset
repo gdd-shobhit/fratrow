@@ -16,27 +16,27 @@ TagManager:
   - Temp_Post
   - Water
   - UI
-  - Terminal
+  - Outline
   - Location
   - LookInteractor
   - Screen
   - Occluder
   - Camera
   - MainCameraOnly
-  - Oasis_TerrainBake
   - 
   - 
   - 
   - 
   - 
   - 
-  - Cockpit
-  - Cockpit_3DSkybox
-  - Cockpit_3DSkybox_BG
-  - Cockpit_Ally
-  - Cockpit_Invader
-  - Cockpit_BG
-  - Cockpit_DepthClear
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
   - 
   - 
   - 

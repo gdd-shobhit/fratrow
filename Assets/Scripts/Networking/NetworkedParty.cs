@@ -183,7 +183,6 @@ public class NetworkedParty : NetworkBehaviour
     private void OnGuestAddedClientRPC(ulong guestNetworkId, float popularity, float troubleMaker, float cashValue)
     {
         Debug.Log($"[NetworkedParty] Guest added on client: {guestNetworkId}");
-        
         // Update local party stats
         if (_localParty != null)
         {

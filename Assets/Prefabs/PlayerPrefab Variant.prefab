@@ -430,7 +430,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1178896236
+  GlobalObjectIdHash: 3369784831
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -612,6 +612,7 @@ MonoBehaviour:
   SprintSpeed: 6
   RotationSpeed: 1
   SpeedChangeRate: 10
+  InteractDistance: 2
   JumpHeight: 1.2
   Gravity: -15
   JumpTimeout: 0.1
@@ -625,6 +626,8 @@ MonoBehaviour:
   CinemachineCameraTarget: {fileID: 3066439434052714872}
   TopClamp: 90
   BottomClamp: -90
+  layerMaskOutline: 6
+  _mainCamera: {fileID: 3066439434052714872}
 --- !u!114 &7687649103893824851
 MonoBehaviour:
   m_ObjectHideFlags: 0
