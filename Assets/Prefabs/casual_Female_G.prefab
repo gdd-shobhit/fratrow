@@ -849,6 +849,7 @@ GameObject:
   - component: {fileID: 6098486421501545624}
   - component: {fileID: -7287740563048152157}
   - component: {fileID: 5740097636913975333}
+  - component: {fileID: 971757864483172955}
   m_Layer: 0
   m_Name: casual_Female_G
   m_TagString: Untagged
@@ -1038,7 +1039,7 @@ MonoBehaviour:
   m_Graph: {fileID: 648946542786345134, guid: a7d037f0a6025fa4e97ef2c628cacbb6, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 673467971933045161
-  m_OriginalGraph: {fileID: -926887065787009233, guid: 3a031c2744472fe43b703eacf279188f, type: 2}
+  m_OriginalGraph: {fileID: 0}
   m_IsInitialised: 0
   m_IsStarted: 0
   NetcodeRunOnlyOnOwner: 1
@@ -1096,6 +1097,19 @@ MonoBehaviour:
     abilities: []
   guestData: {fileID: 0}
   guestClass: 0
+--- !u!114 &971757864483172955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6584613354768528393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c5f8abf0d457a842a6908a9572bd6fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkedNPCGuest
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &6646269780412227657
 GameObject:
   m_ObjectHideFlags: 0

@@ -972,6 +972,7 @@ GameObject:
   - component: {fileID: 6194141914341593567}
   - component: {fileID: -6926705311940063166}
   - component: {fileID: -184622738158527555}
+  - component: {fileID: 200776429745612266}
   m_Layer: 0
   m_Name: casual_Female_K
   m_TagString: Untagged
@@ -1220,6 +1221,19 @@ MonoBehaviour:
     abilities: []
   guestData: {fileID: 0}
   guestClass: 0
+--- !u!114 &200776429745612266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7501788059647666026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c5f8abf0d457a842a6908a9572bd6fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkedNPCGuest
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &7524111919617231996
 GameObject:
   m_ObjectHideFlags: 0

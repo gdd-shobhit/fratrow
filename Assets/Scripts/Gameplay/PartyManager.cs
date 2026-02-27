@@ -304,7 +304,7 @@ public class PartyManager : MonoBehaviour
         currentParty.AddGuest(npcGuest);
 
         // If networked, initialize NetworkedNPCGuest component
-        if (isServer)
+        if (networkManager != null)
         {
             var networkedGuest = guestObject.GetComponent<NetworkedNPCGuest>();
             if (networkedGuest == null)
@@ -312,20 +312,23 @@ public class PartyManager : MonoBehaviour
                 networkedGuest = guestObject.AddComponent<NetworkedNPCGuest>();
             }
             networkedGuest.InitializeGuestData(guestSO);
-            guestObject.GetComponent<NetworkObject>().Spawn(true);
 
-            // Update party stats based on guest
-            currentParty.popularity += guestSO.popularity;
-            currentParty.troubleMaker += guestSO.troubleMaker;
-            currentParty.cashValue += guestSO.cashvalue;
-
-            // If networked, sync party stats via NetworkedParty
-            var networkedParty = FindFirstObjectByType<NetworkedParty>();
-            if (networkedParty != null)
+            if (isServer)
             {
-                var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
-                ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
-                networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
+                guestObject.GetComponent<NetworkObject>().Spawn(true);
+                // Update party stats based on guest
+                currentParty.popularity += guestSO.popularity;
+                currentParty.troubleMaker += guestSO.troubleMaker;
+                currentParty.cashValue += guestSO.cashvalue;
+
+                // If networked, sync party stats via NetworkedParty
+                var networkedParty = FindFirstObjectByType<NetworkedParty>();
+                if (networkedParty != null)
+                {
+                    var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
+                    ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
+                    networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
+                }
             }
         }
 
