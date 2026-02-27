@@ -28,8 +28,7 @@ public class NetworkedPartyManager : NetworkBehaviour
         _networkedParty = FindFirstObjectByType<NetworkedParty>();
         if (_networkedParty == null)
         {
-            GameObject partyObject = new GameObject("NetworkedParty");
-            _networkedParty = partyObject.AddComponent<NetworkedParty>();
+            Debug.LogError("This SHOULDNT be null. Check scene if it already is there");
         }
     }
 
@@ -88,22 +87,5 @@ public class NetworkedPartyManager : NetworkBehaviour
                 _networkedParty.UpdateTimeSinceGuestSpawned(Time.deltaTime);
             }
         }
-    }
-
-    /// <summary>
-    /// Check if we should spawn a guest. Server-only logic.
-    /// </summary>
-    public bool ShouldSpawnGuest()
-    {
-        if (!IsServer) return false;
-        if (_partyManager == null || !_partyManager.IsPartyActive) return false;
-        if (_networkedParty == null) return false;
-
-        var currentParty = _partyManager.CurrentParty;
-        if (currentParty == null) return false;
-
-        // Check if enough time has passed and we haven't reached the limit
-        return currentParty.timeSinceGuestSpawned >= _partyManager.TimeBetweenEachGuestArrival &&
-               currentParty.currentGuests.Count < currentParty.guestLimit;
     }
 }

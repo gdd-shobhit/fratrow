@@ -107,6 +107,14 @@ public class PartyManager : MonoBehaviour
         var networkManager = Unity.Netcode.NetworkManager.Singleton;
         bool isServer = networkManager != null && networkManager.IsServer;
 
+        // Nothing non-server gets past this
+        // Everything after this needs a client side RPC to server to get data.
+        if(!isServer)
+        {
+            return;
+        }
+        
+        // Server Logic
         if (currentParty != null && currentParty.state == PartyState.Active)
         {
             currentParty.timeSinceGuestSpawned += Time.deltaTime;
@@ -118,7 +126,7 @@ public class PartyManager : MonoBehaviour
                 if (currentParty.currentGuests.Count < currentParty.guestLimit)
                 {
                     currentParty.timeSinceGuestSpawned = 0.0f;
-                    SelectAndSpawnGuests(isServer);
+                    SpawnGuests();
                 }
             }
         }
@@ -128,6 +136,11 @@ public class PartyManager : MonoBehaviour
         {
             GetComponent<NetworkedPartyManager>().EndPartyServerRPC();
         }
+    }
+
+    private void OnServerSpawnGuestsClientRPC()
+    {
+       
     }
 
     private void Start()
@@ -221,7 +234,7 @@ public class PartyManager : MonoBehaviour
     /// Randomly selects one guest type and rolls probability for arrival.
     /// Spawns either the selected guest or a "None" guest if probability fails.
     /// </summary>
-    private void SelectAndSpawnGuests(bool isServer)
+    private void SpawnGuests()
     {
         if (currentParty == null || GameManager.Instance == null)
         {

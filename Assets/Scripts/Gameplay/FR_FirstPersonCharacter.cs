@@ -311,10 +311,6 @@ namespace StarterAssets
                         GameObject hitGameobject = hitInfo.transform.gameObject;
                         currentSelectedOutlineObject = hitGameobject;
 
-                        if(IsClient)
-                        {
-                            Debug.Log(NetworkManager.Singleton.LocalClientId + " Client is raycasting to " + currentSelectedOutlineObject.name + " and layer is " + currentSelectedOutlineObject.layer);
-                        }   
                         // Select
                         if (currentSelectedOutlineObject.layer != LayerMask.NameToLayer("Outline"))
                         {

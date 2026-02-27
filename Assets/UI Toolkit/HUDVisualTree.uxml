@@ -1,5 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/HUD.uss?fileID=7433441132597879392&amp;guid=f7e6951f4b372b04c94db46206129a66&amp;type=3#HUD"/>
+    <Style src="project://database/Assets/UI%20Toolkit/HUD.uss?fileID=7433441132597879392&amp;guid=f7e6951f4b372b04c94db46206129a66&amp;type=3#HUD"/>
     <ui:VisualElement name="HUD" style="flex-grow: 1; width: 20%; translate: 5% 4%;">
         <ui:Slider label="Slider" value="80" high-value="100" name="Popularity" fill="true" show-input-field="false" inverted="true" low-value="0" class="HUDSlider bar" style="background-image: none; background-color: rgba(0, 0, 0, 0); flex-direction: row-reverse; margin-bottom: 20px; margin-top: 20px;">
             <ui:Image name="Image_Pop" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/gem-1-512.png?fileID=2800000&amp;guid=e93aaa7f86f3d884ca8cefa5d8dfa6b2&amp;type=3#gem-1-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2 2;"/>
@@ -10,5 +10,27 @@
         <ui:Slider label="Slider" value="54.8" high-value="100" name="Cash" fill="true" inverted="true" class="HUDSlider bar" style="flex-direction: row-reverse; margin-bottom: 0;">
             <ui:Image name="Image" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-512.png?fileID=2800000&amp;guid=df65a0df46f6dc04687bb5db74c11068&amp;type=3#coin-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2;"/>
         </ui:Slider>
+    </ui:VisualElement>
+    <ui:VisualElement name="GameplayInfo" style="flex-grow: 1; width: 20%; height: 20%; position: absolute; align-self: flex-end;">
+        <ui:VisualElement name="DayInfo" style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="Day Number: " name="Day"/>
+            <ui:Label text="Label" name="DayNumber"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="GuestInfo" style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="Current Guests: " name=""/>
+            <ui:Label text="Label" name="CurrentGuests"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="Current Time: " name="Day"/>
+            <ui:Label text="Label" name="Time"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="Fraternity Name: " name="Day"/>
+            <ui:Label text="Fraternity Name" name="DayNumber"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="Drunk Level: " name="Day"/>
+            <ui:Label text="Drunk" name="DrunkLevel"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -76,7 +76,7 @@ public class NetworkedParty : NetworkBehaviour
         
         float durationInSeconds = PartyManager.Instance != null 
             ? PartyManager.Instance.GetPartyDurationInMinutes() * 60f 
-            : 600f; // Default 10 minutes
+            : 600f; // Default 10 in game minutes
         _partyEndTime.Value = Time.time + durationInSeconds;
         _timeSinceGuestSpawned.Value = 0f;
 
@@ -89,28 +89,20 @@ public class NetworkedParty : NetworkBehaviour
         OnPartyStartedClientRPC(guestLimit);
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Owner)]
     private void OnPartyStartedClientRPC(int guestLimit)
     {
         Debug.Log("[NetworkedParty] Party started on client.");
 
-        // Start party locally if null
-        if(_localParty == null)
-        {
-            Debug.Log("[NetworkedParty] Party started on client " + NetworkManager.LocalClientId + ".local party was null.");
-            _localParty = new Party(_dayNumber.Value, guestLimit);
-            PartyManager.Instance.StartParty(guestLimit);
-            _localParty = PartyManager.Instance.CurrentParty;
-        }
-
         // Update local party if it exists
-        SyncFromServerParty();
+        // SyncFromServerPartyRPC();
     }
 
-    private void SyncFromServerParty()
+    private void SyncFromServerPartyRPC()
     {
         if (_localParty != null)
         {
+            Debug.Log("Client " + NetworkManager.LocalClientId + " is syncing from Server");
             _localParty.state = _partyState.Value;
             _localParty.partyStartTime = _partyStartTime.Value;
             _localParty.partyEndTime = _partyEndTime.Value;
@@ -126,6 +118,10 @@ public class NetworkedParty : NetworkBehaviour
             _localParty.popularity = _popularity.Value;
             _localParty.troubleMaker = _troubleMaker.Value;
             _localParty.cashValue = _cashValue.Value;
+        }
+        else
+        {
+            Debug.Log("_localParty is null on client " + NetworkManager.LocalClientId);
         }
     }
 
@@ -152,7 +148,7 @@ public class NetworkedParty : NetworkBehaviour
 
         if (_localParty != null)
         {
-            _localParty.state = _partyState.Value;
+            _localParty.state = PartyState.Ended;
             _localParty.End();
         }
     }
@@ -160,7 +156,7 @@ public class NetworkedParty : NetworkBehaviour
     /// <summary>
     /// Add a guest to the party. Server-only method.
     /// </summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void AddGuestServerRPC(ulong guestNetworkId, float popularity, float troubleMaker, float cashValue)
     {
         if (!IsServer) return;
@@ -183,6 +179,7 @@ public class NetworkedParty : NetworkBehaviour
     private void OnGuestAddedClientRPC(ulong guestNetworkId, float popularity, float troubleMaker, float cashValue)
     {
         Debug.Log($"[NetworkedParty] Guest added on client: {guestNetworkId}");
+
         // Update local party stats
         if (_localParty != null)
         {

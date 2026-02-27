@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -81,8 +82,14 @@ public class NetworkedNPCGuest : NetworkBehaviour
         // Initialize local NPCGuest component
         if (_npcGuest != null)
         {
-            _npcGuest.InitializeFromSO(guestSO);
+            InitializeGuestDataOnClientRPC();
         }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InitializeGuestDataOnClientRPC()
+    {
+        _npcGuest.InitializeFromSO(GameManager.Instance.guestClassesDict[_guestClass.Value]);
     }
 
     /// <summary>
