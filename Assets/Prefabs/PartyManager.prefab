@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4477877778323023059
+--- !u!1 &5988088754488377938
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,10 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8522266627454658116}
-  - component: {fileID: 6401669494905979401}
-  - component: {fileID: 3074717298461638592}
-  - component: {fileID: 4997856362050855497}
+  - component: {fileID: 5411873580439001825}
+  - component: {fileID: 527468116816112607}
+  - component: {fileID: 4043838005812357261}
   m_Layer: 0
   m_Name: PartyManager
   m_TagString: Untagged
@@ -19,66 +18,34 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8522266627454658116
+--- !u!4 &5411873580439001825
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4477877778323023059}
+  m_GameObject: {fileID: 5988088754488377938}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.35915, y: 1.30787, z: -1.0899}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6401669494905979401
+--- !u!114 &527468116816112607
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4477877778323023059}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cdebf9f1eb9cd740a0bda753e50d791, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PartyManager
-  partyDurationMinutes: 1
-  defaultGuestLimit: 20
-  currentParty:
-    dayNumber: 0
-    guestLimit: 0
-    currentGuests: []
-    popularity: 0
-    troubleMaker: 0
-    cashValue: 0
-    state: 0
-    partyStartTime: 0
-    partyEndTime: 0
-    timeSinceGuestSpawned: 0
-    inGameTimeStart: 0
-    inGameTimeEnd: 0
-  timeBetweenEachGuestArrival: 5
-  currentDay: 1
-  persistAcrossScenes: 0
-  guestSpawnLocation: {fileID: 0}
-  guestPrefab: {fileID: 7938427163358765138, guid: 56a7e9ddbed6323428fed69ec475b034, type: 3}
---- !u!114 &3074717298461638592
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4477877778323023059}
+  m_GameObject: {fileID: 5988088754488377938}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3398041014
+  GlobalObjectIdHash: 3555920964
   InScenePlacedSourceGlobalObjectIdHash: 3398041014
   DeferredDespawnTick: 0
   Ownership: 1
@@ -91,16 +58,21 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &4997856362050855497
+--- !u!114 &4043838005812357261
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4477877778323023059}
+  m_GameObject: {fileID: 5988088754488377938}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66c8a2e445d7dbb498f189eac189b974, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkedPartyManager
   ShowTopMostFoldoutHeaderGroup: 1
+  partyDurationMinutes: 10
+  defaultGuestLimit: 20
+  timeBetweenEachGuestArrival: 15
+  persistAcrossScenes: 1
+  guestSpawnLocation: {fileID: 0}

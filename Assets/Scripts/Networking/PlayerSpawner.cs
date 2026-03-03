@@ -95,7 +95,7 @@ public class PlayerSpawner : NetworkBehaviour
 
         // Spawn player as NetworkObject
         GameObject playerObject = NetworkObject.Instantiate(playerPrefab, spawnPosition, spawnRotation);
-        GameManager.Instance.playersInGame.Add(clientId, playerObject);
+        NetworkedGameManager.Instance.playersInGame.Add(clientId, playerObject);
 
         NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
         
@@ -117,7 +117,7 @@ public class PlayerSpawner : NetworkBehaviour
     }
 
     /// <summary>
-    /// Initialize player character with class data from GameManager.
+    /// Initialize player character with class data from NetworkedGameManager.
     /// </summary>
     private void InitializePlayerCharacter(GameObject playerObject, ulong clientId, PlayerClass playerClass)
     {
@@ -128,10 +128,10 @@ public class PlayerSpawner : NetworkBehaviour
             return;
         }
 
-        // Get PlayerClassSO from GameManager
-        if (GameManager.Instance != null && GameManager.Instance.playerClassesDict != null)
+        // Get PlayerClassSO from NetworkedGameManager
+        if (NetworkedGameManager.Instance != null && NetworkedGameManager.Instance.playerClassesDict != null)
         {
-            if (GameManager.Instance.playerClassesDict.TryGetValue(playerClass, out PlayerClassSO playerClassSO))
+            if (NetworkedGameManager.Instance.playerClassesDict.TryGetValue(playerClass, out PlayerClassSO playerClassSO))
             {
                 // Initialize character with class data
                 userCharacter.InitializeFromSO(playerClassSO);
@@ -204,9 +204,9 @@ public class PlayerSpawner : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void SetPlayerDataOnClientRPC(ulong clientId, LobbyPlayerData lobbyPlayerData)
     {
-        if (GameManager.Instance != null)
+        if (NetworkedGameManager.Instance != null)
         {
-            GameManager.Instance.GetComponent<NetworkedGameManager>().HandlePlayerSpawned(clientId, lobbyPlayerData);
+            NetworkedGameManager.Instance.HandlePlayerSpawned(clientId, lobbyPlayerData);
         }
     }
 }

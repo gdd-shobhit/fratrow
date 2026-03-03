@@ -14,7 +14,11 @@
     <ui:VisualElement name="GameplayInfo" style="flex-grow: 1; width: 20%; height: 20%; position: absolute; align-self: flex-end;">
         <ui:VisualElement name="DayInfo" style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Day Number: " name="Day"/>
-            <ui:Label text="Label" name="DayNumber"/>
+            <ui:Label text="Day number" name="DayNumber" data-source-type="NetworkedParty, Assembly-CSharp" data-source-path="">
+                <Bindings>
+                    <ui:DataBinding property="text" data-source-path="_dayNumber" data-source-type="NetworkedParty, Assembly-CSharp" binding-mode="ToTarget"/>
+                </Bindings>
+            </ui:Label>
         </ui:VisualElement>
         <ui:VisualElement name="GuestInfo" style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Current Guests: " name=""/>

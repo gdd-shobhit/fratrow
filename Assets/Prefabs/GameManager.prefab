@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3651124820434836955
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 159800950356121687}
+  - component: {fileID: 5280634357089654671}
+  - component: {fileID: 8959333915021029575}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &159800950356121687
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5280634357089654671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 3392718102
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &8959333915021029575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15d27c73de95ef84780faca4f4644696, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkedGameManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerClasses:
+  - {fileID: 11400000, guid: 30348cabfdd47ef40be579211ea6971b, type: 2}
+  - {fileID: 11400000, guid: d7854b864cf0ac24ba5af323bc303c35, type: 2}
+  - {fileID: 11400000, guid: c406855af96b0df48a3aba97e3e288e0, type: 2}
+  - {fileID: 11400000, guid: 851a2c81f1f38264eb363505b25e4a0d, type: 2}
+  guestClasses:
+  - {fileID: 11400000, guid: ff391b91a31961245891bd09dd59f7be, type: 2}
+  - {fileID: 11400000, guid: f74c15bed102a3a4bba5b1552279005a, type: 2}
+  - {fileID: 11400000, guid: 7befe4896a7275946aef594574baa18c, type: 2}
+  - {fileID: 11400000, guid: 6904fc3c461ba5c4a8aeda60f650bae2, type: 2}
+  myFraternity:
+    m_InternalValue:
+      fratName: 
+      rating: 0
+      grade: 0
+      memberCount: 0
+      popularity: 0
+      cashValue: 0

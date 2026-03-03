@@ -89,7 +89,7 @@ public class NetworkedNPCGuest : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void InitializeGuestDataOnClientRPC()
     {
-        _npcGuest.InitializeFromSO(GameManager.Instance.guestClassesDict[_guestClass.Value]);
+        _npcGuest.InitializeFromSO(NetworkedGameManager.Instance.guestClassesDict[_guestClass.Value]);
     }
 
     /// <summary>

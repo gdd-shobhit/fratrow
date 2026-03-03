@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Properties;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEditor.Recorder.OutputPath;
 
 public class GameplayUIManager : MonoBehaviour
 {
@@ -15,6 +17,9 @@ public class GameplayUIManager : MonoBehaviour
     private Slider _troubleMakerSlider;
     private Slider _cashSlider;
 
+    private Label _dayLabel;
+    private NetworkedParty _partyDetails;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -22,20 +27,34 @@ public class GameplayUIManager : MonoBehaviour
         _popularitySlider = root.Q<Slider>("Popularity");
         _troubleMakerSlider = root.Q<Slider>("TroubleMaker");
         _cashSlider = root.Q<Slider>("Cash");
+        _dayLabel = root.Q<Label>("DayNumber");
+        _partyDetails = NetworkedPartyManager.Instance.NetworkedParty;
+        _dayLabel.dataSource = _partyDetails;
+
         SetupStatSliders();
     }
 
     private void OnEnable()
     {
+        // Game manager
         NetworkedGameManager.Instance.OnPopularityChanged += UpdatePopularitySlider;
         NetworkedGameManager.Instance.OnTroubleChanged += UpdateTroubleSlider;
         NetworkedGameManager.Instance.OnCashValueChanged += UpdateCashSlider;
 
+        // Party Manager
+        // NetworkedPartyManager.Instance.NetworkedParty.OnDayNumberChangedEvent += UpdateDayNumber;
+
         // For late joiners
         if (NetworkedGameManager.Instance != null)
         {
-            UpdatePopularitySlider(NetworkedGameManager.Instance.TotalPopularity);
+            //UpdatePopularitySlider(NetworkedGameManager.Instance.TotalPopularity);
         }
+    }
+
+    private void UpdateDayNumber(int value)
+    {
+
+        _dayLabel.text = value.ToString();
     }
 
     private void OnDisable()

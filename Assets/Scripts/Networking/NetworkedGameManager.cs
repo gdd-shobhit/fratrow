@@ -23,9 +23,9 @@ public class NetworkedGameManager : NetworkBehaviour
     public NetworkVariable<FraternityData> myFraternity = new NetworkVariable<FraternityData>();
 
     // Network synchronized variables
-    private NetworkVariable<float> _totalPopularity = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _totalCashValue = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _totalTroubleMaking = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _totalPopularity = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _totalCashValue = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _totalTroubleMaking = new NetworkVariable<float>(0f);
 
     // Public getters for network variables
     public float TotalPopularity => _totalPopularity.Value;
@@ -67,6 +67,7 @@ public class NetworkedGameManager : NetworkBehaviour
 
         if(IsClient)
         {
+            Debug.LogWarning($"[NetoworkedGameManager] OnNetworkSpawn on {NetworkManager.Singleton.LocalClientId}");
             // Subscribe to network variable changes
             _totalPopularity.OnValueChanged += OnTotalPopularityChanged;
             _totalCashValue.OnValueChanged += OnTotalCashValueChanged;
@@ -130,6 +131,19 @@ public class NetworkedGameManager : NetworkBehaviour
     private void OnTotalTroubleMakingChanged(float oldValue, float newValue)
     {
         OnTroubleChanged?.Invoke(newValue);
+    }
+    public void AddTotalCashValue(float inCashValue)
+    {
+        this._totalCashValue.Value += inCashValue;
+    }
+
+    public void AddTotalPopularityValue(float inPopularityValue)
+    {
+        this._totalPopularity.Value += inPopularityValue;
+    }
+    public void AddTotalTroubleMaking(float inTroubleMaking)
+    {
+        this._totalTroubleMaking.Value += inTroubleMaking;
     }
 
     public void HandlePlayerSpawned(ulong clientId, LobbyPlayerData lobbyPlayerData)

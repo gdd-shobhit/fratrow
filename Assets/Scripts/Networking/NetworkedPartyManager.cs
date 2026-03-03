@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -43,15 +44,20 @@ public class NetworkedPartyManager : NetworkBehaviour
     [SerializeField] private float timeBetweenEachGuestArrival = 15.0f;
 
     [Header("Game State")]
-    [SerializeField]
-    private NetworkVariable<int> _dayNumber = new NetworkVariable<int>(1);
-
-    /// <summary>
-    /// Whether this PartyManager should persist across scene loads.
-    /// </summary>
     [SerializeField] private bool persistAcrossScenes = true;
-
     [SerializeField] private Transform guestSpawnLocation;
+
+    // Action events
+    public event System.Action<int> OnDayNumberChanged;
+    public event System.Action<float> OnCurrentGuestNumberChanged;
+    public event System.Action<float> OnCurrentTimeChanged;
+
+
+    // Accessors
+    public bool IsPartyActive => _networkedParty != null && _networkedParty.State == PartyState.Active;
+    public bool IsPartyOver => NetworkManager.ServerTime.Time >= _networkedParty.PartyEndTime;
+    public float PartyDurationMinutes => partyDurationMinutes;
+    public NetworkedParty NetworkedParty { get => _networkedParty; set => _networkedParty = value; }
     private void Awake()
     {
         // If instance already exists and it's not this, destroy this
@@ -65,25 +71,22 @@ public class NetworkedPartyManager : NetworkBehaviour
         // Set this as the instance
         _instance = this;
 
+        if (IsServer && !_instance.GetComponent<NetworkObject>().IsSpawned)
+        {
+            _instance.GetComponent<NetworkObject>().Spawn();
+        }
+
         DontDestroyOnLoad(gameObject);
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-
         _instance = GetComponent<NetworkedPartyManager>();
         if (_instance == null)
         {
             Debug.LogError("[NetworkedPartyManager] PartyManager component not found!");
             return;
-        }
-
-        // Find or create NetworkedParty component
-        _networkedParty = FindFirstObjectByType<NetworkedParty>();
-        if (_networkedParty == null)
-        {
-            Debug.LogError("This SHOULDNT be null. Check scene if it already is there");
         }
     }
 
@@ -91,7 +94,7 @@ public class NetworkedPartyManager : NetworkBehaviour
     {
         // Nothing non-server gets past this
         // Everything after this needs a client side RPC to server to get data.
-        if (IsServer)
+        if (!IsServer)
         {
             return;
         }
@@ -105,16 +108,16 @@ public class NetworkedPartyManager : NetworkBehaviour
             if (_networkedParty._timeSinceGuestSpawned >= timeBetweenEachGuestArrival)
             {
                 // Check if we haven't reached the guest limit
-                if (_networkedParty.currentGuests.Count < _networkedParty.guestLimit)
+                if (_networkedParty.currentGuests.Count < _networkedParty.GuestLimit)
                 {
-                    _networkedParty.timeSinceGuestSpawned = 0.0f;
+                    _networkedParty._timeSinceGuestSpawned = 0.0f;
                     SpawnGuests();
                 }
             }
         }
 
         // Check if current party should end (server-only in multiplayer)
-        if (isServer && IsPartyActive && currentParty.IsPartyOver())
+        if (IsPartyActive && IsPartyOver)
         {
             GetComponent<NetworkedPartyManager>().EndPartyServerRPC();
         }
@@ -129,26 +132,26 @@ public class NetworkedPartyManager : NetworkBehaviour
     {
         if (_networkedParty == null)
         {
-            Debug.LogError("Cannot select guests: Party or GameManager is null!");
+            Debug.LogError("Cannot select guests: Party or NetworkedGameManager is null!");
             return;
         }
 
         // Check if we've reached the guest limit
-        if (_networkedParty.currentGuests.Count >= currentParty.guestLimit)
+        if (_networkedParty.currentGuests.Count >= _networkedParty.GuestLimit)
         {
-            Debug.Log($"Party reached guest limit ({currentParty.guestLimit}). Cannot spawn more guests.");
+            Debug.Log($"Party reached guest limit ({_networkedParty.GuestLimit}). Cannot spawn more guests.");
             return;
         }
 
         // Get current party popularity (updates as guests arrive)
         float partyPopularity = _networkedParty.Popularity;
 
-        // Get guest dictionary from GameManager
-        Dictionary<GuestClass, GuestSO> guestDict = GameManager.Instance.guestClassesDict;
+        // Get guest dictionary from NetworkedGameManager
+        Dictionary<GuestClass, GuestSO> guestDict = NetworkedGameManager.Instance.guestClassesDict;
 
         if (guestDict == null || guestDict.Count == 0)
         {
-            Debug.LogWarning("No guests available in GameManager dictionary!");
+            Debug.LogWarning("No guests available in NetworkedGameManager dictionary!");
             return;
         }
 
@@ -235,25 +238,17 @@ public class NetworkedPartyManager : NetworkBehaviour
 
     }
 
-    /// <summary>
-    /// Start a party. Server-only method.
-    /// </summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void StartPartyServerRPC(int dayNumber, int guestLimit)
+    public void StartPartyServer()
     {
         if (!IsServer) return;
 
-        Debug.Log($"[NetworkedPartyManager] Server starting party - Day {dayNumber}, Guest Limit: {guestLimit}");
-
-        if(_instance != null)
-        {
-            _instance.StartParty(guestLimit);
-        }
+        Debug.Log($"[NetworkedPartyManager] Server starting party");
+        // If start party was called with default parameter
 
         // Sync via NetworkedParty
         if (_networkedParty != null)
         {
-            _networkedParty.StartPartyServerRPC(dayNumber, guestLimit);
+            _networkedParty.StartPartyServerRPC();
         }
     }
 
@@ -266,29 +261,11 @@ public class NetworkedPartyManager : NetworkBehaviour
         if (!IsServer) return;
 
         Debug.Log("[NetworkedPartyManager] Server ending party.");
-        if (_partyManager != null)
-        {
-            _partyManager.EndParty();
-        }
+
         // Sync via NetworkedParty
         if (_networkedParty != null)
         {
             _networkedParty.EndPartyServerRPC();
-        }
-    }
-
-    private void Update()
-    {
-        // Only server handles party timing and guest spawning
-        if (!IsServer) return;
-
-        if (_partyManager != null && _partyManager.IsPartyActive)
-        {
-            // Update networked party time tracking
-            if (_networkedParty != null)
-            {
-                _networkedParty.UpdateTimeSinceGuestSpawned(Time.deltaTime);
-            }
         }
     }
 }

@@ -4,6 +4,6 @@ public class Interact_Start : MonoBehaviour, IInteractable
 {
     public void Interact()
     {
-        PartyManager.Instance.RequestStartParty();
+        NetworkedPartyManager.Instance.StartPartyServer();
     }
 }

@@ -367,7 +367,7 @@ public class PartyManager : MonoBehaviour
         }
         if (!IsPartyActive)
         {
-            GetComponent<NetworkedPartyManager>().StartPartyServerRPC(1, 20);
+            //GetComponent<NetworkedPartyManager>().StartPartyServerRPC(1, 20);
         }
     }
 }
