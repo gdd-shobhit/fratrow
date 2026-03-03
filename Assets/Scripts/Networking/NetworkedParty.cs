@@ -12,18 +12,15 @@ public class NetworkedParty : NetworkBehaviour
 {
     // Network synchronized variables
     //private NetworkVariable<Party> _networkedParty = new NetworkVariable<Party>();
-    private NetworkVariable<int> _dayNumber = new NetworkVariable<int>(1);
-    private NetworkVariable<int> _guestLimit = new NetworkVariable<int>(20);
-    private NetworkVariable<float> _popularity = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _troubleMaker = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _cashValue = new NetworkVariable<float>(0f);
-    private NetworkVariable<PartyState> _partyState = new NetworkVariable<PartyState>(PartyState.NotStarted);
-    private NetworkVariable<float> _partyStartTime = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _partyEndTime = new NetworkVariable<float>(0f);
-    private NetworkVariable<float> _timeSinceGuestSpawned = new NetworkVariable<float>(0f);
-
-    // Reference to local Party object
-    private Party _localParty;
+    public NetworkVariable<int> _dayNumber = new NetworkVariable<int>(1);
+    public NetworkVariable<int> _guestLimit = new NetworkVariable<int>(20);
+    public NetworkVariable<float> _popularity = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _troubleMaker = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _cashValue = new NetworkVariable<float>(0f);
+    public NetworkVariable<PartyState> _partyState = new NetworkVariable<PartyState>(PartyState.NotStarted);
+    public NetworkVariable<float> _partyStartTime = new NetworkVariable<float>(0f);
+    public NetworkVariable<float> _partyEndTime = new NetworkVariable<float>(0f);
+    public float _timeSinceGuestSpawned = 0f;
 
     // Network list for guest IDs (we'll track guest NetworkObjects)
     private NetworkList<ulong> _guestNetworkIds = new NetworkList<ulong>();
@@ -38,13 +35,6 @@ public class NetworkedParty : NetworkBehaviour
         _troubleMaker.OnValueChanged += OnTroubleMakerChanged;
         _cashValue.OnValueChanged += OnCashValueChanged;
         _partyState.OnValueChanged += OnPartyStateChanged;
-
-        // Initialize local party reference
-        if (PartyManager.Instance != null && PartyManager.Instance.CurrentParty != null)
-        {
-            _localParty = PartyManager.Instance.CurrentParty;
-            SyncFromLocalParty();
-        }
     }
 
     public override void OnNetworkDespawn()
@@ -78,7 +68,7 @@ public class NetworkedParty : NetworkBehaviour
             ? PartyManager.Instance.GetPartyDurationInMinutes() * 60f 
             : 600f; // Default 10 in game minutes
         _partyEndTime.Value = Time.time + durationInSeconds;
-        _timeSinceGuestSpawned.Value = 0f;
+        _timeSinceGuestSpawned = 0f;
 
         // Reset stats
         _popularity.Value = 0f;
@@ -94,35 +84,6 @@ public class NetworkedParty : NetworkBehaviour
     {
         Debug.Log("[NetworkedParty] Party started on client.");
 
-        // Update local party if it exists
-        // SyncFromServerPartyRPC();
-    }
-
-    private void SyncFromServerPartyRPC()
-    {
-        if (_localParty != null)
-        {
-            Debug.Log("Client " + NetworkManager.LocalClientId + " is syncing from Server");
-            _localParty.state = _partyState.Value;
-            _localParty.partyStartTime = _partyStartTime.Value;
-            _localParty.partyEndTime = _partyEndTime.Value;
-
-            _localParty.dayNumber = _dayNumber.Value; 
-            _localParty.guestLimit= _guestLimit.Value;
-            _localParty.state = _partyState.Value;
-            _localParty.partyStartTime = _partyStartTime.Value;
-            _localParty.timeSinceGuestSpawned = _timeSinceGuestSpawned.Value;
-            _localParty.partyEndTime= _partyEndTime.Value;
-
-            // Reset stats
-            _localParty.popularity = _popularity.Value;
-            _localParty.troubleMaker = _troubleMaker.Value;
-            _localParty.cashValue = _cashValue.Value;
-        }
-        else
-        {
-            Debug.Log("_localParty is null on client " + NetworkManager.LocalClientId);
-        }
     }
 
     /// <summary>
@@ -145,12 +106,37 @@ public class NetworkedParty : NetworkBehaviour
     private void OnPartyEndedClientRPC()
     {
         Debug.Log("[NetworkedParty] Party ended on client.");
+        _partyState.Value = PartyState.Ended;
+        this.End();
+    }
 
-        if (_localParty != null)
+    /// <summary>
+    /// End the party
+    /// </summary>
+    public void End()
+    {
+        DistributePartyEndRewards();
+        // TODO: Achievements hookups
+
+        // TODO: Leaderboard implementation. Distribution of everything else
+    }
+
+    /// <summary>
+    /// Distribute the rewards after the party
+    /// </summary>
+    private void DistributePartyEndRewards()
+    {
+        if (_partyState.Value != PartyState.Ended)
         {
-            _localParty.state = PartyState.Ended;
-            _localParty.End();
+            Debug.LogWarning($"Distributing rewards when party state was: {state}");
+            return;
         }
+
+        // Rewards
+        NetworkedGameManager.Instance._totalCashValue.Value += cashValue;
+        NetworkedGameManager.Instance._totalPopularity.Value += popularity;
+
+        Debug.Log($"Party rewards distributed: +{cashValue} Cash, +{popularity} Popularity");
     }
 
     /// <summary>
@@ -229,7 +215,7 @@ public class NetworkedParty : NetworkBehaviour
     {
         if (IsServer)
         {
-            _timeSinceGuestSpawned.Value += deltaTime;
+            _timeSinceGuestSpawned += deltaTime;
         }
     }
 
@@ -289,7 +275,25 @@ public class NetworkedParty : NetworkBehaviour
         _partyState.Value = _localParty.state;
         _partyStartTime.Value = _localParty.partyStartTime;
         _partyEndTime.Value = _localParty.partyEndTime;
-        _timeSinceGuestSpawned.Value = _localParty.timeSinceGuestSpawned;
+        _timeSinceGuestSpawned = _localParty.timeSinceGuestSpawned;
+    }
+
+    public bool AddGuest(NPCGuest guest)
+    {
+        if (current.Count >= guestLimit)
+        {
+            // TODO: Show a UI popup to the player that the party is at capacity and show UI for Guest Limit button
+            Debug.LogWarning($"Party is at capacity ({guestLimit}). Cannot add more guests.");
+            return false;
+        }
+
+        if (guest != null && !currentGuests.Contains(guest))
+        {
+            currentGuests.Add(guest);
+            return true;
+        }
+
+        return false;
     }
 
     // Public getters for network variables
@@ -301,5 +305,5 @@ public class NetworkedParty : NetworkBehaviour
     public PartyState State => _partyState.Value;
     public float PartyStartTime => _partyStartTime.Value;
     public float PartyEndTime => _partyEndTime.Value;
-    public float TimeSinceGuestSpawned => _timeSinceGuestSpawned.Value;
+    public float TimeSinceGuestSpawned => _timeSinceGuestSpawned;
 }

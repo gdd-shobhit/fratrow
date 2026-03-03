@@ -47,19 +47,7 @@ public struct FraternityData : INetworkSerializable
         serializer.SerializeValue(ref grade, new FastBufferWriter.ForEnums());
         serializer.SerializeValue(ref rating, new FastBufferWriter.ForPrimitives());
         serializer.SerializeValue(ref memberCount, new FastBufferWriter.ForPrimitives());
-        //serializer.SerializeValue(ref SelectedMaterialIndex, new FastBufferWriter.ForPrimitives());
-        //serializer.SerializeValue(ref IsReady, new FastBufferWriter.ForPrimitives());
-        //serializer.SerializeValue(ref IsHost, new FastBufferWriter.ForPrimitives());
-        //serializer.SerializeValue(ref NetworkId, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref popularity, new FastBufferWriter.ForPrimitives());
+        serializer.SerializeValue(ref cashValue, new FastBufferWriter.ForPrimitives());
     }
-}
-public class Fraternity : MonoBehaviour
-{
-    public FraternityData fraternityData;
-
-    private void Awake()
-    {
-        this.fraternityData = new FraternityData();
-    }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
 }
