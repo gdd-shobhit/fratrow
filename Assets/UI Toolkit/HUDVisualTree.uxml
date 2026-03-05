@@ -16,7 +16,7 @@
             <ui:Label text="Day Number: " name="Day"/>
             <ui:Label text="Day number" name="DayNumber" data-source-type="NetworkedParty, Assembly-CSharp" data-source-path="">
                 <Bindings>
-                    <ui:DataBinding property="text" data-source-path="_dayNumber" data-source-type="NetworkedParty, Assembly-CSharp" binding-mode="ToTarget"/>
+                    <ui:DataBinding property="text" data-source-path="DayNumberUI" data-source-type="NetworkedParty, Assembly-CSharp" binding-mode="ToTarget"/>
                 </Bindings>
             </ui:Label>
         </ui:VisualElement>
@@ -30,7 +30,11 @@
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Fraternity Name: " name="Day"/>
-            <ui:Label text="Fraternity Name" name="DayNumber"/>
+            <ui:Label text="Fraternity Name" name="FratName">
+                <Bindings>
+                    <ui:DataBinding property="text" data-source-path="fratName" data-source-type="FraternityData, Assembly-CSharp" binding-mode="ToTarget"/>
+                </Bindings>
+            </ui:Label>
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Drunk Level: " name="Day"/>

@@ -8,7 +8,7 @@
     -unity-text-outline-width: 0;
     text-shadow: 5px 5px 0 rgb(253, 253, 253);
     width: 50%;
-    height: 15%;
+    height: 12%;
     -unity-background-image-tint-color: rgb(255, 255, 255);
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: stretch-to-fill;
@@ -28,6 +28,7 @@
     margin-right: 20px;
     margin-bottom: 20px;
     margin-left: 20px;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/large/short-purple-large.png?fileID=2800000&guid=99b5d53c34d0dfa44827c2d700cdbedf&type=3#short-purple-large");
 }
 
 .CyclerArrowLeft {
@@ -65,4 +66,19 @@
     color: rgb(255, 255, 255);
     font-size: 20px;
     background-color: rgba(0, 0, 0, 0.5);
+}
+
+.button:hover {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Highlighted_Sprite/large/short-pink-highlight-large.png?fileID=2800000&guid=39c758ed67cc0a245beaebba74010f2d&type=3#short-pink-highlight-large");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button:active {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Pressed_Sprites/Large/short-yellow-pressed-large.png?fileID=2800000&guid=8deed42f6540fd24bb177a9842b66171&type=3#short-yellow-pressed-large");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button:disabled {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Disabled_Sprites/Large/square-disabled-large.png?fileID=2800000&guid=7a258ba575f28f74bba6b0a00850f1c9&type=3#square-disabled-large");
+    background-color: rgba(0, 0, 0, 0);
 }

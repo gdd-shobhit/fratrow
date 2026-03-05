@@ -22,6 +22,9 @@ public class NetworkedParty : NetworkBehaviour
     public NetworkVariable<PartyState> _partyState = new NetworkVariable<PartyState>(PartyState.NotStarted);
     public NetworkVariable<float> _partyStartTime = new NetworkVariable<float>(0f);
     public NetworkVariable<float> _partyEndTime = new NetworkVariable<float>(0f);
+    
+    [SerializeField]
+    private int DayNumberUI = 0;
 
     // Non-networked variables
     public float _timeSinceGuestSpawned = 0f;
@@ -89,6 +92,7 @@ public class NetworkedParty : NetworkBehaviour
         else
         {
             _dayNumber.Value++;
+            DayNumberUI = _dayNumber.Value;
         }
 
         // Increase guest limit through upgrades?
@@ -236,6 +240,7 @@ public class NetworkedParty : NetworkBehaviour
     // Network variable change handlers
     private void OnDayNumberChanged(int oldValue, int newValue)
     {
+        DayNumberUI = _dayNumber.Value;
         OnDayNumberChangedEvent?.Invoke(newValue);
     }
 

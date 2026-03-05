@@ -46,9 +46,9 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="ButtonContainer" style="flex-grow: 1; justify-content: center; width: 417px; margin-top: 0; align-self: center; flex-direction: row; flex-wrap: nowrap; height: auto;">
-            <ui:Button text="Ready" name="ReadyButton" class="button" style="align-self: center; align-content: center; background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-yellow-extra-large.png?fileID=2800000&amp;guid=c8dd6d8869346624c8adc63daa4146b9&amp;type=3#short-yellow-extra-large&quot;); margin-right: 20px; height: 40%;"/>
-            <ui:Button text="Start Game" name="StartGameButton" class="button" style="align-self: center; align-content: center; background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-yellow-extra-large.png?fileID=2800000&amp;guid=c8dd6d8869346624c8adc63daa4146b9&amp;type=3#short-yellow-extra-large&quot;); margin-right: 20px; height: 40%;"/>
-            <ui:Button text="Leave Lobby" name="LeaveButton" class="button" style="background-image: url(&quot;project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/extra%20large/short-blue-extra-large.png?fileID=2800000&amp;guid=c1186c6c57955e74286697f5a74fa36d&amp;type=3#short-blue-extra-large&quot;); margin-right: 20px; height: 40%;"/>
+            <ui:Button text="Ready" name="ReadyButton" class="button" style="align-self: center; align-content: center; margin-right: 20px; height: 40%;"/>
+            <ui:Button text="Start Game" name="StartGameButton" class="button" style="align-self: center; align-content: center; margin-right: 20px; height: 40%; transition-property: all; transition-duration: 0s; transition-timing-function: ease; transition-delay: 0s;"/>
+            <ui:Button text="Leave Lobby" name="LeaveButton" class="button" style="margin-right: 20px; height: 40%;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

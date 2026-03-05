@@ -18,6 +18,7 @@ public class GameplayUIManager : MonoBehaviour
     private Slider _cashSlider;
 
     private Label _dayLabel;
+    private Label _FratNameLabel;
     private NetworkedParty _partyDetails;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -28,8 +29,10 @@ public class GameplayUIManager : MonoBehaviour
         _troubleMakerSlider = root.Q<Slider>("TroubleMaker");
         _cashSlider = root.Q<Slider>("Cash");
         _dayLabel = root.Q<Label>("DayNumber");
+        _FratNameLabel = root.Q<Label>("FratName");
         _partyDetails = NetworkedPartyManager.Instance.NetworkedParty;
         _dayLabel.dataSource = _partyDetails;
+        _FratNameLabel.dataSource = NetworkedGameManager.Instance.fraternityLocal;
 
         SetupStatSliders();
     }

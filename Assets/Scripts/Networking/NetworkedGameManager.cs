@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -36,6 +36,9 @@ public class NetworkedGameManager : NetworkBehaviour
     public event System.Action<float> OnCashValueChanged;
     public event System.Action<float> OnTroubleChanged;
 
+    [SerializeField]
+    public FraternityData fraternityLocal;
+    private string fratName = "Frat Test Name";
     private static NetworkedGameManager _instance;
     public static NetworkedGameManager Instance
     {
@@ -71,8 +74,11 @@ public class NetworkedGameManager : NetworkBehaviour
             // Subscribe to network variable changes
             _totalPopularity.OnValueChanged += OnTotalPopularityChanged;
             _totalCashValue.OnValueChanged += OnTotalCashValueChanged;
-            _totalTroubleMaking.OnValueChanged += OnTotalTroubleMakingChanged;
+            _totalTroubleMaking.OnValueChanged += OnTotalTroubleMakingChanged;   
         }
+
+        fraternityLocal = myFraternity.Value;
+        fraternityLocal.fratName = fratName;
     }
 
     private void Awake()
