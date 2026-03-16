@@ -14,7 +14,7 @@ public class NetworkedParty : NetworkBehaviour
     // Network synchronized variables
     //private NetworkVariable<Party> _networkedParty = new NetworkVariable<Party>();
     [SerializeField]
-    public NetworkVariable<int> _dayNumber = new NetworkVariable<int>(-1);
+    public NetworkVariable<int> _dayNumber = new NetworkVariable<int>(0);
     public NetworkVariable<int> _guestLimit = new NetworkVariable<int>(20);
     public NetworkVariable<float> _popularity = new NetworkVariable<float>(0f);
     public NetworkVariable<float> _troubleMaker = new NetworkVariable<float>(0f);
@@ -85,15 +85,10 @@ public class NetworkedParty : NetworkBehaviour
 
         Debug.Log($"[NetworkedParty] Server starting party - Day {_dayNumber.Value}, Guest Limit: {_guestLimit.Value}");
 
-        if(_dayNumber.Value == -1)
-        {
-            _dayNumber.Value = 1;
-        }
-        else
-        {
-            _dayNumber.Value++;
-            DayNumberUI = _dayNumber.Value;
-        }
+
+         _dayNumber.Value++;
+         DayNumberUI = _dayNumber.Value;
+
 
         // Increase guest limit through upgrades?
         //_guestLimit.Value = guestLimit;
