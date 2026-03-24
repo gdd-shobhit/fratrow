@@ -128,6 +128,100 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &5757708449642189966
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6822457786382419354}
+  - component: {fileID: 4653840875708496742}
+  - component: {fileID: 2460364524934424948}
+  - component: {fileID: 1790124845307843192}
+  m_Layer: 0
+  m_Name: Inventory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6822457786382419354
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189966}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.6177601, y: -4.6521997, z: 9.637509}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8446742108066757666}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4653840875708496742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: d2c63d696d5308a44b57be419f78823c, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: dbe26a05c9578e34294886afa8241c04, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &2460364524934424948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 012194ab3987448690078e0ddc0c6de4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.Inventory
+  view: {fileID: 1790124845307843192}
+  capacity: 20
+  startingItems:
+  - {fileID: 11400000, guid: 5b58359d8827e9a43980fe45b12dba86, type: 2}
+  - {fileID: 11400000, guid: 227a186c7bb40f84dabc3eb31349ad51, type: 2}
+  <Id>k__BackingField:
+    Part1: 1148471753
+    Part2: 1140271112
+    Part3: 3986129804
+    Part4: 2315780542
+--- !u!114 &1790124845307843192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9346b1d9d948e4b8192a0ab5008e0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.InventoryView
+  document: {fileID: 4653840875708496742}
+  styleSheet: {fileID: 7433441132597879392, guid: 2b0324e19364e3b408d529ec654d3d37, type: 3}
+  panelName: Inventory
 --- !u!1 &8960411254144160565
 GameObject:
   m_ObjectHideFlags: 0
@@ -374,6 +468,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1303869121318198942, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
       insertIndex: 1
       addedObject: {fileID: 8666392064292848849}
+    - targetCorrespondingSourceObject: {fileID: 1303869121318198942, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6822457786382419354}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
       insertIndex: -1
@@ -627,6 +724,7 @@ MonoBehaviour:
   TopClamp: 90
   BottomClamp: -90
   layerMaskOutline: 6
+  inventoryView: {fileID: 1790124845307843192}
   _mainCamera: {fileID: 3066439434052714872}
 --- !u!114 &7687649103893824851
 MonoBehaviour:
@@ -663,6 +761,7 @@ MonoBehaviour:
   sprint: 0
   drink: 0
   interact: 0
+  inventoryToggle: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1

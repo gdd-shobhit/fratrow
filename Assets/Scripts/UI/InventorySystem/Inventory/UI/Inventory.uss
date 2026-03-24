@@ -8,7 +8,7 @@
     justify-content: center;
     align-items: center;
     text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
-    color: rgb(255, 197, 0);
+    color: rgb(255, 0, 236);
 }
 
 .inventory {
@@ -18,6 +18,7 @@
     justify-content: flex-start;
     max-height: 500px;
     flex-grow: 1;
+    background-image: none;
 }
 
 .inventoryHeader {
@@ -29,6 +30,7 @@
     justify-content: center;
     align-items: center;
     -unity-slice-scale: 0.5;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/large/large-purple-large.png?fileID=2800000&guid=40cbba651a6cfe54ea2cb7c3af40658c&type=3#large-purple-large");
 }
 
 Label {
@@ -42,6 +44,7 @@ Label {
     width: 326px;
     height: 520px;
     -unity-slice-scale: 0.5;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Containers/Extra%20Large/shop-container-extra-large.png?fileID=2800000&guid=b8d58338d003e9b4892fc675b7d2e47d&type=3#shop-container-extra-large");
 }
 
 .slotsContainer {
@@ -105,6 +108,7 @@ Label {
     width: 40px;
     height: 40px;
     margin: 4px;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-256.png?fileID=2800000&guid=469e60d338347ab429e56aaf70eba747&type=3#coin-256");
 }
 
 .slot:hover {
@@ -113,5 +117,3 @@ Label {
     margin: 4px;
     background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Grid_Components/Large/inventory-highlight-large%201.png?fileID=2800000&guid=84af1e1dff4d84e4da23b7114a108818&type=3#inventory-highlight-large 1");
 }
-
-

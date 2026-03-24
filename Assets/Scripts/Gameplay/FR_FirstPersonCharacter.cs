@@ -1,4 +1,5 @@
 using System;
+using Systems.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
@@ -61,6 +62,9 @@ namespace StarterAssets
         [Tooltip("LayerMaskForOutline")]
         public int layerMaskOutline = 6;
         private GameObject currentSelectedOutlineObject;
+
+        [Header("UI")]
+        [SerializeField] InventoryView inventoryView;
 
         // cinemachine
         private float _cinemachineTargetPitch;
@@ -135,6 +139,22 @@ namespace StarterAssets
             Move();
             DrinkCheck();
             InteractAction();
+            InventoryCheck();
+        }
+
+        void InventoryCheck()
+        {
+            if (inventoryView == null)
+            {
+                return;
+            }
+
+            if (_input.inventoryToggle)
+            {
+                inventoryView.ToggleVisibility();
+                _input.inventoryToggle = false; // Reset the input to avoid multiple toggles
+                _input.SetInventoryUIMode(inventoryView.IsVisible);
+            }
         }
 
         private void DrinkCheck()

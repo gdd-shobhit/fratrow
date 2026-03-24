@@ -15,6 +15,7 @@ namespace StarterAssets
 		public bool sprint;
         public bool drink;
 		public bool interact;
+		public bool inventoryToggle;
 
         [Header("Movement Settings")]
 		public bool analogMovement;
@@ -54,11 +55,21 @@ namespace StarterAssets
         {
             InteractInput(value.isPressed);
         }
+
+		public void OnInventory(InputValue value)
+		{
+			InventoryInput(value.isPressed);
+		}
 #endif
         private void InteractInput(bool isPressed)
         {
             interact = isPressed;
         }
+
+		private void InventoryInput(bool isPressed)
+		{
+			inventoryToggle = isPressed;
+		}
         public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
@@ -85,12 +96,22 @@ namespace StarterAssets
 		
 		private void OnApplicationFocus(bool hasFocus)
 		{
-			SetCursorState(cursorLocked);
+			ApplyCursorFromSettings();
 		}
 
-		private void SetCursorState(bool newState)
+		/// <summary>Inventory open: free cursor for UI. Closed: return to FPS (locked, look enabled).</summary>
+		public void SetInventoryUIMode(bool inventoryOpen)
 		{
-			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+			cursorLocked = !inventoryOpen;
+			cursorInputForLook = !inventoryOpen;
+			LookInput(Vector2.zero);
+			ApplyCursorFromSettings();
+		}
+
+		void ApplyCursorFromSettings()
+		{
+			Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
+			Cursor.visible = !cursorLocked;
 		}
 	}
 	
