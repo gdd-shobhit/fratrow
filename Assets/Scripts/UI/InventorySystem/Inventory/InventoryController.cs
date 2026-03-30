@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -33,6 +33,14 @@ namespace Systems.Inventory {
         public void Bind(InventoryData data) => model.Bind(data);
 
         public void AddCoins(int amount) => model.AddCoins(amount);
+
+        public bool TryAddItem(ItemDetails details, int quantity = 1) {
+            return model.TryAddItem(details, quantity);
+        }
+
+        public bool TryRemoveOne(ItemDetails details) {
+            return model.TryRemoveOne(details);
+        }
 
         IEnumerator Initialize() {
             yield return view.InitializeView(new ViewModel(model, capacity));

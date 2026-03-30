@@ -199,9 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.Inventory
   view: {fileID: 1790124845307843192}
   capacity: 20
-  startingItems:
-  - {fileID: 11400000, guid: 5b58359d8827e9a43980fe45b12dba86, type: 2}
-  - {fileID: 11400000, guid: 227a186c7bb40f84dabc3eb31349ad51, type: 2}
+  startingItems: []
   <Id>k__BackingField:
     Part1: 1148471753
     Part2: 1140271112
@@ -527,7 +525,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3369784831
+  GlobalObjectIdHash: 1178896236
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

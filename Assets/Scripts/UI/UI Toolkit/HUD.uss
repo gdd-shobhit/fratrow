@@ -100,6 +100,21 @@ Slider #unity-dragger {
     width: auto;
 }
 
+.hud-cash-value-text {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(255, 220, 120);
+    -unity-text-align: middle-left;
+    margin-top: 25px;
+    margin-right: 25px;
+    margin-bottom: 25px;
+    margin-left: 25px;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-right: 0;
+    padding-left: 0;
+}
+
 .inventory-slot {
     width: 40%;
     height: 150px;
@@ -153,7 +168,3 @@ Slider #unity-dragger {
     -unity-font-style: bold;
     translate: 50% -5px;
 }
-
-
-
-

@@ -16,6 +16,7 @@ public class GameplayUIManager : MonoBehaviour
     private Slider _popularitySlider;
     private Slider _troubleMakerSlider;
     private Slider _cashSlider;
+    private Label _cashValueLabel;
 
     private Label _dayLabel;
     private Label _FratNameLabel;
@@ -28,6 +29,7 @@ public class GameplayUIManager : MonoBehaviour
         _popularitySlider = root.Q<Slider>("Popularity");
         _troubleMakerSlider = root.Q<Slider>("TroubleMaker");
         _cashSlider = root.Q<Slider>("Cash");
+        _cashValueLabel = root.Q<Label>("CashValueText");
         _dayLabel = root.Q<Label>("DayNumber");
         _FratNameLabel = root.Q<Label>("FratName");
         _partyDetails = NetworkedPartyManager.Instance.NetworkedParty;
@@ -35,6 +37,7 @@ public class GameplayUIManager : MonoBehaviour
         _FratNameLabel.dataSource = NetworkedGameManager.Instance.fraternityLocal;
 
         SetupStatSliders();
+        RefreshCashValueLabelFromManager();
     }
 
     private void OnEnable()
@@ -100,7 +103,28 @@ public class GameplayUIManager : MonoBehaviour
     }
     private void UpdateCashSlider(float newValue)
     {
-        _cashSlider.value = InvertForSlider(newValue, _cashSlider.lowValue, _cashSlider.highValue);
+        if (_cashSlider != null)
+        {
+            _cashSlider.value = InvertForSlider(newValue, _cashSlider.lowValue, _cashSlider.highValue);
+        }
+        SetCashValueLabelText(newValue);
+    }
+
+    void RefreshCashValueLabelFromManager()
+    {
+        if (NetworkedGameManager.Instance != null)
+        {
+            SetCashValueLabelText(NetworkedGameManager.Instance.TotalCashValue);
+        }
+    }
+
+    void SetCashValueLabelText(float cashAmount)
+    {
+        if (_cashValueLabel == null)
+        {
+            return;
+        }
+        _cashValueLabel.text = $"Cash: {cashAmount:F2}";
     }
 
     private void UpdateTroubleSlider(float newValue)

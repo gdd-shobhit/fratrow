@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: Rum
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: Rum
+  maxStack: 5
+  Id:
+    Part1: 129592749
+    Part2: 1138787396
+    Part3: 1882110342
+    Part4: 2942455823
+  Icon: {fileID: 0}
+  Description: White, gold, dark, or spiced — molasses or cane tones; daiquiris to tiki. Mid-range vs neutral vodkas.
+  displayName: 
+  itemType: 0
+  shopRarity: 1
+  shopCost: 8
+  startingStock: 99

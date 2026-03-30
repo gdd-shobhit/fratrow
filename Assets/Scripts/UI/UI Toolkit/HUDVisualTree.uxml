@@ -7,11 +7,16 @@
         <ui:Slider label="Slider" value="57.9" high-value="100" name="TroubleMaker" fill="true" show-input-field="false" inverted="true" class="HUDSlider bar" style="flex-direction: row-reverse; margin-bottom: 20px;">
             <ui:Image name="Image" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/skull-512.png?fileID=2800000&amp;guid=d18286f1fadb5e545bf2a031b0bf2196&amp;type=3#skull-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2;"/>
         </ui:Slider>
-        <ui:Slider label="Slider" value="54.8" high-value="100" name="Cash" fill="true" inverted="true" class="HUDSlider bar" style="flex-direction: row-reverse; margin-bottom: 0;">
+        <ui:Slider label="Slider" value="54.8" high-value="100" name="Cash" fill="true" inverted="true" class="HUDSlider bar" style="flex-direction: row-reverse; margin-bottom: 8px;">
             <ui:Image name="Image" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-512.png?fileID=2800000&amp;guid=df65a0df46f6dc04687bb5db74c11068&amp;type=3#coin-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2;"/>
         </ui:Slider>
+        <ui:Label text="Cash: 0.00" name="CashValueText" class="hud-cash-value-text" style="margin-bottom: 0;">
+            <Bindings>
+                <ui:DataBinding property="text" data-source-path="_totalCashValue" data-source-type="NetworkedGameManager, Assembly-CSharp" binding-mode="ToTarget"/>
+            </Bindings>
+        </ui:Label>
     </ui:VisualElement>
-    <ui:VisualElement name="GameplayInfo" style="flex-grow: 1; width: 20%; height: 20%; position: absolute; align-self: flex-end;">
+    <ui:VisualElement name="GameplayInfo" style="flex-grow: 1; width: 498px; height: 357px; position: absolute; align-self: flex-end; left: 1422px; font-size: 28px;">
         <ui:VisualElement name="DayInfo" style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Day Number: " name="Day"/>
             <ui:Label text="Day number" name="DayNumber" data-source-type="NetworkedParty, Assembly-CSharp" data-source-path="">

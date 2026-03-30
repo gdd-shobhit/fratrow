@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -143,6 +143,28 @@ public class NetworkedGameManager : NetworkBehaviour
         this._totalCashValue.Value += inCashValue;
     }
 
+    /// <summary>
+    /// Server only. Deducts from the team's cumulative <see cref="_totalCashValue"/> if funds are sufficient.
+    /// </summary>
+    /// <returns>True if the charge was applied (or cost was zero).</returns>
+    public bool TrySpendTeamCash(float amount)
+    {
+        if (!IsServer)
+        {
+            return false;
+        }
+        if (amount <= 0f)
+        {
+            return true;
+        }
+        if (_totalCashValue.Value < amount)
+        {
+            return false;
+        }
+        _totalCashValue.Value -= amount;
+        return true;
+    }
+
     public void AddTotalPopularityValue(float inPopularityValue)
     {
         this._totalPopularity.Value += inPopularityValue;
@@ -179,6 +201,8 @@ public class NetworkedGameManager : NetworkBehaviour
     /// Get the in-game player GameObject for a client. Server uses GameManager.playersInGame;
     /// clients find it via SpawnManager by OwnerClientId.
     /// </summary>
+    public GameObject GetPlayerGameObject(ulong clientId) => GetPlayerObject(clientId);
+
     private GameObject GetPlayerObject(ulong clientId)
     {
         if (playersInGame == null) return null;
@@ -190,8 +214,14 @@ public class NetworkedGameManager : NetworkBehaviour
             if (playerObject != null) return playerObject;
         }
 
-        // Client (or late host): find spawned object owned by this client (player prefab has UserCharacter)
+        // Client (or late host): playersInGame is server-only — walk spawned objects.
         if (NetworkManager.Singleton?.SpawnManager?.SpawnedObjectsList == null) return null;
+
+        foreach (var no in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
+        {
+            if (no.OwnerClientId != clientId) continue;
+            if (no.IsPlayerObject) return no.gameObject;
+        }
 
         foreach (var no in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
         {

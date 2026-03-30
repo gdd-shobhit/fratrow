@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Systems.Persistence;
 using UnityEngine;
 
@@ -21,6 +21,15 @@ namespace Systems.Inventory {
         public void Bind(InventoryData data) {
             controller.Bind(data);
             data.Id = Id;
+        }
+
+        /// <summary>Add items (e.g. after a shop purchase). Uses stacking rules from <see cref="InventoryModel"/>.</summary>
+        public bool TryAddItem(ItemDetails details, int quantity = 1) {
+            return controller != null && controller.TryAddItem(details, quantity);
+        }
+
+        public bool TryRemoveOne(ItemDetails details) {
+            return controller != null && controller.TryRemoveOne(details);
         }
     }
 }

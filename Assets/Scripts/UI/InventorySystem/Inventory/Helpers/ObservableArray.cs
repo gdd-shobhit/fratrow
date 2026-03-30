@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -77,5 +77,10 @@ public class ObservableArray<T> : IObservableArray<T> {
         items[index] = default;
         Invoke();
         return true;
+    }
+
+    /// <summary>Call after mutating an item in-place (e.g. stack quantity) so listeners refresh.</summary>
+    public void NotifyChanged() {
+        Invoke();
     }
 }

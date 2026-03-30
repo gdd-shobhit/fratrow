@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: CinnamonSticks
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: CinnamonSticks
+  maxStack: 5
+  Id:
+    Part1: 694071304
+    Part2: 1194862592
+    Part3: 3427370885
+    Part4: 1999549940
+  Icon: {fileID: 0}
+  Description: "Whole cinnamon \u2014 one of the cheapest spices by use; bought in
+    bulk everywhere."
+  displayName: 
+  itemType: 6
+  shopRarity: 0
+  shopCost: 2
+  startingStock: 99

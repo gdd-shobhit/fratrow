@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -66,6 +66,61 @@ namespace Systems.Inventory {
             Items[target].quantity = total;
             Remove(Items[source]);
             return total;
+        }
+
+        /// <summary>Adds quantity of an item, stacking when possible. Returns false if nothing could fit.</summary>
+        public bool TryAddItem(ItemDetails details, int quantity) {
+            if (details == null || quantity <= 0) {
+                return false;
+            }
+            for (var n = 0; n < quantity; n++) {
+                if (!TryAddSingle(details)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool TryAddSingle(ItemDetails details) {
+            for (var i = 0; i < capacity; i++) {
+                var slot = Items[i];
+                if (slot == null) {
+                    continue;
+                }
+                if (!slot.detailsId.Equals(details.Id)) {
+                    continue;
+                }
+                if (details.maxStack <= 1) {
+                    continue;
+                }
+                if (slot.quantity >= details.maxStack) {
+                    continue;
+                }
+                slot.quantity++;
+                Items.NotifyChanged();
+                return true;
+            }
+            return Items.TryAdd(details.Create(1));
+        }
+
+        /// <summary>Removes one of an item (un-stacks or clears a slot). Used to roll back a failed purchase after TryAddItem.</summary>
+        public bool TryRemoveOne(ItemDetails details) {
+            if (details == null) {
+                return false;
+            }
+            for (var i = 0; i < capacity; i++) {
+                var slot = Items[i];
+                if (slot == null || !slot.detailsId.Equals(details.Id)) {
+                    continue;
+                }
+                if (slot.quantity > 1) {
+                    slot.quantity--;
+                    Items.NotifyChanged();
+                    return true;
+                }
+                return Items.TryRemoveAt(i);
+            }
+            return false;
         }
     }
 }

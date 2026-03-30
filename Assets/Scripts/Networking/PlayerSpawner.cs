@@ -101,8 +101,8 @@ public class PlayerSpawner : NetworkBehaviour
         
         if (networkObject != null)
         {
-            // Assign ownership to the client
-            networkObject.SpawnWithOwnership(clientId);
+            // Register as this client's player object so LocalClient.PlayerObject is set (SpawnWithOwnership alone leaves it null).
+            networkObject.SpawnAsPlayerObject(clientId);
 
             // Initialize player character with class data
             InitializePlayerCharacter(playerObject, clientId, playerClass);
