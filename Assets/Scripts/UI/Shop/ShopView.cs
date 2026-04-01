@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using StarterAssets;
 using Systems.Inventory;
@@ -17,9 +18,13 @@ namespace Systems.Shop
 
         VisualElement _root;
         ScrollView _scroll;
+        VisualElement _filterStrip;
         Button _closeButton;
         ShopOwner _activeOwner;
         readonly List<VisualElement> _rows = new List<VisualElement>();
+
+        /// <summary><c>null</c> = show all types.</summary>
+        ItemType? _activeTypeFilter;
 
         void Awake()
         {
@@ -53,6 +58,7 @@ namespace Systems.Shop
             }
             _root = root.Q<VisualElement>("shop-root");
             _scroll = root.Q<ScrollView>("ShopItemList");
+            _filterStrip = root.Q<VisualElement>("shop-filters");
             _closeButton = root.Q<Button>("shop-close");
             if (_closeButton != null)
             {
@@ -81,6 +87,8 @@ namespace Systems.Shop
             _activeOwner = owner;
             _activeOwner.OnStockChanged += RefreshStocks;
             _root.style.display = DisplayStyle.Flex;
+            _activeTypeFilter = null;
+            BuildFilterButtons();
             RebuildRows();
             ApplyCursor(true);
         }
@@ -105,6 +113,73 @@ namespace Systems.Shop
         }
 
         void OnCloseClicked() => Hide();
+
+        void BuildFilterButtons()
+        {
+            if (_filterStrip == null)
+            {
+                return;
+            }
+
+            _filterStrip.Clear();
+
+            var allBtn = new Button(() => SetTypeFilter(null))
+            {
+                text = "All"
+            };
+            allBtn.AddToClassList("shop-filter-btn");
+            allBtn.AddToClassList("shop-filter-btn--all");
+            _filterStrip.Add(allBtn);
+
+            foreach (ItemType t in (ItemType[])Enum.GetValues(typeof(ItemType)))
+            {
+                var captured = t;
+                var btn = new Button(() => SetTypeFilter(captured))
+                {
+                    text = ItemTypeDisplayName(t)
+                };
+                btn.AddToClassList("shop-filter-btn");
+                btn.AddToClassList(ItemTypeClass(t));
+                _filterStrip.Add(btn);
+            }
+
+            UpdateFilterButtonStyles();
+        }
+
+        void SetTypeFilter(ItemType? type)
+        {
+            _activeTypeFilter = type;
+            UpdateFilterButtonStyles();
+            RebuildRows();
+        }
+
+        void UpdateFilterButtonStyles()
+        {
+            if (_filterStrip == null)
+            {
+                return;
+            }
+
+            var index = 0;
+            foreach (var child in _filterStrip.Children())
+            {
+                if (child is not Button btn)
+                {
+                    continue;
+                }
+
+                btn.RemoveFromClassList("shop-filter-btn--active");
+                var isActive = index == 0
+                    ? !_activeTypeFilter.HasValue
+                    : _activeTypeFilter == (ItemType)(index - 1);
+                if (isActive)
+                {
+                    btn.AddToClassList("shop-filter-btn--active");
+                }
+
+                index++;
+            }
+        }
 
         void OnDestroy()
         {
@@ -136,7 +211,18 @@ namespace Systems.Shop
 
             displayOrder.Sort((i, j) => ShopOwner.CompareCatalogOrder(items[i], items[j]));
 
+            var filteredOrder = new List<int>();
             foreach (var i in displayOrder)
+            {
+                if (_activeTypeFilter.HasValue && items[i].Type != _activeTypeFilter.Value)
+                {
+                    continue;
+                }
+
+                filteredOrder.Add(i);
+            }
+
+            foreach (var i in filteredOrder)
             {
                 var def = items[i];
 
@@ -337,7 +423,7 @@ namespace Systems.Shop
                     }
                 }
             }
-            return Object.FindFirstObjectByType<StarterAssetsInputs>();
+            return FindFirstObjectByType<StarterAssetsInputs>();
         }
     }
 }

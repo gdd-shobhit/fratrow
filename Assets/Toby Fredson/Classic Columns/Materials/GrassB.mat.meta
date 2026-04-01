@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e27a41f0b184ee3438ebd0f652152ade
+labels:
+- grass
+- materials
+timeCreated: 1501790635
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/GrassB.mat
+  uploadId: 195697

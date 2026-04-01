@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
   m_Name: CreamLiqueurs
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
-  Name: Cream liqueurs (e.g., Baileys Irish Cream)
+  Name: Cream liqueur
   maxStack: 5
   Id:
     Part1: 1655650081
@@ -20,7 +20,8 @@ MonoBehaviour:
     Part3: 905875085
     Part4: 3577293289
   Icon: {fileID: 0}
-  Description: Dairy or emulsion base — dessert pours; shelf-stable cream tech sits above basic syrups.
+  Description: "Dairy or emulsion base \u2014 dessert pours; shelf-stable cream tech
+    sits above basic syrups."
   displayName: 
   itemType: 8
   shopRarity: 1

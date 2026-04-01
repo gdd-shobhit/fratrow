@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
   m_Name: Amaretto
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
-  Name: Amaretto (almond)
+  Name: Amaretto
   maxStack: 5
   Id:
     Part1: 3852804290
@@ -20,7 +20,8 @@ MonoBehaviour:
     Part3: 3825908138
     Part4: 1552552800
   Icon: {fileID: 0}
-  Description: Almond sweetness — Amaretto Sour, coffee drinks; slightly niche vs triple sec.
+  Description: "Almond sweetness \u2014 Amaretto Sour, coffee drinks; slightly niche
+    vs triple sec."
   displayName: 
   itemType: 8
   shopRarity: 0

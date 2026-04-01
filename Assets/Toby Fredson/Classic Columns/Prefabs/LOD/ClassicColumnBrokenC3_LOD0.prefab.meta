@@ -1,0 +1,36 @@
+fileFormatVersion: 2
+guid: ee0018ed04300c949a91c24fe782355c
+labels:
+- ancientruins
+- architecture
+- building
+- classic
+- cliff
+- columns
+- environments
+- exterior
+- gameasset
+- gameready
+- grass
+- historical
+- lowpolygameasset
+- mud
+- neoclassical
+- pillar
+- rock
+- roman
+- ruins
+- stone
+timeCreated: 1501612800
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: prefabs
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Prefabs/LOD/ClassicColumnBrokenC3_LOD0.prefab
+  uploadId: 195697

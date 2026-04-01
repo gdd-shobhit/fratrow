@@ -2,12 +2,14 @@
     <Style src="project://database/Assets/Scripts/UI/Shop/UI/Shop.uss?fileID=7433441132597879392&amp;guid=7c4a9e2f1d8b4036a5e7f9012345678a&amp;type=3#Shop"/>
     <Style src="project://database/Assets/Scripts/UI/UI%20Toolkit/MainMenuStyle.uss?fileID=7433441132597879392&amp;guid=a19dac0e7ce2b3944858e48ca0245d28&amp;type=3#MainMenuStyle"/>
     <ui:VisualElement name="shop-root" class="shop-root" style="display: none; left: 1px;">
-        <ui:VisualElement name="shop-panel" class="shop-panel" style="height: 80%; width: 50%;">
-            <ui:VisualElement name="shop-header" class="shop-header" style="height: 60px;">
+        <ui:VisualElement name="shop-panel" class="shop-panel" style="height: 884px; width: 800px; max-width: 800px;">
+            <ui:VisualElement name="shop-header" class="shop-header">
                 <ui:Label text="Shop" name="shop-title" class="shop-title"/>
+                <ui:VisualElement name="shop-filters" class="shop-filters"/>
             </ui:VisualElement>
             <ui:ScrollView name="ShopItemList" mode="Vertical" horizontal-scroller-visibility="Hidden" class="shop-scroll" style="height: 70%; min-height: auto; max-height: 90%;"/>
             <ui:Button text="Close" name="shop-close" class="button shop-close" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; height: 100px;"/>
         </ui:VisualElement>
     </ui:VisualElement>
+    <ui:GroupBox/>
 </ui:UXML>

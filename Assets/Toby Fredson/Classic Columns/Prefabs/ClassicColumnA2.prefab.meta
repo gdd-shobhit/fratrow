@@ -1,0 +1,33 @@
+fileFormatVersion: 2
+guid: 8ff991edec1d720438bacd2896e57115
+labels:
+- architecture
+- classic
+- cliff
+- columns
+- environments
+- exterior
+- gameasset
+- gameready
+- grass
+- historical
+- lowpolygameasset
+- mud
+- pillar
+- rock
+- roman
+- ruins
+- stone
+timeCreated: 1501404553
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: prefabs
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Prefabs/ClassicColumnA2.prefab
+  uploadId: 195697

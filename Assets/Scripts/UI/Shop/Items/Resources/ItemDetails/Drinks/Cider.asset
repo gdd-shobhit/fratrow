@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: Cider
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: Cider
+  maxStack: 5
+  Id:
+    Part1: 2597628504
+    Part2: 1115322422
+    Part3: 2568021640
+    Part4: 3824150946
+  Icon: {fileID: 0}
+  Description: Apple or pear fermented — fruity backbone for autumn and spiced serves.
+  displayName: 
+  itemType: 3
+  shopRarity: 0
+  shopCost: 2
+  startingStock: 99

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
   m_Name: HerbalLiqueurs
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
-  Name: Herbal liqueurs (Chartreuse, Benedictine)
+  Name: Herbal liqueur
   maxStack: 5
   Id:
     Part1: 523163064
@@ -20,7 +20,8 @@ MonoBehaviour:
     Part3: 109800339
     Part4: 3635191068
   Icon: {fileID: 0}
-  Description: Monastery-style herb stacks — complex, limited production; real-world prices soar vs orange liqueur.
+  Description: "Monastery-style herb stacks \u2014 complex, limited production; real-world
+    prices soar vs orange liqueur."
   displayName: 
   itemType: 8
   shopRarity: 2

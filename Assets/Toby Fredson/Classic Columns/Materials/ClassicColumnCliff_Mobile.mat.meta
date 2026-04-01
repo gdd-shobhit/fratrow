@@ -1,0 +1,27 @@
+fileFormatVersion: 2
+guid: d26ae7f3a1f12e34b953280d7c3427ea
+labels:
+- Grass
+- classic
+- cliff
+- columns
+- grass
+- materials
+- mud
+- rock
+- roman
+- ruins
+- stone
+timeCreated: 1502727165
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/ClassicColumnCliff_Mobile.mat
+  uploadId: 195697

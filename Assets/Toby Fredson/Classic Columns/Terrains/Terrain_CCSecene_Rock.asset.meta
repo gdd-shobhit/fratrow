@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 0bcd0fe8ab1cc364f9c3211d879b089e
+labels:
+- environments
+- exterior
+- scenes
+- terrain
+timeCreated: 1501932581
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: terrain
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Terrains/Terrain_CCSecene_Rock.asset
+  uploadId: 195697

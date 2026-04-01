@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
   m_Name: AperitifsDigestifs
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
-  Name: Aperitifs & digestifs (Campari, Aperol, vermouth)
+  Name: Aperitifs
   maxStack: 5
   Id:
     Part1: 884578583
@@ -20,7 +20,8 @@ MonoBehaviour:
     Part3: 3489769902
     Part4: 3514573705
   Icon: {fileID: 0}
-  Description: Bitter-orange, herbal, or wine-based — Spritz, Negroni, Manhattan vermouth; specialty SKUs add up.
+  Description: "Bitter-orange, herbal, or wine-based \u2014 Spritz, Negroni, Manhattan
+    vermouth; specialty SKUs add up."
   displayName: 
   itemType: 8
   shopRarity: 2

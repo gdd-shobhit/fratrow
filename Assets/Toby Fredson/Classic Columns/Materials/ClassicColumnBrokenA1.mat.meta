@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 13cb93efcc327a24ba870d2c3ba3ea72
+labels:
+- classic
+- columns
+- materials
+- roman
+- ruins
+- stone
+timeCreated: 1501588078
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/ClassicColumnBrokenA1.mat
+  uploadId: 195697

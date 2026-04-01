@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 0b589f23992b03548bfd63500a5020a5
+labels:
+- environments
+- exterior
+- scenes
+- terrain
+timeCreated: 1501801817
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: terrain
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Terrains/CCTerrain_RuinsA.asset
+  uploadId: 195697

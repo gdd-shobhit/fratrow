@@ -20,9 +20,9 @@ MonoBehaviour:
     Part3: 1618066333
     Part4: 1863654803
   Icon: {fileID: 21300000, guid: e2a427e03f22a5a42a9771948579193e, type: 3}
-  Description: 
+  Description: Crisp malt beverage — sessionable base for radlers and beer cocktails.
   displayName: 
-  itemType: 0
+  itemType: 3
   shopRarity: 0
   shopCost: 1
   startingStock: 99

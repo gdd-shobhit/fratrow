@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: cbfc1c14435129d418ea4ffb0f9a8e29
+labels:
+- columns
+- ruins
+- stone
+timeCreated: 1501604884
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: prefabs
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Prefabs/LOD/ClassicColumnBrokenA3_LOD0.prefab
+  uploadId: 195697

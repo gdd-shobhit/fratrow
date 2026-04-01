@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 703750bd34680994dba66e6eaa915e71
+labels:
+- classic
+- columns
+- materials
+- roman
+- ruins
+- stone
+timeCreated: 1501351564
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/ClassicColumn2_Cap.mat
+  uploadId: 195697

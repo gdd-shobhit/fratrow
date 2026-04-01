@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
   m_Name: TripleSecOrangeLiqueur
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
-  Name: Triple sec / orange liqueur
+  Name: Triple sec
   maxStack: 5
   Id:
     Part1: 4249953039
@@ -20,7 +20,8 @@ MonoBehaviour:
     Part3: 2783648915
     Part4: 3718254335
   Icon: {fileID: 0}
-  Description: Orange-forward sweet modifier — margaritas, sidecars; mid-shelf vs specialty liqueurs.
+  Description: "Orange-forward sweet modifier \u2014 margaritas, sidecars; mid-shelf
+    vs specialty liqueurs."
   displayName: 
   itemType: 8
   shopRarity: 0

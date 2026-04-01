@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: c237282908237814e8a83ce6c5c937b6
+labels:
+- materials
+- mud
+- ruins
+timeCreated: 1501761318
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/Dirt test.mat
+  uploadId: 195697
