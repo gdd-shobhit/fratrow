@@ -13,12 +13,24 @@ public class PlayerSpawner : NetworkBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private Transform[] spawnPoints;
     [SerializeField] private bool useRandomSpawn = true;
+    public bool IsTesting = false;
 
     private int _nextSpawnIndex = 0;
 
+    public void Start()
+    {
+
+    }
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        // Testing so i dont have to go through the whole flow
+        if (IsTesting)
+        {
+            SpawnPlayer(0, PlayerClass.President);
+            return;
+        }
 
         if (IsServer)
         {
@@ -83,14 +95,14 @@ public class PlayerSpawner : NetworkBehaviour
 
         // Spawn player as NetworkObject
         GameObject playerObject = NetworkObject.Instantiate(playerPrefab, spawnPosition, spawnRotation);
-        GameManager.Instance.playersInGame.Add(clientId, playerObject);
+        NetworkedGameManager.Instance.playersInGame.Add(clientId, playerObject);
 
         NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
         
         if (networkObject != null)
         {
-            // Assign ownership to the client
-            networkObject.SpawnWithOwnership(clientId);
+            // Register as this client's player object so LocalClient.PlayerObject is set (SpawnWithOwnership alone leaves it null).
+            networkObject.SpawnAsPlayerObject(clientId);
 
             // Initialize player character with class data
             InitializePlayerCharacter(playerObject, clientId, playerClass);
@@ -105,7 +117,7 @@ public class PlayerSpawner : NetworkBehaviour
     }
 
     /// <summary>
-    /// Initialize player character with class data from GameManager.
+    /// Initialize player character with class data from NetworkedGameManager.
     /// </summary>
     private void InitializePlayerCharacter(GameObject playerObject, ulong clientId, PlayerClass playerClass)
     {
@@ -116,14 +128,18 @@ public class PlayerSpawner : NetworkBehaviour
             return;
         }
 
-        // Get PlayerClassSO from GameManager
-        if (GameManager.Instance != null && GameManager.Instance.playerClassesDict != null)
+        // Get PlayerClassSO from NetworkedGameManager
+        if (NetworkedGameManager.Instance != null && NetworkedGameManager.Instance.playerClassesDict != null)
         {
-            if (GameManager.Instance.playerClassesDict.TryGetValue(playerClass, out PlayerClassSO playerClassSO))
+            if (NetworkedGameManager.Instance.playerClassesDict.TryGetValue(playerClass, out PlayerClassSO playerClassSO))
             {
                 // Initialize character with class data
                 userCharacter.InitializeFromSO(playerClassSO);
-                SetPlayerDataOnClientRPC(clientId, LobbyManager.Instance.Players[clientId]);
+
+                if(!IsTesting)
+                {
+                    SetPlayerDataOnClientRPC(clientId, LobbyManager.Instance.Players[clientId]);
+                }
             }
             else
             {
@@ -188,9 +204,9 @@ public class PlayerSpawner : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void SetPlayerDataOnClientRPC(ulong clientId, LobbyPlayerData lobbyPlayerData)
     {
-        if (GameManager.Instance != null)
+        if (NetworkedGameManager.Instance != null)
         {
-            GameManager.Instance.GetComponent<NetworkedGameManager>().HandlePlayerSpawned(clientId, lobbyPlayerData);
+            NetworkedGameManager.Instance.HandlePlayerSpawned(clientId, lobbyPlayerData);
         }
     }
 }

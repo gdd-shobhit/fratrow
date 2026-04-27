@@ -1,0 +1,84 @@
+:root {
+    -unity-font-definition: url("project://database/Assets/Space_Exploration_GUI_Kit/Fonts/Font%20Sources/static/Asap_SemiCondensed-SemiBold.ttf?fileID=12800000&guid=53c38cca34deaed409f0e16ea9c6afe0&type=3#Asap_SemiCondensed-SemiBold");
+}
+
+.button {
+    font-size: 32px;
+    -unity-font-definition: url("project://database/Assets/Space_Exploration_GUI_Kit/Fonts/Font%20Sources/static/Asap_SemiCondensed-SemiBold.ttf?fileID=12800000&guid=53c38cca34deaed409f0e16ea9c6afe0&type=3#Asap_SemiCondensed-SemiBold");
+    -unity-text-outline-width: 0;
+    text-shadow: 5px 5px 0 rgb(253, 253, 253);
+    width: 50%;
+    height: 12%;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    justify-content: flex-end;
+    align-items: center;
+    align-self: center;
+    align-content: center;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    margin-top: 20px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    margin-left: 20px;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/large/short-purple-large.png?fileID=2800000&guid=99b5d53c34d0dfa44827c2d700cdbedf&type=3#short-purple-large");
+}
+
+.CyclerArrowLeft {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Picto_Icons/Light_Purple/left-arrow-256.png?fileID=2800000&guid=a309aa76ca0cc6c4b86aee9aee5cf9fd&type=3#left-arrow-256");
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0);
+    border-left-color: rgba(255, 255, 255, 0);
+    border-right-color: rgba(255, 255, 255, 0);
+    border-top-color: rgba(255, 255, 255, 0);
+    border-bottom-color: rgba(255, 255, 255, 0);
+}
+
+.CyclerArrowRight {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Picto_Icons/Light_Purple/right-arrow-256.png?fileID=2800000&guid=adcd09b10d4a56f44946d2b22493b4ca&type=3#right-arrow-256");
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    background-color: rgba(255, 255, 255, 0);
+}
+
+#SessionCodeField #unity-text-input {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+#PlayerNameField #unity-text-input {
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.button:hover {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Highlighted_Sprite/large/short-pink-highlight-large.png?fileID=2800000&guid=39c758ed67cc0a245beaebba74010f2d&type=3#short-pink-highlight-large");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button:active {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Pressed_Sprites/Large/short-yellow-pressed-large.png?fileID=2800000&guid=8deed42f6540fd24bb177a9842b66171&type=3#short-yellow-pressed-large");
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button:disabled {
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Disabled_Sprites/Large/square-disabled-large.png?fileID=2800000&guid=7a258ba575f28f74bba6b0a00850f1c9&type=3#square-disabled-large");
+    background-color: rgba(0, 0, 0, 0);
+}

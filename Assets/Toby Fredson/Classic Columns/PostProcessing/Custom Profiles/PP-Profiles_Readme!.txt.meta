@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 97b4b2159d08de4489cbc621ab09298e
+timeCreated: 1502731235
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: postprocessing
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/PostProcessing/Custom Profiles/PP-Profiles_Readme!.txt
+  uploadId: 195697

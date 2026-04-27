@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: b036e951aedaee54caa62d1784ab76c7
+labels:
+- building
+- columns
+- environments
+- exterior
+- roman
+- scenes
+- stone
+timeCreated: 1501964048
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: scenes
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Scenes/CCSecene_RuinsB.unity
+  uploadId: 195697

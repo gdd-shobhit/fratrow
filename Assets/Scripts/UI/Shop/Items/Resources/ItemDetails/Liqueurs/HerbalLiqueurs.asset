@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: HerbalLiqueurs
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: Herbal liqueur
+  maxStack: 5
+  Id:
+    Part1: 523163064
+    Part2: 1291495361
+    Part3: 109800339
+    Part4: 3635191068
+  Icon: {fileID: 0}
+  Description: "Monastery-style herb stacks \u2014 complex, limited production; real-world
+    prices soar vs orange liqueur."
+  displayName: 
+  itemType: 8
+  shopRarity: 2
+  shopCost: 16
+  startingStock: 99

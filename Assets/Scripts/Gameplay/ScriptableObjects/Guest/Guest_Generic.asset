@@ -15,6 +15,7 @@ MonoBehaviour:
   guestName: Just a guy
   guestClass: 0
   description: Just a normal guy
+  prefab: {fileID: 913845681951795218, guid: 4c898f4c7975a5f4a869669a6766b60c, type: 3}
   health: 100
   popularity: 5
   troubleMaker: 0

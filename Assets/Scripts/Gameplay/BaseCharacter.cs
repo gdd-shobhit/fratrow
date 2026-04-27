@@ -17,6 +17,7 @@ public class BaseCharacterStats
     public float popularity;
     public float troubleMaker;
     public float cashvalue;
+    public bool isRecruitable;
     public List<Ability> abilities;
 
     public BaseCharacterStats()
@@ -97,6 +98,7 @@ public abstract class BaseCharacter : MonoBehaviour
     public float Popularity => stats.popularity;
     public float TroubleMaker => stats.troubleMaker;
     public float CashValue => stats.cashvalue;
+    public bool IsRecruitable => stats.isRecruitable;
     public List<Ability> Abilities => stats.abilities;
 
     protected virtual void Awake()

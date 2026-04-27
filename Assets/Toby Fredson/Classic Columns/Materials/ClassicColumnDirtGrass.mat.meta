@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 91bd07626bf12c34e87998ceede480dc
+labels:
+- grass
+- materials
+timeCreated: 1501758794
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/ClassicColumnDirtGrass.mat
+  uploadId: 195697

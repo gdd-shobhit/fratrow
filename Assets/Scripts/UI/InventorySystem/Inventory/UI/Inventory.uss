@@ -1,0 +1,119 @@
+.container {
+    flex-grow: 1;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
+    color: rgb(255, 0, 236);
+}
+
+.inventory {
+    width: 300px;
+    padding: 10px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    max-height: 500px;
+    flex-grow: 1;
+    background-image: none;
+}
+
+.inventoryHeader {
+    position: absolute;
+    top: -32px;
+    left: -27px;
+    width: 350px;
+    height: 70px;
+    justify-content: center;
+    align-items: center;
+    -unity-slice-scale: 0.5;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Button_Images/Source_Image_Sprites/large/large-purple-large.png?fileID=2800000&guid=40cbba651a6cfe54ea2cb7c3af40658c&type=3#large-purple-large");
+}
+
+Label {
+    font-size: 24px;
+}
+
+.inventoryFrame {
+    position: absolute;
+    top: -10px;
+    left: -17px;
+    width: 326px;
+    height: 520px;
+    -unity-slice-scale: 0.5;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Containers/Extra%20Large/shop-container-extra-large.png?fileID=2800000&guid=b8d58338d003e9b4892fc675b7d2e47d&type=3#shop-container-extra-large");
+}
+
+.slotsContainer {
+    flex-grow: 1;
+    padding-top: 30px;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-shrink: 0;
+}
+
+.slot {
+    width: 60px;
+    height: 60px;
+    margin: 4px;
+}
+
+.slotFrame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    border-width: 0;
+    -unity-slice-scale: 0.8;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Grid_Components/Large/item-info-picto-icon-container-large.png?fileID=2800000&guid=64c4e7c4890c2eb4e80dc959a2c3aa60&type=3#item-info-picto-icon-container-large");
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.slotIcon {
+    padding: 4px;
+    flex-shrink: 0;
+    flex-grow: 1;
+}
+
+.stackCount {
+    position: absolute;
+    color: white;
+    bottom: 0;
+    right: 0;
+    font-size: 18px;
+}
+
+.ghostIcon {
+    visibility: hidden;
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background-image: none;
+}
+
+.coins {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.coinsIcon {
+    width: 40px;
+    height: 40px;
+    margin: 4px;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-256.png?fileID=2800000&guid=469e60d338347ab429e56aaf70eba747&type=3#coin-256");
+}
+
+.slot:hover {
+    width: 60px;
+    height: 60px;
+    margin: 4px;
+    background-image: url("project://database/Assets/Space_Exploration_GUI_Kit/Grid_Components/Large/inventory-highlight-large%201.png?fileID=2800000&guid=84af1e1dff4d84e4da23b7114a108818&type=3#inventory-highlight-large 1");
+}

@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: d402e429d5cff244487b8f068699461e
+labels:
+- columns
+- ruins
+- stone
+timeCreated: 1501410267
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: prefabs
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Prefabs/LOD/ClassicColumnB4_LOD2.prefab
+  uploadId: 195697

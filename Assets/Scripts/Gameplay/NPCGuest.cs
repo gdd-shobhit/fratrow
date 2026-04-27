@@ -13,7 +13,7 @@ public enum GuestClass
 /// <summary>
 /// NPC Guest character that loads its data from a GuestSO ScriptableObject.
 /// </summary>
-public class NPCGuest : BaseCharacter
+public class NPCGuest : BaseCharacter, IInteractable
 {
     [Header("Guest Data")]
     [SerializeField] private GuestSO guestData;
@@ -67,5 +67,12 @@ public class NPCGuest : BaseCharacter
         
         // Initialize character stats
         InitializeCharacter();
+    }
+
+    public void Interact()
+    {
+        // Interact logic for NPCs
+        // Rotate the NPC to player, Animation goes to idle/talking, add UI for talking, hook up rewards based on conversation
+
     }
 }

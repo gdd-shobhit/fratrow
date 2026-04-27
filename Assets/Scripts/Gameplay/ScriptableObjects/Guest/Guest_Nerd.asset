@@ -15,6 +15,7 @@ MonoBehaviour:
   guestName: The Nerd
   guestClass: 1
   description: Godamn, who invited this nerd.
+  prefab: {fileID: 1616406060653692748, guid: daa2343ba15b09e48a2fb008a75df5a2, type: 3}
   health: 70
   popularity: -5
   troubleMaker: 0

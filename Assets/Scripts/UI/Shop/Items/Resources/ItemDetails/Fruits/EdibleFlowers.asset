@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: EdibleFlowers
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: Edible flowers
+  maxStack: 5
+  Id:
+    Part1: 4096879593
+    Part2: 1140838624
+    Part3: 2487668923
+    Part4: 1557300932
+  Icon: {fileID: 0}
+  Description: Specialty garnish — florists’ food-grade blooms cost far more than bulk fruit.
+  displayName: 
+  itemType: 5
+  shopRarity: 2
+  shopCost: 12
+  startingStock: 99

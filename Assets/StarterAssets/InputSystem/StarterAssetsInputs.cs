@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -12,8 +13,11 @@ namespace StarterAssets
 		public Vector2 look;
 		public bool jump;
 		public bool sprint;
+        public bool drink;
+		public bool interact;
+		public bool inventoryToggle;
 
-		[Header("Movement Settings")]
+        [Header("Movement Settings")]
 		public bool analogMovement;
 
 		[Header("Mouse Cursor Settings")]
@@ -43,10 +47,30 @@ namespace StarterAssets
 		{
 			SprintInput(value.isPressed);
 		}
+        public void OnDrink(InputValue value)
+        {
+            DrinkInput(value.isPressed);
+        }
+        public void OnInteract(InputValue value)
+        {
+            InteractInput(value.isPressed);
+        }
+
+		public void OnInventory(InputValue value)
+		{
+			InventoryInput(value.isPressed);
+		}
 #endif
+        private void InteractInput(bool isPressed)
+        {
+            interact = isPressed;
+        }
 
-
-		public void MoveInput(Vector2 newMoveDirection)
+		private void InventoryInput(bool isPressed)
+		{
+			inventoryToggle = isPressed;
+		}
+        public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
 		} 
@@ -60,20 +84,34 @@ namespace StarterAssets
 		{
 			jump = newJumpState;
 		}
+        public void DrinkInput(bool newDrinkState)
+        {
+            drink = newDrinkState;
+        }
 
-		public void SprintInput(bool newSprintState)
+        public void SprintInput(bool newSprintState)
 		{
 			sprint = newSprintState;
 		}
 		
 		private void OnApplicationFocus(bool hasFocus)
 		{
-			SetCursorState(cursorLocked);
+			ApplyCursorFromSettings();
 		}
 
-		private void SetCursorState(bool newState)
+		/// <summary>Inventory open: free cursor for UI. Closed: return to FPS (locked, look enabled).</summary>
+		public void SetInventoryUIMode(bool inventoryOpen)
 		{
-			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+			cursorLocked = !inventoryOpen;
+			cursorInputForLook = !inventoryOpen;
+			LookInput(Vector2.zero);
+			ApplyCursorFromSettings();
+		}
+
+		void ApplyCursorFromSettings()
+		{
+			Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
+			Cursor.visible = !cursorLocked;
 		}
 	}
 	

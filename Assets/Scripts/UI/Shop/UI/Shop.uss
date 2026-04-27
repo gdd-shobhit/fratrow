@@ -1,0 +1,496 @@
+.shop-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.65);
+}
+
+.shop-panel {
+    flex-direction: column;
+    min-width: 480px;
+    max-width: 720px;
+    max-height: 85%;
+    padding: 24px;
+    background-color: rgba(32, 32, 40, 0.95);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.shop-header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+
+.shop-title {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    margin-bottom: 8px;
+}
+
+.shop-filters {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.shop-filter-btn {
+    margin-right: 8px;
+    margin-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font-size: 14px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.35);
+    color: rgb(220, 220, 230);
+}
+
+/* Neutral "All" — same family as type chips, no hue */
+.shop-filter-btn--all {
+    color: rgb(210, 215, 225);
+    border-color: rgba(255, 255, 255, 0.22);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn--all:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(55, 58, 70, 0.5);
+    color: rgb(235, 238, 245);
+}
+
+.shop-filter-btn--active.shop-filter-btn--all {
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(70, 75, 90, 0.5);
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.shop-filter-btn--all:hover {
+    border-color: rgba(255, 255, 255, 0.65);
+    background-color: rgba(88, 94, 112, 0.58);
+    color: rgb(255, 255, 255);
+}
+
+/* Filter chips: border + label color match .shop-item-type .item-type-* tags */
+.shop-filter-btn.item-type-alcohol {
+    color: rgb(220, 140, 110);
+    border-color: rgba(220, 140, 110, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-alcohol:hover {
+    border-color: rgba(220, 140, 110, 0.75);
+    background-color: rgba(220, 140, 110, 0.12);
+    color: rgb(235, 165, 135);
+}
+
+.shop-filter-btn--active.item-type-alcohol {
+    border-color: rgba(220, 140, 110, 0.95);
+    background-color: rgba(220, 140, 110, 0.22);
+    color: rgb(255, 220, 200);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-alcohol:hover {
+    border-color: rgb(255, 190, 155);
+    background-color: rgba(220, 140, 110, 0.34);
+    color: rgb(255, 235, 220);
+}
+
+.shop-filter-btn.item-type-food {
+    color: rgb(240, 190, 100);
+    border-color: rgba(240, 190, 100, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-food:hover {
+    border-color: rgba(240, 190, 100, 0.78);
+    background-color: rgba(240, 190, 100, 0.11);
+    color: rgb(255, 210, 120);
+}
+
+.shop-filter-btn--active.item-type-food {
+    border-color: rgba(240, 190, 100, 0.95);
+    background-color: rgba(240, 190, 100, 0.2);
+    color: rgb(255, 235, 200);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-food:hover {
+    border-color: rgb(255, 215, 140);
+    background-color: rgba(240, 190, 100, 0.3);
+    color: rgb(255, 245, 215);
+}
+
+.shop-filter-btn.item-type-mixer {
+    color: rgb(120, 220, 200);
+    border-color: rgba(120, 220, 200, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-mixer:hover {
+    border-color: rgba(120, 220, 200, 0.78);
+    background-color: rgba(120, 220, 200, 0.1);
+    color: rgb(160, 240, 225);
+}
+
+.shop-filter-btn--active.item-type-mixer {
+    border-color: rgba(120, 220, 200, 0.95);
+    background-color: rgba(120, 220, 200, 0.18);
+    color: rgb(210, 255, 245);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-mixer:hover {
+    border-color: rgb(170, 245, 230);
+    background-color: rgba(120, 220, 200, 0.28);
+    color: rgb(225, 255, 250);
+}
+
+.shop-filter-btn.item-type-drinks {
+    color: rgb(130, 200, 255);
+    border-color: rgba(130, 200, 255, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-drinks:hover {
+    border-color: rgba(130, 200, 255, 0.78);
+    background-color: rgba(130, 200, 255, 0.1);
+    color: rgb(170, 220, 255);
+}
+
+.shop-filter-btn--active.item-type-drinks {
+    border-color: rgba(130, 200, 255, 0.95);
+    background-color: rgba(130, 200, 255, 0.18);
+    color: rgb(220, 240, 255);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-drinks:hover {
+    border-color: rgb(190, 225, 255);
+    background-color: rgba(130, 200, 255, 0.28);
+    color: rgb(235, 248, 255);
+}
+
+.shop-filter-btn.item-type-misc {
+    color: rgb(170, 175, 190);
+    border-color: rgba(170, 175, 190, 0.45);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-misc:hover {
+    border-color: rgba(195, 200, 215, 0.65);
+    background-color: rgba(170, 175, 190, 0.12);
+    color: rgb(200, 205, 218);
+}
+
+.shop-filter-btn--active.item-type-misc {
+    border-color: rgba(200, 205, 220, 0.85);
+    background-color: rgba(170, 175, 190, 0.2);
+    color: rgb(235, 238, 248);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-misc:hover {
+    border-color: rgb(220, 225, 238);
+    background-color: rgba(170, 175, 190, 0.3);
+    color: rgb(245, 247, 255);
+}
+
+.shop-filter-btn.item-type-fruits {
+    color: rgb(255, 130, 150);
+    border-color: rgba(255, 130, 150, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-fruits:hover {
+    border-color: rgba(255, 130, 150, 0.78);
+    background-color: rgba(255, 130, 150, 0.11);
+    color: rgb(255, 165, 178);
+}
+
+.shop-filter-btn--active.item-type-fruits {
+    border-color: rgba(255, 130, 150, 0.95);
+    background-color: rgba(255, 130, 150, 0.18);
+    color: rgb(255, 215, 220);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-fruits:hover {
+    border-color: rgb(255, 175, 188);
+    background-color: rgba(255, 130, 150, 0.28);
+    color: rgb(255, 228, 232);
+}
+
+.shop-filter-btn.item-type-herbs-spices-aromatics {
+    color: rgb(110, 200, 130);
+    border-color: rgba(110, 200, 130, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-herbs-spices-aromatics:hover {
+    border-color: rgba(110, 200, 130, 0.78);
+    background-color: rgba(110, 200, 130, 0.11);
+    color: rgb(145, 220, 160);
+}
+
+.shop-filter-btn--active.item-type-herbs-spices-aromatics {
+    border-color: rgba(110, 200, 130, 0.95);
+    background-color: rgba(110, 200, 130, 0.2);
+    color: rgb(210, 255, 220);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-herbs-spices-aromatics:hover {
+    border-color: rgb(160, 230, 175);
+    background-color: rgba(110, 200, 130, 0.3);
+    color: rgb(225, 255, 232);
+}
+
+.shop-filter-btn.item-type-sweeteners {
+    color: rgb(255, 215, 235);
+    border-color: rgba(255, 215, 235, 0.45);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-sweeteners:hover {
+    border-color: rgba(255, 215, 235, 0.72);
+    background-color: rgba(255, 215, 235, 0.1);
+    color: rgb(255, 230, 245);
+}
+
+.shop-filter-btn--active.item-type-sweeteners {
+    border-color: rgba(255, 215, 235, 0.9);
+    background-color: rgba(255, 215, 235, 0.14);
+    color: rgb(255, 235, 248);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-sweeteners:hover {
+    border-color: rgb(255, 235, 250);
+    background-color: rgba(255, 215, 235, 0.22);
+    color: rgb(255, 245, 252);
+}
+
+.shop-filter-btn.item-type-liqueurs {
+    color: rgb(190, 130, 230);
+    border-color: rgba(190, 130, 230, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.shop-filter-btn.item-type-liqueurs:hover {
+    border-color: rgba(190, 130, 230, 0.78);
+    background-color: rgba(190, 130, 230, 0.11);
+    color: rgb(210, 165, 240);
+}
+
+.shop-filter-btn--active.item-type-liqueurs {
+    border-color: rgba(190, 130, 230, 0.95);
+    background-color: rgba(190, 130, 230, 0.2);
+    color: rgb(235, 215, 255);
+    -unity-font-style: bold;
+}
+
+.shop-filter-btn--active.item-type-liqueurs:hover {
+    border-color: rgb(215, 175, 245);
+    background-color: rgba(190, 130, 230, 0.3);
+    color: rgb(245, 230, 255);
+}
+
+.shop-close {
+    min-width: 100px;
+    height: 158px;
+    font-size: 20px;
+}
+
+.shop-scroll {
+    flex-grow: 1;
+    min-height: 200px;
+    max-height: 520px;
+}
+
+.shop-scroll > #unity-content-container {
+    flex-direction: column;
+    padding: 4px;
+}
+
+.shop-item-icon-wrap {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.shop-item-icon {
+    width: 56px;
+    height: 56px;
+}
+
+.shop-item-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.shop-item-row--selected {
+    border-color: rgba(255, 200, 80, 0.5);
+    background-color: rgba(40, 35, 20, 0.5);
+}
+
+.shop-item-main {
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 160px;
+}
+
+.shop-item-name {
+    font-size: 20px;
+    color: rgb(255, 255, 255);
+}
+
+.shop-item-tags-row {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.shop-item-economy-row {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.shop-item-rarity {
+    font-size: 14px;
+    margin-right: 12px;
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    -unity-text-align: upper-center;
+    padding-top: 8px;
+    padding-right: 10px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+}
+
+.shop-item-type {
+    font-size: 14px;
+    margin-right: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-center;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.35);
+    padding-top: 8px;
+    padding-right: 10px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+}
+
+.shop-item-cost,
+.shop-item-stock {
+    font-size: 15px;
+    color: rgb(200, 200, 210);
+    margin-right: 12px;
+}
+
+.shop-buy {
+    font-size: 16px;
+    margin-left: 8px;
+    min-height: 70%;
+    max-width: 30%;
+}
+
+.shop-buy:disabled {
+    opacity: 0.45;
+}
+
+.rarity-common {
+    color: rgb(180, 180, 190);
+}
+
+.rarity-uncommon {
+    color: rgb(80, 200, 120);
+}
+
+.rarity-rare {
+    color: rgb(80, 160, 255);
+}
+
+.rarity-epic {
+    color: rgb(200, 100, 255);
+}
+
+.rarity-legendary {
+    color: rgb(255, 160, 60);
+}
+
+.item-type-alcohol {
+    color: rgb(220, 140, 110);
+}
+
+.item-type-food {
+    color: rgb(240, 190, 100);
+}
+
+.item-type-mixer {
+    color: rgb(120, 220, 200);
+}
+
+.item-type-drinks {
+    color: rgb(130, 200, 255);
+}
+
+.item-type-misc {
+    color: rgb(170, 175, 190);
+}
+
+.item-type-fruits {
+    color: rgb(255, 130, 150);
+}
+
+.item-type-herbs-spices-aromatics {
+    color: rgb(110, 200, 130);
+}
+
+.item-type-sweeteners {
+    color: rgb(255, 215, 235);
+}
+
+.item-type-liqueurs {
+    color: rgb(190, 130, 230);
+}

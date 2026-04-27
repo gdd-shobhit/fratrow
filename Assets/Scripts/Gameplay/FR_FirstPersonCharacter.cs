@@ -1,8 +1,12 @@
+using System;
+using Systems.Inventory;
 using Unity.Netcode;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
+
+
 
 namespace StarterAssets
 {
@@ -21,6 +25,8 @@ namespace StarterAssets
         public float RotationSpeed = 1.0f;
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
+        [Tooltip("Distance to interact with objects")]
+        public float InteractDistance = 50.0f;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -52,6 +58,14 @@ namespace StarterAssets
         [Tooltip("How far in degrees can you move the camera down")]
         public float BottomClamp = -90.0f;
 
+        [Header("Interaction")]
+        [Tooltip("LayerMaskForOutline")]
+        public int layerMaskOutline = 6;
+        private GameObject currentSelectedOutlineObject;
+
+        [Header("UI")]
+        [SerializeField] InventoryView inventoryView;
+
         // cinemachine
         private float _cinemachineTargetPitch;
 
@@ -71,7 +85,7 @@ namespace StarterAssets
 #endif
         private CharacterController _controller;
         private StarterAssetsInputs _input;
-        private GameObject _mainCamera;
+        public GameObject _mainCamera;
         private Animator _animator;
 
         private const float _threshold = 0.01f;
@@ -93,6 +107,7 @@ namespace StarterAssets
             // get a reference to our main camera
             if (_mainCamera == null)
             {
+                Debug.LogWarning("Camera was null. We need to fix this");
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
         }
@@ -122,6 +137,33 @@ namespace StarterAssets
             JumpAndGravity();
             GroundedCheck();
             Move();
+            DrinkCheck();
+            InteractAction();
+            InventoryCheck();
+        }
+
+        void InventoryCheck()
+        {
+            if (inventoryView == null)
+            {
+                return;
+            }
+
+            if (_input.inventoryToggle)
+            {
+                inventoryView.ToggleVisibility();
+                _input.inventoryToggle = false; // Reset the input to avoid multiple toggles
+                _input.SetInventoryUIMode(inventoryView.IsVisible);
+            }
+        }
+
+        private void DrinkCheck()
+        {
+            if (_input.drink)
+            {
+                _animator.SetTrigger("Drink");
+                _animator.ResetTrigger("Drink");
+            }
         }
 
         private void LateUpdate()
@@ -194,7 +236,7 @@ namespace StarterAssets
                 _speed = targetSpeed;
             }
 
-            _animator.SetFloat("Speed", _speed/SprintSpeed);
+            _animator.SetFloat("Speed", _speed / SprintSpeed);
 
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
@@ -276,6 +318,53 @@ namespace StarterAssets
 
             // when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
             Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
+        }
+
+        private void InteractAction()
+        {
+            if (_mainCamera != null)
+            {
+                if (Physics.Raycast(_mainCamera.transform.position, _mainCamera.transform.forward, out RaycastHit hitInfo, InteractDistance))
+                {
+                    if (hitInfo.collider.gameObject.TryGetComponent(out IInteractable interactableObject))
+                    {
+                        GameObject hitGameobject = hitInfo.transform.gameObject;
+                        currentSelectedOutlineObject = hitGameobject;
+
+                        // Select
+                        if (currentSelectedOutlineObject.layer != LayerMask.NameToLayer("Outline"))
+                        {
+                            SetGameLayerRecursive(currentSelectedOutlineObject, LayerMask.NameToLayer("Outline"));
+                        }
+                        if (_input.interact)
+                        {
+                            interactableObject.Interact();
+                            _input.interact = false;
+                            return;
+                        }
+                        return;
+                    }               
+                }
+
+                if (currentSelectedOutlineObject != null)
+                {
+                    SetGameLayerRecursive(currentSelectedOutlineObject, LayerMask.NameToLayer("Default"));
+                    currentSelectedOutlineObject = null;
+                }
+            }
+        }
+
+        private void SetGameLayerRecursive(GameObject _go, int _layer)
+        {
+            _go.layer = _layer;
+            foreach (Transform child in _go.transform)
+            {
+                child.gameObject.layer = _layer;
+
+                Transform _HasChildren = child.GetComponentInChildren<Transform>();
+                if (_HasChildren != null)
+                    SetGameLayerRecursive(child.gameObject, _layer);
+            }
         }
     }
 }

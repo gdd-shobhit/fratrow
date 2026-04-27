@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: e244d53987f30cf48936ddc96e404aeb
+labels:
+- classic
+- columns
+- materials
+- rock
+- roman
+- ruins
+- stone
+timeCreated: 1501425007
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/ClassicColumnStoneBlocksC.mat
+  uploadId: 195697

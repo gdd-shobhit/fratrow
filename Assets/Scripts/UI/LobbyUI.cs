@@ -461,10 +461,10 @@ public class LobbyUI : MonoBehaviour
             selectedClass = data.SelectedClass;
         }
 
-        if (GameManager.Instance == null || GameManager.Instance.playerClassesDict == null)
+        if (NetworkedGameManager.Instance == null || NetworkedGameManager.Instance.playerClassesDict == null)
             return;
 
-        if (!GameManager.Instance.playerClassesDict.TryGetValue(selectedClass, out var classSO))
+        if (!NetworkedGameManager.Instance.playerClassesDict.TryGetValue(selectedClass, out var classSO))
             return;
 
         // Sliders use inverted="true" for visual design - invert value so 20 displays as 20, not 80

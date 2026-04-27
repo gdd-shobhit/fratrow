@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b156da869479a9367bd920214e066, type: 3}
+  m_Name: Whiskey
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemDetails
+  Name: Whiskey
+  maxStack: 5
+  Id:
+    Part1: 2782355601
+    Part2: 1182262608
+    Part3: 3209563778
+    Part4: 2374288537
+  Icon: {fileID: 0}
+  Description: Bourbon, rye, or scotch — oak, grain, and smoke; wide price ladder, quality sips sit above clear spirits.
+  displayName: 
+  itemType: 0
+  shopRarity: 2
+  shopCost: 14
+  startingStock: 99

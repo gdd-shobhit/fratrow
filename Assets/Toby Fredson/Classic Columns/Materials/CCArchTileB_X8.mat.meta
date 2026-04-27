@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: b2a46d9dbe616bd4892c3236ff4335f6
+labels:
+- classic
+- columns
+- materials
+- roman
+- ruins
+- stone
+timeCreated: 1501715011
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: materials
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 58062
+  packageName: Classic Columns
+  packageVersion: 1.1
+  assetPath: Assets/Toby Fredson/Classic Columns/Materials/CCArchTileB_X8.mat
+  uploadId: 195697
