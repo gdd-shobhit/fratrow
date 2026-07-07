@@ -17,10 +17,6 @@ public class PlayerSpawner : NetworkBehaviour
 
     private int _nextSpawnIndex = 0;
 
-    public void Start()
-    {
-
-    }
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();

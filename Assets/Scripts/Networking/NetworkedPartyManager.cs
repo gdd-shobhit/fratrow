@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -46,12 +44,6 @@ public class NetworkedPartyManager : NetworkBehaviour
     [Header("Game State")]
     [SerializeField] private bool persistAcrossScenes = true;
     [SerializeField] private Transform guestSpawnLocation;
-
-    // Action events
-    public event System.Action<int> OnDayNumberChanged;
-    public event System.Action<float> OnCurrentGuestNumberChanged;
-    public event System.Action<float> OnCurrentTimeChanged;
-
 
     // Accessors
     public bool IsPartyActive => _networkedParty != null && _networkedParty.State == PartyState.Active;
@@ -209,20 +201,12 @@ public class NetworkedPartyManager : NetworkBehaviour
         networkedGuest.InitializeGuestData(guestSO);
 
         guestObject.GetComponent<NetworkObject>().Spawn(true);
-        // Update party stats based on guest
-        _networkedParty._popularity.Value += guestSO.popularity;
-        _networkedParty._troubleMaker.Value += guestSO.troubleMaker;
-        _networkedParty._cashValue.Value += guestSO.cashvalue;
 
-        // If networked, sync party stats via NetworkedParty
-        var networkedParty = FindFirstObjectByType<NetworkedParty>();
-        if (networkedParty != null)
-        {
-            var guestNetworkObject = guestObject.GetComponent<Unity.Netcode.NetworkObject>();
-            ulong guestNetworkId = guestNetworkObject != null ? guestNetworkObject.NetworkObjectId : 0;
-            networkedParty.AddGuestServerRPC(guestNetworkId, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
-        }
-            
+        _networkedParty.AddGuestServerRPC(
+            guestObject.GetComponent<NetworkObject>().NetworkObjectId,
+            guestSO.popularity,
+            guestSO.troubleMaker,
+            guestSO.cashvalue);
 
         if (IsServer && npcGuest.Abilities.Count > 0)
         {

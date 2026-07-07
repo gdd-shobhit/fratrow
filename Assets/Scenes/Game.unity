@@ -1088607,7 +1088607,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 995812535}
-  - component: {fileID: 995812534}
   - component: {fileID: 995812536}
   - component: {fileID: 995812537}
   m_Layer: 0
@@ -1088617,29 +1088616,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &995812534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 995812533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 325297ebf0bf8734b9e1e49d33f8f77f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  playerClasses:
-  - {fileID: 11400000, guid: 851a2c81f1f38264eb363505b25e4a0d, type: 2}
-  - {fileID: 11400000, guid: c406855af96b0df48a3aba97e3e288e0, type: 2}
-  - {fileID: 11400000, guid: d7854b864cf0ac24ba5af323bc303c35, type: 2}
-  - {fileID: 11400000, guid: 30348cabfdd47ef40be579211ea6971b, type: 2}
-  guestClasses:
-  - {fileID: 11400000, guid: f74c15bed102a3a4bba5b1552279005a, type: 2}
-  - {fileID: 11400000, guid: 6904fc3c461ba5c4a8aeda60f650bae2, type: 2}
-  - {fileID: 11400000, guid: 7befe4896a7275946aef594574baa18c, type: 2}
-  - {fileID: 11400000, guid: ff391b91a31961245891bd09dd59f7be, type: 2}
-  persistAcrossScenes: 1
 --- !u!4 &995812535
 Transform:
   m_ObjectHideFlags: 0
@@ -1088693,8 +1088669,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkedGameManager
   ShowTopMostFoldoutHeaderGroup: 1
-  playerClasses: []
-  guestClasses: []
+  playerClasses:
+  - {fileID: 11400000, guid: 851a2c81f1f38264eb363505b25e4a0d, type: 2}
+  - {fileID: 11400000, guid: c406855af96b0df48a3aba97e3e288e0, type: 2}
+  - {fileID: 11400000, guid: d7854b864cf0ac24ba5af323bc303c35, type: 2}
+  - {fileID: 11400000, guid: 30348cabfdd47ef40be579211ea6971b, type: 2}
+  guestClasses:
+  - {fileID: 11400000, guid: f74c15bed102a3a4bba5b1552279005a, type: 2}
+  - {fileID: 11400000, guid: 6904fc3c461ba5c4a8aeda60f650bae2, type: 2}
+  - {fileID: 11400000, guid: 7befe4896a7275946aef594574baa18c, type: 2}
+  - {fileID: 11400000, guid: ff391b91a31961245891bd09dd59f7be, type: 2}
   myFraternity:
     m_InternalValue:
       fratName: 

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 
 /// <summary>
 /// NetworkBehaviour singleton for GameManager.
@@ -198,7 +196,7 @@ public class NetworkedGameManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// Get the in-game player GameObject for a client. Server uses GameManager.playersInGame;
+    /// Get the in-game player GameObject for a client. Server uses playersInGame;
     /// clients find it via SpawnManager by OwnerClientId.
     /// </summary>
     public GameObject GetPlayerGameObject(ulong clientId) => GetPlayerObject(clientId);
@@ -207,7 +205,7 @@ public class NetworkedGameManager : NetworkBehaviour
     {
         if (playersInGame == null) return null;
 
-        // Server: we have it in GameManager (PlayerSpawner added it)
+        // Server: we have it in playersInGame (PlayerSpawner added it)
         if (IsServer && playersInGame.TryGetValue(clientId, out GameObject playerObject))
         {
             // Only return if the reference is still valid (not destroyed)

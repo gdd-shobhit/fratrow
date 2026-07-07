@@ -1,10 +1,8 @@
-using System.Collections;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Handles initialization of Unity Services and NetCode networking.
@@ -190,84 +188,5 @@ public class NetworkBootstrap : MonoBehaviour
 
         Debug.Log("[NetworkBootstrap] Starting as client...");
         networkManager.StartClient();
-    }
-
-    /// <summary>
-    /// Start as client, then load Lobby scene when LobbySystems spawns (event-driven).
-    /// Subscribes to LobbyManager.OnClientLobbySystemsSpawned so no polling.
-    /// </summary>
-    public void StartClientAndLoadLobbyWhenReady()
-    {
-        LobbyManager.OnClientLobbySystemsSpawned += OnClientLobbySystemsSpawned;
-        StartClient();
-        StartCoroutine(TimeoutLoadLobbyFallback());
-    }
-
-    private void OnClientLobbySystemsSpawned()
-    {
-        LobbyManager.OnClientLobbySystemsSpawned -= OnClientLobbySystemsSpawned;
-        _lobbyLoadPending = false;
-        Debug.Log("[NetworkBootstrap] LobbySystems spawned, loading Lobby scene");
-        SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-    }
-
-    private bool _lobbyLoadPending = true;
-
-    private IEnumerator TimeoutLoadLobbyFallback()
-    {
-        float timeout = 30f;
-        float elapsed = 0f;
-        while (_lobbyLoadPending && elapsed < timeout)
-        {
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        if (_lobbyLoadPending)
-        {
-            _lobbyLoadPending = false;
-            LobbyManager.OnClientLobbySystemsSpawned -= OnClientLobbySystemsSpawned;
-            Debug.LogWarning("[NetworkBootstrap] Timeout waiting for LobbySystems spawn, loading Lobby anyway");
-            SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-        }
-    }
-
-    /// <summary>
-    /// Disconnect from the current session.
-    /// </summary>
-    public void Disconnect()
-    {
-        var networkManager = NetworkManager.Singleton;
-        if (networkManager != null && (networkManager.IsServer || networkManager.IsClient))
-        {
-            Debug.Log("[NetworkBootstrap] Disconnecting...");
-            networkManager.Shutdown();
-        }
-    }
-
-    /// <summary>
-    /// Check if we are currently hosting (server + client).
-    /// </summary>
-    public bool IsHost()
-    {
-        var networkManager = NetworkManager.Singleton;
-        return networkManager != null && networkManager.IsHost;
-    }
-
-    /// <summary>
-    /// Check if we are currently a client.
-    /// </summary>
-    public bool IsClient()
-    {
-        var networkManager = NetworkManager.Singleton;
-        return networkManager != null && networkManager.IsClient && !networkManager.IsServer;
-    }
-
-    /// <summary>
-    /// Check if we are currently a server (host or dedicated server).
-    /// </summary>
-    public bool IsServer()
-    {
-        var networkManager = NetworkManager.Singleton;
-        return networkManager != null && networkManager.IsServer;
     }
 }

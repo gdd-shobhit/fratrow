@@ -47,14 +47,8 @@ public class GameplayUIManager : MonoBehaviour
         NetworkedGameManager.Instance.OnTroubleChanged += UpdateTroubleSlider;
         NetworkedGameManager.Instance.OnCashValueChanged += UpdateCashSlider;
 
-        // Party Manager
-        // NetworkedPartyManager.Instance.NetworkedParty.OnDayNumberChangedEvent += UpdateDayNumber;
-
-        // For late joiners
-        if (NetworkedGameManager.Instance != null)
-        {
-            //UpdatePopularitySlider(NetworkedGameManager.Instance.TotalPopularity);
-        }
+        if (_partyDetails != null)
+            _partyDetails.OnDayNumberChangedEvent += UpdateDayNumber;
     }
 
     private void UpdateDayNumber(int value)
@@ -68,6 +62,9 @@ public class GameplayUIManager : MonoBehaviour
         NetworkedGameManager.Instance.OnPopularityChanged -= UpdatePopularitySlider;
         NetworkedGameManager.Instance.OnTroubleChanged -= UpdateTroubleSlider;
         NetworkedGameManager.Instance.OnCashValueChanged -= UpdateCashSlider;
+
+        if (_partyDetails != null)
+            _partyDetails.OnDayNumberChangedEvent -= UpdateDayNumber;
     }
 
     // Update is called once per frame

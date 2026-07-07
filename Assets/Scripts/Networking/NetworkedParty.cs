@@ -1,9 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Unity.Netcode;
-using Unity.Properties;
 using UnityEngine;
+
+/// <summary>
+/// States a party can be in.
+/// </summary>
+public enum PartyState
+{
+    NotStarted,
+    Active,
+    Ended
+}
 
 /// <summary>
 /// NetworkBehaviour component for Party that synchronizes party state across the network.
@@ -11,8 +19,6 @@ using UnityEngine;
 /// </summary>
 public class NetworkedParty : NetworkBehaviour
 {
-    // Network synchronized variables
-    //private NetworkVariable<Party> _networkedParty = new NetworkVariable<Party>();
     [SerializeField]
     public NetworkVariable<int> _dayNumber = new NetworkVariable<int>(0);
     public NetworkVariable<int> _guestLimit = new NetworkVariable<int>(20);
@@ -26,17 +32,12 @@ public class NetworkedParty : NetworkBehaviour
     [SerializeField]
     private int DayNumberUI = 0;
 
-    // Non-networked variables
     public float _timeSinceGuestSpawned = 0f;
     public List<NPCGuest> currentGuests = new List<NPCGuest>();
 
-    // In-game time tracking (10pm = 22:00, 2am = 02:00)
-    public float inGameTimeStart = 22.0f; // 10:00 PM
-    public float inGameTimeEnd = 2.0f;    // 2:00 AM (next day)
-    // Network list for guest IDs (we'll track guest NetworkObjects)
-    private NetworkList<ulong> _guestNetworkIds = new NetworkList<ulong>();
+    public float inGameTimeStart = 22.0f;
+    public float inGameTimeEnd = 2.0f;
 
-    // Action events
     public event System.Action<int> OnDayNumberChangedEvent;
 
     private void Awake()
@@ -46,18 +47,14 @@ public class NetworkedParty : NetworkBehaviour
             gameObject.GetComponent<NetworkObject>().Spawn();
         }
     }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        // Subscribe to network variable changes
         _dayNumber.OnValueChanged += OnDayNumberChanged;
-        _popularity.OnValueChanged += OnPopularityChanged;
-        _troubleMaker.OnValueChanged += OnTroubleMakerChanged;
-        _cashValue.OnValueChanged += OnCashValueChanged;
-        _partyState.OnValueChanged += OnPartyStateChanged;
 
-        if(NetworkedPartyManager.Instance.NetworkedParty != this)
+        if (NetworkedPartyManager.Instance.NetworkedParty != this)
         {
             NetworkedPartyManager.Instance.NetworkedParty = this;
         }
@@ -66,18 +63,9 @@ public class NetworkedParty : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
-
-        // Unsubscribe from network variable changes
         _dayNumber.OnValueChanged -= OnDayNumberChanged;
-        _popularity.OnValueChanged -= OnPopularityChanged;
-        _troubleMaker.OnValueChanged -= OnTroubleMakerChanged;
-        _cashValue.OnValueChanged -= OnCashValueChanged;
-        _partyState.OnValueChanged -= OnPartyStateChanged;
     }
 
-    /// <summary>
-    /// Start the party. Server-only method.
-    /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void StartPartyServerRPC()
     {
@@ -85,26 +73,20 @@ public class NetworkedParty : NetworkBehaviour
 
         Debug.Log($"[NetworkedParty] Server starting party - Day {_dayNumber.Value}, Guest Limit: {_guestLimit.Value}");
 
-
          _dayNumber.Value++;
          DayNumberUI = _dayNumber.Value;
 
-
-        // Increase guest limit through upgrades?
-        //_guestLimit.Value = guestLimit;
         _partyState.Value = PartyState.Active;
         _partyStartTime.Value = (float)NetworkManager.ServerTime.Time;
         
-        float durationInSeconds =NetworkedPartyManager.Instance.PartyDurationMinutes * 60f; // Default 10 in game minutes
+        float durationInSeconds = NetworkedPartyManager.Instance.PartyDurationMinutes * 60f;
         _partyEndTime.Value = (float)NetworkManager.ServerTime.Time + durationInSeconds;
         _timeSinceGuestSpawned = 0f;
 
-        // Reset stats
         _popularity.Value = 0f;
         _troubleMaker.Value = 0f;
         _cashValue.Value = 0f;
 
-        // Notify clients
         OnPartyStartedClientRPC();
     }
 
@@ -114,9 +96,6 @@ public class NetworkedParty : NetworkBehaviour
         Debug.Log("[NetworkedParty] Party started on client.");
     }
 
-    /// <summary>
-    /// End the party. Server-only method.
-    /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void EndPartyServerRPC()
     {
@@ -127,7 +106,6 @@ public class NetworkedParty : NetworkBehaviour
         _partyState.Value = PartyState.Ended;
         End();
 
-        // Notify clients
         OnPartyEndedClientRPC();
     }
 
@@ -137,20 +115,11 @@ public class NetworkedParty : NetworkBehaviour
         Debug.Log("[NetworkedParty] Party ended on client.");
     }
 
-    /// <summary>
-    /// End the party
-    /// </summary>
     public void End()
     {
         DistributePartyEndRewards();
-        // TODO: Achievements hookups
-
-        // TODO: Leaderboard implementation. Distribution of everything else
     }
 
-    /// <summary>
-    /// Distribute the rewards after the party
-    /// </summary>
     private void DistributePartyEndRewards()
     {
         if (_partyState.Value != PartyState.Ended)
@@ -159,16 +128,12 @@ public class NetworkedParty : NetworkBehaviour
             return;
         }
 
-        // Rewards
         NetworkedGameManager.Instance.AddTotalCashValue(CashValue);
         NetworkedGameManager.Instance.AddTotalPopularityValue(Popularity);
 
         Debug.Log($"Party rewards distributed: +{CashValue} Cash, +{Popularity} Popularity");
     }
 
-    /// <summary>
-    /// Add a guest to the party. Server-only method.
-    /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void AddGuestServerRPC(ulong guestNetworkId, float popularity, float troubleMaker, float cashValue)
     {
@@ -176,15 +141,10 @@ public class NetworkedParty : NetworkBehaviour
 
         Debug.Log($"[NetworkedParty] Server adding guest {guestNetworkId}");
 
-        // Update party stats
         _popularity.Value += popularity;
         _troubleMaker.Value += troubleMaker;
         _cashValue.Value += cashValue;
 
-        // Add guest to network list (if we're tracking them)
-        // Note: We might track guest NetworkObjects separately
-
-        // Notify clients
         OnGuestAddedClientRPC(guestNetworkId, popularity, troubleMaker, cashValue);
     }
 
@@ -194,36 +154,6 @@ public class NetworkedParty : NetworkBehaviour
         Debug.Log($"[NetworkedParty] Guest added on client: {NetworkManager.Singleton.LocalClientId}");
     }
 
-    /// <summary>
-    /// Remove a guest from the party. Server-only method.
-    /// </summary>
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RemoveGuestServerRPC(ulong guestNetworkId, float popularity, float troubleMaker, float cashValue)
-    {
-        if (!IsServer) return;
-
-        Debug.Log($"[NetworkedParty] Server removing guest {guestNetworkId}");
-
-        // Update party stats (subtract guest's contribution)
-        _popularity.Value -= popularity;
-        _troubleMaker.Value -= troubleMaker;
-        
-        // Design: Should we deduct cash if we remove people? 
-        _cashValue.Value -= cashValue;
-
-        // Notify clients
-        OnGuestRemovedClientRPC(guestNetworkId);
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void OnGuestRemovedClientRPC(ulong guestNetworkId)
-    {
-        Debug.Log($"[NetworkedParty] Guest removed on client: {guestNetworkId}"); 
-    }
-
-    /// <summary>
-    /// Update time since guest spawned. Called by server each frame.
-    /// </summary>
     public void UpdateTimeSinceGuestSpawned(float deltaTime)
     {
         if (IsServer)
@@ -232,38 +162,16 @@ public class NetworkedParty : NetworkBehaviour
         }
     }
 
-    // Network variable change handlers
     private void OnDayNumberChanged(int oldValue, int newValue)
     {
         DayNumberUI = _dayNumber.Value;
         OnDayNumberChangedEvent?.Invoke(newValue);
     }
 
-    private void OnPopularityChanged(float oldValue, float newValue)
-    {
-
-    }
-
-    private void OnTroubleMakerChanged(float oldValue, float newValue)
-    {
-
-    }
-
-    private void OnCashValueChanged(float oldValue, float newValue)
-    {
-
-    }
-
-    private void OnPartyStateChanged(PartyState oldValue, PartyState newValue)
-    {
-
-    }
-
     public bool AddGuest(NPCGuest guest)
     {
         if (currentGuests.Count >= GuestLimit)
         {
-            // TODO: Show a UI popup to the player that the party is at capacity and show UI for Guest Limit button
             Debug.LogWarning($"Party is at capacity ({GuestLimit}). Cannot add more guests.");
             return false;
         }
@@ -277,42 +185,26 @@ public class NetworkedParty : NetworkBehaviour
         return false;
     }
 
-    public void Start()
-    {
-
-    }
-
-    /// <summary>
-    /// Get the current in-game time based on elapsed real-time.
-    /// Returns time in hours (22.0 = 10pm, 2.0 = 2am)
-    /// </summary>
     public float GetCurrentInGameTime()
     {
         if (State != PartyState.Active)
             return inGameTimeStart;
 
         float elapsedRealTime = (float)NetworkManager.ServerTime.Time - PartyStartTime;
-        // 10 minutes real-time = 4 hours in-game (240 minutes)
-        // So 1 second real-time = 0.4 minutes in-game = 0.00667 hours in-game
-        float inGameHoursElapsed = (elapsedRealTime / 60f) * 4f; // Convert real minutes to in-game hours
+        float inGameHoursElapsed = (elapsedRealTime / 60f) * 4f;
         float currentTime = inGameTimeStart + inGameHoursElapsed;
 
-        // Handle wrap-around past midnight (2am = 26:00 in 24h format, but we want 2.0)
         if (currentTime >= 24.0f)
             currentTime -= 24.0f;
 
         return currentTime;
     }
 
-    /// <summary>
-    /// Remove a guest from the party
-    /// </summary>
     public bool RemoveGuest(NPCGuest guest)
     {
         return currentGuests.Remove(guest);
     }
 
-    // Public getters for network variables
     public int DayNumber => _dayNumber.Value;
     public int GuestLimit => _guestLimit.Value;
     public float Popularity => _popularity.Value;
