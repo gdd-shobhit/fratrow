@@ -42,6 +42,20 @@ namespace Systems.Inventory {
             return model.TryRemoveOne(details);
         }
 
+        public int Capacity => capacity;
+
+        public Item GetItemAt(int index) => model.Get(index);
+
+        public bool IsSlotEmpty(int index) {
+            if (index < 0 || index >= capacity) {
+                return true;
+            }
+
+            return model.Get(index) == null;
+        }
+
+        public event Action OnChanged;
+
         IEnumerator Initialize() {
             yield return view.InitializeView(new ViewModel(model, capacity));
             
@@ -75,7 +89,10 @@ namespace Systems.Inventory {
             }
         }
 
-        void HandleModelChanged(IList<Item> items) => RefreshView();
+        void HandleModelChanged(IList<Item> items) {
+            RefreshView();
+            OnChanged?.Invoke();
+        }
         
         void RefreshView() {
             for (int i = 0; i < capacity; i++) {
@@ -93,7 +110,7 @@ namespace Systems.Inventory {
         public class Builder {
             InventoryView view;
             IEnumerable<ItemDetails> itemDetails;
-            int capacity = 20;
+            int capacity = 8;
             
             public Builder(InventoryView view) {
                 this.view = view;

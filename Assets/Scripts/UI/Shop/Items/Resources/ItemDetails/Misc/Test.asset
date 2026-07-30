@@ -26,3 +26,5 @@ MonoBehaviour:
   shopRarity: 0
   shopCost: 0
   startingStock: 0
+  isPlaceableInWorld: 0
+  equippedPrefab: {fileID: 1000000000000000001, guid: b4e8f1c23a5d6e74f9a0b1c2d3e4f5a6, type: 3}

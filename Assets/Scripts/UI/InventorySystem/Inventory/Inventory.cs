@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Systems.Persistence;
 using UnityEngine;
@@ -5,17 +6,22 @@ using UnityEngine;
 namespace Systems.Inventory {
     public class Inventory : MonoBehaviour, IBind<InventoryData> {
         [SerializeField] InventoryView view;
-        [SerializeField] int capacity = 20;
+        [SerializeField] int capacity = 8;
         [SerializeField] List<ItemDetails> startingItems = new List<ItemDetails>();
         [field: SerializeField] public SerializableGuid Id { get; set; } = SerializableGuid.NewGuid();
 
         InventoryController controller;
+
+        public int Capacity => capacity;
+
+        public event Action OnChanged;
 
         void Awake() {
             controller = new InventoryController.Builder(view)
                 .WithStartingItems(startingItems)
                 .WithCapacity(capacity)
                 .Build();
+            controller.OnChanged += () => OnChanged?.Invoke();
         }
          
         public void Bind(InventoryData data) {
@@ -30,6 +36,14 @@ namespace Systems.Inventory {
 
         public bool TryRemoveOne(ItemDetails details) {
             return controller != null && controller.TryRemoveOne(details);
+        }
+
+        public Item GetItemAt(int index) {
+            return controller?.GetItemAt(index);
+        }
+
+        public bool IsSlotEmpty(int index) {
+            return controller == null || controller.IsSlotEmpty(index);
         }
     }
 }

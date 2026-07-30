@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/Phone/UI/Phone.uss?fileID=7433441132597879392&amp;guid=c0a1e2b3d4f5567890abc0010000000b&amp;type=3#Phone"/>
+    <ui:VisualElement name="phone-root" class="phone-root" style="display: none;">
+        <!-- Layer 1: Case -->
+        <ui:VisualElement name="phone-case" class="phone-case">
+            <!-- Layer 2: Screen -->
+            <ui:VisualElement name="phone-screen" class="phone-screen">
+                <ui:VisualElement name="phone-status-bar" class="phone-status-bar">
+                    <ui:Button name="phone-nav-back" text="‹" class="phone-nav-back" style="display: none;"/>
+                    <ui:Label name="phone-status" text="Fri 10:42 PM" class="phone-status"/>
+                    <ui:Button name="phone-close" text="✕" class="phone-close"/>
+                </ui:VisualElement>
+                <!-- Layer 3: Apps -->
+                <ui:VisualElement name="phone-apps" class="phone-apps">
+                    <ui:VisualElement name="view-home" class="phone-view view-home">
+                        <ui:Label text="Home" class="app-title"/>
+                        <ui:VisualElement class="home-grid">
+                            <ui:Button name="app-contacts" text="Contacts" class="app-icon app-icon-contacts"/>
+                            <ui:Button name="app-messages" text="Messages" class="app-icon app-icon-messages"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="view-contacts" class="phone-view view-contacts" style="display: none;">
+                        <ui:Label text="Contacts" class="app-title"/>
+                        <ui:ScrollView name="contacts-scroll" class="phone-scroll"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="view-messages" class="phone-view view-messages" style="display: none;">
+                        <ui:Label text="Messages" class="app-title"/>
+                        <ui:ScrollView name="messages-scroll" class="phone-scroll"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="view-thread" class="phone-view view-thread" style="display: none;">
+                        <ui:Label name="thread-title" text="Thread" class="app-title"/>
+                        <ui:ScrollView name="thread-scroll" class="phone-scroll thread-scroll"/>
+                        <ui:VisualElement name="template-row" class="template-row"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

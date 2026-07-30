@@ -1,11 +1,12 @@
 ﻿using System;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Represents a globally unique identifier (GUID) that is serializable with Unity and usable in game scripts.
 /// </summary>
 [Serializable]
-public struct SerializableGuid : IEquatable<SerializableGuid> {
+public struct SerializableGuid : IEquatable<SerializableGuid>, INetworkSerializable {
     [SerializeField, HideInInspector] public uint Part1;
     [SerializeField, HideInInspector] public uint Part2;
     [SerializeField, HideInInspector] public uint Part3;
@@ -73,5 +74,12 @@ public struct SerializableGuid : IEquatable<SerializableGuid> {
     }
 
     public static bool operator ==(SerializableGuid left, SerializableGuid right) => left.Equals(right);
-    public static bool operator !=(SerializableGuid left, SerializableGuid right) => !(left == right); 
+    public static bool operator !=(SerializableGuid left, SerializableGuid right) => !(left == right);
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter {
+        serializer.SerializeValue(ref Part1);
+        serializer.SerializeValue(ref Part2);
+        serializer.SerializeValue(ref Part3);
+        serializer.SerializeValue(ref Part4);
+    }
 }

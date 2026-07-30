@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Systems.Phone;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -144,6 +145,35 @@ public class NetworkedPartyManager : NetworkBehaviour
         if (guestDict == null || guestDict.Count == 0)
         {
             Debug.LogWarning("No guests available in NetworkedGameManager dictionary!");
+            return;
+        }
+
+        // Phone invites: consume one pending invite and bias that guest class's arrival roll
+        var invites = NetworkedPhoneInvites.Instance;
+        if (invites != null && invites.TryConsumeInvite(out var invite)
+            && invite.GuestClass != GuestClass.None
+            && guestDict.TryGetValue(invite.GuestClass, out var invitedGuestSO)
+            && invitedGuestSO != null)
+        {
+            float invitedChance = Mathf.Clamp(
+                invitedGuestSO.GetModifiedArrivalChance(partyPopularity) + invite.ArrivalBonus,
+                0f,
+                100f);
+            float invitedRoll = Random.Range(0f, 100f);
+            if (invitedRoll <= invitedChance)
+            {
+                SpawnGuest(invitedGuestSO);
+                Debug.Log(
+                    $"[PhoneInvite] {invitedGuestSO.guestName} arrived via invite! " +
+                    $"(Roll: {invitedRoll:F2} <= {invitedChance:F2}%)");
+            }
+            else
+            {
+                SpawnGuest(guestDict[GuestClass.None]);
+                Debug.Log(
+                    $"[PhoneInvite] {invitedGuestSO.guestName} invite missed. " +
+                    $"(Roll: {invitedRoll:F2} > {invitedChance:F2}%)");
+            }
             return;
         }
 

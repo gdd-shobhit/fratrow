@@ -16,6 +16,8 @@ namespace StarterAssets
         public bool drink;
 		public bool interact;
 		public bool inventoryToggle;
+		public bool phoneToggle;
+		public bool[] hotbarSlots = new bool[8];
 
         [Header("Movement Settings")]
 		public bool analogMovement;
@@ -60,6 +62,20 @@ namespace StarterAssets
 		{
 			InventoryInput(value.isPressed);
 		}
+
+		public void OnPhone(InputValue value)
+		{
+			PhoneInput(value.isPressed);
+		}
+
+		public void OnHotbarSlot1(InputValue value) => HotbarSlotInput(0, value.isPressed);
+		public void OnHotbarSlot2(InputValue value) => HotbarSlotInput(1, value.isPressed);
+		public void OnHotbarSlot3(InputValue value) => HotbarSlotInput(2, value.isPressed);
+		public void OnHotbarSlot4(InputValue value) => HotbarSlotInput(3, value.isPressed);
+		public void OnHotbarSlot5(InputValue value) => HotbarSlotInput(4, value.isPressed);
+		public void OnHotbarSlot6(InputValue value) => HotbarSlotInput(5, value.isPressed);
+		public void OnHotbarSlot7(InputValue value) => HotbarSlotInput(6, value.isPressed);
+		public void OnHotbarSlot8(InputValue value) => HotbarSlotInput(7, value.isPressed);
 #endif
         private void InteractInput(bool isPressed)
         {
@@ -69,6 +85,20 @@ namespace StarterAssets
 		private void InventoryInput(bool isPressed)
 		{
 			inventoryToggle = isPressed;
+		}
+
+		private void PhoneInput(bool isPressed)
+		{
+			phoneToggle = isPressed;
+		}
+
+		private void HotbarSlotInput(int slotIndex, bool isPressed)
+		{
+			if (!isPressed || slotIndex < 0 || slotIndex >= hotbarSlots.Length) {
+				return;
+			}
+
+			hotbarSlots[slotIndex] = true;
 		}
         public void MoveInput(Vector2 newMoveDirection)
 		{

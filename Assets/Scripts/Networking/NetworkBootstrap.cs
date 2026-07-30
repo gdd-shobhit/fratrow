@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Systems.Inventory;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -159,6 +160,7 @@ public class NetworkBootstrap : MonoBehaviour
         }
 
         Debug.Log("[NetworkBootstrap] Starting as host...");
+        EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
         networkManager.StartHost();
     }
 
@@ -187,6 +189,7 @@ public class NetworkBootstrap : MonoBehaviour
         }
 
         Debug.Log("[NetworkBootstrap] Starting as client...");
+        EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
         networkManager.StartClient();
     }
 }

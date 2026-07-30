@@ -65,6 +65,8 @@ namespace StarterAssets
 
         [Header("UI")]
         [SerializeField] InventoryView inventoryView;
+        [SerializeField] ItemEquipper itemEquipper;
+        [SerializeField] Systems.Phone.PhoneView phoneView;
 
         // cinemachine
         private float _cinemachineTargetPitch;
@@ -123,6 +125,11 @@ namespace StarterAssets
 #endif
 
             _animator = GetComponent<Animator>();
+
+            if (itemEquipper == null) {
+                itemEquipper = GetComponent<ItemEquipper>();
+            }
+
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
@@ -140,6 +147,8 @@ namespace StarterAssets
             DrinkCheck();
             InteractAction();
             InventoryCheck();
+            PhoneCheck();
+            HotbarCheck();
         }
 
         void InventoryCheck()
@@ -151,9 +160,45 @@ namespace StarterAssets
 
             if (_input.inventoryToggle)
             {
-                inventoryView.ToggleVisibility();
-                _input.inventoryToggle = false; // Reset the input to avoid multiple toggles
-                _input.SetInventoryUIMode(inventoryView.IsVisible);
+                inventoryView.ToggleEditMode();
+                _input.inventoryToggle = false;
+                _input.SetInventoryUIMode(inventoryView.IsEditModeActive);
+            }
+        }
+
+        void PhoneCheck()
+        {
+            if (phoneView == null)
+            {
+                phoneView = GetComponentInChildren<Systems.Phone.PhoneView>(true);
+            }
+
+            if (phoneView == null || _input == null)
+            {
+                return;
+            }
+
+            if (_input.phoneToggle)
+            {
+                _input.phoneToggle = false;
+                phoneView.Toggle();
+            }
+        }
+
+        void HotbarCheck()
+        {
+            if (itemEquipper == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _input.hotbarSlots.Length; i++)
+            {
+                if (_input.hotbarSlots[i])
+                {
+                    _input.hotbarSlots[i] = false;
+                    itemEquipper.EquipSlot(i);
+                }
             }
         }
 

@@ -177,7 +177,7 @@ MonoBehaviour:
   m_PanelSettings: {fileID: 11400000, guid: d2c63d696d5308a44b57be419f78823c, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 9197481963319205126, guid: dbe26a05c9578e34294886afa8241c04, type: 3}
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Position: 0
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
@@ -185,6 +185,90 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!1 &5757708449642189970
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6822457786382419355}
+  - component: {fileID: 4653840875708496743}
+  - component: {fileID: 4653840875708496744}
+  - component: {fileID: 4653840875708496745}
+  m_Layer: 0
+  m_Name: Phone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6822457786382419355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189970}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8446742108066757666}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4653840875708496743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: d2c63d696d5308a44b57be419f78823c, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: c0a1e2b3d4f5567890abc0010000000a, type: 3}
+  m_SortingOrder: 2
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &4653840875708496744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0a1e2b3d4f5567890abc00100000006, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Phone.PhoneController
+--- !u!114 &4653840875708496745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5757708449642189970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0a1e2b3d4f5567890abc00100000007, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Phone.PhoneView
+  document: {fileID: 4653840875708496743}
+  controller: {fileID: 4653840875708496744}
+  phoneHold: {fileID: 5858962347969024345}
 --- !u!114 &2460364524934424948
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,7 +282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.Inventory
   view: {fileID: 1790124845307843192}
-  capacity: 20
+  capacity: 8
   startingItems: []
   <Id>k__BackingField:
     Part1: 1148471753
@@ -469,6 +553,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1303869121318198942, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6822457786382419354}
+    - targetCorrespondingSourceObject: {fileID: 1303869121318198942, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6822457786382419355}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
       insertIndex: -1
@@ -497,6 +584,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4995370117575458894}
+    - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5858962347969024343}
+    - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5858962347969024344}
+    - targetCorrespondingSourceObject: {fileID: 1303869121318198912, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5858962347969024345}
   m_SourcePrefab: {fileID: 100100000, guid: 3625b8aaa69cde2449bff0b4bc37913b, type: 3}
 --- !u!137 &6269830649017550809 stripped
 SkinnedMeshRenderer:
@@ -723,7 +819,51 @@ MonoBehaviour:
   BottomClamp: -90
   layerMaskOutline: 6
   inventoryView: {fileID: 1790124845307843192}
+  itemEquipper: {fileID: 5858962347969024344}
+  phoneView: {fileID: 4653840875708496745}
   _mainCamera: {fileID: 3066439434052714872}
+--- !u!114 &5858962347969024343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8446742108066757692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bd3f5706902f734eaa982eab0fa48f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkedPlayerEquipment
+  ShowTopMostFoldoutHeaderGroup: 1
+  equipSlot: {fileID: 0}
+--- !u!114 &5858962347969024345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8446742108066757692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0a1e2b3d4f5567890abc00100000009, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Phone.NetworkedPhoneHold
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &5858962347969024344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8446742108066757692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb27dee8bca6b8b439180cb4ec40793e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Inventory.ItemEquipper
+  inventory: {fileID: 2460364524934424948}
+  inventoryView: {fileID: 1790124845307843192}
+  networkedEquipment: {fileID: 5858962347969024343}
 --- !u!114 &7687649103893824851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -760,6 +900,15 @@ MonoBehaviour:
   drink: 0
   interact: 0
   inventoryToggle: 0
+  hotbarSlots:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
