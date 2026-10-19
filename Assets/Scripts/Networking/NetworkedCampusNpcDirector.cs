@@ -70,10 +70,12 @@ namespace Systems.Campus
             base.OnNetworkSpawn();
             _instance = this;
             _states.OnListChanged += OnStatesChanged;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
 
             // Locations must exist before first schedule resolve (same fallback set as CampusSystemsBootstrap,
-            // including the rival houses; adds only missing ids to an existing registry).
-            CampusLocationFallbacks.Ensure();
+            // including the rival houses; adds only missing ids to an existing registry). GameManager spawns in the
+            // main menu, so only build campus objects once the campus scene is active.
+            if (CampusScene.IsActive) CampusLocationFallbacks.Ensure();
 
             if (IsServer)
             {
@@ -91,8 +93,42 @@ namespace Systems.Campus
             RebuildAllVisuals();
         }
 
+        /// <summary>
+        /// Scene change (menu → lobby → Game): visuals and location lookups belong to the new scene. In the campus scene,
+        /// ensure locations and rebuild every NPC visual; elsewhere, remove them.
+        /// </summary>
+        void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (mode != UnityEngine.SceneManagement.LoadSceneMode.Single)
+            {
+                return;
+            }
+
+            if (scene.name != CampusScene.Name)
+            {
+                ClearVisuals();
+                return;
+            }
+
+            CampusLocationFallbacks.Ensure();
+            if (IsServer)
+            {
+                if (TryGetCampaign(out var campaign))
+                {
+                    ApplyCampaignLocationsServer(campaign);
+                }
+                else
+                {
+                    ApplySchedulesServer(force: true);
+                }
+            }
+
+            RebuildAllVisuals();
+        }
+
         public override void OnNetworkDespawn()
         {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
             _states.OnListChanged -= OnStatesChanged;
             foreach (var v in _visuals.Values)
             {
@@ -399,6 +435,12 @@ namespace Systems.Campus
 
         void UpsertVisual(NamedNpcNetState state)
         {
+            // NPC bodies only exist on the campus (not in the main menu or lobby the GameManager passes through).
+            if (!CampusScene.IsActive)
+            {
+                return;
+            }
+
             if (!_visuals.TryGetValue(state.NpcId, out var visual) || visual == null)
             {
                 visual = CreateVisual(state.NpcId);

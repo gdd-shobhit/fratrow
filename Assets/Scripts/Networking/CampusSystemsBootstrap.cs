@@ -15,7 +15,9 @@ namespace Systems.Campus
         {
             base.OnNetworkSpawn();
             EnsureLocalDialogue();
-            EnsureLocations();
+            // GameManager spawns in the main menu; campus locations are built when the campus scene loads
+            // (NetworkedCampusNpcDirector handles the scene-load path).
+            if (CampusScene.IsActive) EnsureLocations();
 
             if (IsServer)
             {

@@ -58,6 +58,21 @@ reply comes from the social backend. Yarn Spinner has been removed: no scripted 
 3. **PartyManager → Guest Spawn Location** is the party entrance. "Meet me at the door" means standing within 4 m of it.
 4. The **HUD** (`GameplayUIManager` + `HUDVisualTree.uxml`) binds to `NetworkedCampaign` automatically.
 
+## Starting a session (menu → lobby → game)
+
+1. In the **Main menu**, **Start** initialises Unity Gaming Services, creates a Relay session (which starts the NGO host), and
+   loads the **Lobby**. Friends use **Join** with the session code.
+2. In the **Lobby**, everyone pick a class (it becomes your frat role) and press **Ready**; Ready toggles. When everyone is
+   ready, the host presses **Start Game**, and NGO loads **Game** for everybody.
+3. The campaign, NPC visuals and campus locations start only once **Game** is active. GameManager persists from the menu, but
+   the week clock doesn't run in the lobby.
+
+If **Start** logs `Failed to initialize services`, the log now lists the inner causes. The usual one is an editor project that
+isn't linked to Unity Cloud. Fix it in **Edit → Project Settings → Services** by linking the existing **fratrow** project
+(org `shobhitdhamania`). In the editor and development builds, a failed Start falls back to a **local host** over direct
+transport, and the lobby code shows **LOCAL**. Others on the same machine (for example a ParrelSync clone) or LAN join by
+typing `LOCAL` or the host's IP into the Join field.
+
 ## Driving and testing it
 
 - **In play mode (development builds):** press **F1** for the campaign dev panel. It offers every action for the

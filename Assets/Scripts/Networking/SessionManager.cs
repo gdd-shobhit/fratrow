@@ -188,6 +188,12 @@ public class SessionManager : MonoBehaviour
     /// </summary>
     public string GetSessionCode()
     {
+        if (_currentSession == null && NetworkBootstrap.Instance != null && NetworkBootstrap.Instance.IsLocalMode)
+        {
+            // Development direct-transport session: friends join with this code (see MainMenuEvents).
+            return "LOCAL";
+        }
+
         return _currentSession?.Code ?? string.Empty;
     }
 

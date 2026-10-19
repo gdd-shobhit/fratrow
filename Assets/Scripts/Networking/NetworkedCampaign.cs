@@ -259,6 +259,9 @@ public sealed class NetworkedCampaign : NetworkBehaviour
     void Update()
     {
         if (!IsServer) return;
+        // GameManager spawns with the host in the main menu and persists through the lobby. The semester only starts
+        // (and the clock only runs) once LobbyManager has loaded the campus scene for everyone.
+        if (!CampusScene.IsActive) return;
         if (Session == null) { TryStartCampaign(); return; }
         try
         {

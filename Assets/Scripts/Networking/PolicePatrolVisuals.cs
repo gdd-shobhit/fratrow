@@ -29,6 +29,11 @@ public sealed class PolicePatrolVisuals : MonoBehaviour
     {
         var campaign = NetworkedCampaign.Instance;
         var registry = CampusLocationRegistry.Instance;
+        if (!CampusScene.IsActive)
+        {
+            foreach (var unit in units.Values) if (unit.go != null) unit.go.SetActive(false);
+            return;
+        }
         if (campaign == null || campaign.Patrols == null || registry == null || !campaign.IsSpawned) return;
         var list = campaign.Patrols;
         stale.Clear();

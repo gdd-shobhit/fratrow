@@ -400,6 +400,7 @@ public class LobbyUI : MonoBehaviour
 
     private void RefreshStartGameButton()
     {
+        RefreshReadyButton();
         if (_startGameButton == null) return;
 
         var nm = NetworkManager.Singleton;
@@ -520,8 +521,21 @@ public class LobbyUI : MonoBehaviour
 
     private void OnReadyClicked()
     {
-        // Toggle ready: would need local state or ask LobbyManager for current; for now just send true
-        LobbyManager.Instance?.RequestSetReadyStatus(true);
+        // Toggle from the authoritative lobby roster (server state replicated to every client).
+        LobbyManager.Instance?.RequestSetReadyStatus(!IsLocalReady());
+    }
+
+    private static bool IsLocalReady()
+    {
+        var nm = NetworkManager.Singleton;
+        var lobby = LobbyManager.Instance;
+        return nm != null && lobby != null && lobby.Players.TryGetValue(nm.LocalClientId, out var me) && me.IsReady;
+    }
+
+    private void RefreshReadyButton()
+    {
+        if (_readyButton == null) return;
+        _readyButton.text = IsLocalReady() ? "Unready" : "Ready";
     }
 
     private void OnStartGameClicked()
