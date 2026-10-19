@@ -47,7 +47,7 @@ static class Simulation
         report.AppendLine("Roster: " + f.Roster.npcs.Count + " NPCs (" + f.Roster.npcs.Count(n => n.isPnm) + " PNMs). Roles: " +
             string.Join(", ", f.Session.State.players.Select(p => p.displayName + "=" + p.role)));
         report.AppendLine();
-        int lastNews = 0, lastConversation = 0;
+        int lastNews = 0, lastConversation = 0, lastStory = 0;
         while (f.Session.State.phase != Phase.SemesterEnd)
         {
             int week = f.Session.State.week;
@@ -84,6 +84,8 @@ static class Simulation
             foreach (var n in f.Session.State.news.Where(n => n.seq > lastNews)) report.AppendLine("- " + n.text);
             lastNews = (int)f.Session.State.newsSeq;
             report.AppendLine();
+            AppendRumorMill(f, report, result, lastStory);
+            lastStory = f.Session.State.storySeq;
         }
         report.AppendLine("## Semester result");
         report.AppendLine();
@@ -102,4 +104,22 @@ static class Simulation
     }
 
     static string Name(GameFixture f, string playerId) => f.Session.Player(playerId)?.displayName ?? playerId;
+
+    /// <summary>Stories born since last week, how far each got, how it mutated, and word of mouth per house.</summary>
+    static void AppendRumorMill(GameFixture f, StringBuilder report, WeekResult week, int lastStory)
+    {
+        var s = f.Session;
+        report.AppendLine("Rumor mill (stories since last week; reach = NPCs who heard it, believe = would act on it):");
+        foreach (var story in s.State.stories.Where(x => x.id > lastStory).OrderByDescending(x => x.severity))
+        {
+            var knowers = s.KnowersOf(story.id);
+            var versions = knowers.Where(k => k.detail > 0 || k.spice > 0).OrderByDescending(k => k.detail + k.spice).ThenBy(k => k.npcId, StringComparer.Ordinal)
+                .Select(k => "\"" + s.StoryText(story, k.detail, k.spice) + "\" (" + k.npcId + ")").Take(1).ToList();
+            report.AppendLine("- [" + story.kind + (story.fabricated ? ", a lie" : "") + (story.exposed ? ", EXPOSED" : "") + "] " + s.StoryText(story, 0, 0) +
+                " — reach " + knowers.Count + ", believe " + knowers.Count(k => k.belief >= s.Config.gossip.beliefThreshold) +
+                (versions.Count > 0 ? "; retold as " + versions[0] : ""));
+        }
+        report.AppendLine("Word of mouth this week (Δpop): " + string.Join(", ", week.entries.Select(e => s.House(e.houseId).name + " " + e.wordOfMouth.ToString("+0.0;-0.0;0.0"))));
+        report.AppendLine();
+    }
 }

@@ -30,8 +30,10 @@ namespace FratRow.Social
             var observed = s.events.Find(e => e.eventId == turn.observedEventId);
             // The host-issued receipt is immutable across retries/reloads and independent of client request IDs.
             c.SamplingSeed = Convert.ToInt32(observed.eventId.Substring(0, 7), 16);
+            // Gossip about the person speaking (or their house) is what this NPC would bring up; rank it with promises.
             var memories = s.events.Where(e => e.witnesses.Contains(npc.npcId) && e.eventId != turn.observedEventId)
-                .OrderByDescending(e => active.Contains(e.eventId) ? 3 : e.kind == "promise_broken" || e.kind == "promise_fulfilled" ? 2 : 1)
+                .OrderByDescending(e => active.Contains(e.eventId) ? 3 : e.kind == "promise_broken" || e.kind == "promise_fulfilled" ||
+                    (e.kind == "gossip" && (e.subjectId == turn.playerId || e.subjectId == "players")) ? 2 : 1)
                 .ThenByDescending(e => e.utcTicks).Take(12).ToList();
             var text = new StringBuilder();
             c.GameSetting = includeGameSetting ? SocialGameSetting.Prompt : null;
@@ -181,8 +183,10 @@ namespace FratRow.Social
             if (e.source == "rumor")
             {
                 var origin = SocialWorld.GossipOrigin(s, e);
+                // Gossip receipts also carry the version this NPC was told (possibly exaggerated) next to the original record.
+                string told = e.kind == "gossip" && origin != null ? "; what you were told=" + codec.Encode(e.text) : "";
                 return head + "RUMOR REPORTED by " + Who(s, e.actorId, codec) + ": " + (origin == null ? codec.Encode(e.text) :
-                    "alleged actor=" + Who(s, origin.actorId, codec) + "; reported content=" + codec.Encode(origin.text)) + "; you did NOT witness the original incident.";
+                    "alleged actor=" + Who(s, origin.actorId, codec) + "; reported content=" + codec.Encode(origin.text) + told) + "; you did NOT witness the original incident.";
             }
             return head + "WITNESSED WORLD EVENT kind=" + e.kind + "; actor=" + Who(s, e.actorId, codec) + "; target=" + Who(s, e.targetId, codec) + "; detail=" + codec.Encode(e.text);
         }

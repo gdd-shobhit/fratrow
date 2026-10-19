@@ -127,6 +127,7 @@ namespace FratRow.Game
                         + rng.Range(0f, Config.destination.appealNoise);
                     if (h.isPlayer && c.state == "deferred" && regard >= 0) appeal += Config.destination.deferredBonus;
                     if (h.isPlayer) appeal -= h.cover * 0.3f;
+                    if (G.enabled) appeal += G.destinationWeight * Opinion(npc.npcId, h.id);
                     if (appeal > bestAppeal) { bestAppeal = appeal; best = h.id; }
                 }
                 npc.destination = best;
@@ -407,6 +408,7 @@ namespace FratRow.Game
                 switch (inc.kind)
                 {
                     case "fight":
+                        p.injuries++;
                         h.heat = Clamp(h.heat + t.injuryHeat, 0, 100);
                         foreach (var g in PresentGuests) g.mood = Clamp(g.mood - 10, 0, 100);
                         News("incident", "A fight at " + h.name + "'s party left someone hurt.", h.id, isPublic: true);
@@ -416,6 +418,7 @@ namespace FratRow.Game
                         var guest = p.guests.Find(g => g.guestId == inc.guestId);
                         if (guest != null && guest.underage && guest.drankUnderage)
                         {
+                            p.hospitalized++;
                             h.heat = Clamp(h.heat + t.hospitalHeat, 0, 100);
                             h.dean = Clamp(h.dean - t.hospitalDean, 0, 100);
                             News("incident", "An underage guest from " + h.name + "'s party was taken to the hospital.", h.id, isPublic: true);

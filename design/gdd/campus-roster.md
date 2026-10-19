@@ -2,7 +2,8 @@
 
 > **Status**: Draft v1 (2026-10-18). Data reference, not a mechanic GDD.
 > **Data**: `Assets/Resources/Campus/CampusRoster.json` (schema in `Assets/Scripts/Game/Core/CampusRoster.cs`).
-> **Related**: `design/gdd/core-game-loop.md` §3.6 (witnesses), §3.10 (rush), §4.7–4.8 (interest, destination choice).
+> **Related**: `design/gdd/core-game-loop.md` §3.6 (witnesses), §3.10 (rush), §4.7–4.8 (interest, destination choice);
+> `design/gdd/campus-gossip.md` (schedules, cliques and the `gossip` trait drive who tells whom).
 
 The roster has 32 named NPCs. It covers the 16 original campus NPCs (seed stats, gates and schedules unchanged), the 10 authored
 catalog girls (persona and voice verbatim from `SocialCharacterCatalog`), and 6 new rush PNMs. Of these, 10 are PNMs and 11 are underage.
@@ -68,3 +69,12 @@ between Kappa and Lambda, and Quinn and Kai are open. Each persona states what w
 is the lever that turns a pick. GPA runs from 2.4 to 3.8. Recruiting therefore trades popularity and party energy (Casey, Owen) against
 the Dean's GPA check (Mateo, Kevin, Elliot). Four PNMs start unlocked: Kevin, Marcus, Mateo and Owen. Casey is the Legendary late-game
 prize (60/B). Seven of the 10 PNMs are underage, so courting them at a party carries real card-check risk.
+
+**Who gossips (`gossip`, 0–1).** Each authored NPC has a talkativeness that follows their persona (gossip GDD §3.1). The loud end
+of campus is Megan 0.95 (drama-loving queen bee), Maya 0.9 (social connector), Ivy 0.85 (social strategist), Avery 0.8, Casey 0.75,
+Ashley and Sofia 0.7. The quiet end is Mateo 0.1, Priya and Alex 0.15, Sam and Jade 0.2, and Nina 0.25 (she notices everything and tells
+almost no one). Archetypes give ranges: campus influencers 0.8–0.95, theater kids and party critics 0.7–0.85, gamers 0.1–0.25.
+High talkers tell more people per round and exaggerate more. The three most talkative (Megan, the generated influencer Kayla, and Maya
+with the shipped seed) are the **hubs** who hear police-blotter and Dean news first. Schedules matter as much as the trait. Two
+NPCs who share ≥ 4 scheduled hours a week at the same places can trade nasty stories when together, and ≥ 12 hours makes them close
+friends who text when apart. Among the authored 32, that is 349 and 72 pairs respectively.

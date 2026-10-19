@@ -23,7 +23,8 @@ namespace FratRow.Game
             if (a == null || string.IsNullOrEmpty(a.action)) return ActionResult.Fail("unknown_action", "No action.");
             var p = Player(a.playerId);
             if (p == null) return ActionResult.Fail("unknown_player", "Unknown player.");
-            bool talking = a.action == ActionIds.Talk || a.action == ActionIds.Invite || a.action == ActionIds.RushTalk;
+            bool talking = a.action == ActionIds.Talk || a.action == ActionIds.Invite || a.action == ActionIds.RushTalk ||
+                a.action == ActionIds.AskGossip || a.action == ActionIds.DenyRumor || a.action == ActionIds.TraceRumor || a.action == ActionIds.ExposeRumor;
             if (!talking && p.detainedUntil > State.time)
                 return ActionResult.Fail("detained", "You're being held by campus police for " + Math.Ceiling(p.detainedUntil - State.time) + "s.");
             if (!talking && p.busyUntil > State.time) return ActionResult.Fail("busy", "You're still out on a beer run.");
@@ -38,6 +39,10 @@ namespace FratRow.Game
                     case ActionIds.Invite:
                     case ActionIds.RushTalk: return Conversation(p, a);
                     case ActionIds.ExtendBid: return ExtendBid(p, a);
+                    case ActionIds.AskGossip: return AskGossip(p, a);
+                    case ActionIds.DenyRumor: return DenyRumor(p, a);
+                    case ActionIds.TraceRumor: return TraceRumor(p, a);
+                    case ActionIds.ExposeRumor: return ExposeRumor(p, a);
                     case ActionIds.AskNumber: return AskNumber(p, a);
                     case ActionIds.Buy: return Buy(p, a);
                     case ActionIds.WorkShift: return WeekdayChore(p, a, Config.shopLocation, Config.actions.workPerDay, () => { int pay = (int)Math.Round(Config.economy.workShiftPay * RoleOf(p).workPayMult); PlayerHouse.cash += pay; return "Worked a shift: +$" + pay + "."; });
@@ -71,7 +76,11 @@ namespace FratRow.Game
                 }
                 return ActionResult.Fail("unknown_action", "Unknown action " + a.action + ".");
             }
-            finally { social.BeginTick(); }
+            finally
+            {
+                FlushGossipLedger();
+                social.BeginTick();
+            }
         }
 
         bool InPhase(params Phase[] phases) => phases.Contains(State.phase);
@@ -153,6 +162,8 @@ namespace FratRow.Game
                 News("rsvp", def.displayName + " is coming to the party.", PlayerHouse.id, playerId, npcId);
             else if (result.commitment == "conditional" && def != null)
                 News("rsvp", def.displayName + " will come if " + p.displayName + " meets them at the door in the first minute.", PlayerHouse.id, playerId, npcId);
+            SeedFromTurn(p, def, result.requestId);
+            FlushGossipLedger();
         }
 
         /// <summary>In-person contact unlock with the roster's popularity/grade gates and rarity roll (mirrors NamedNpcSO.MeetsUnlockGates).</summary>
@@ -169,6 +180,8 @@ namespace FratRow.Game
             bool gradeOk = "ABCDEF".IndexOf(h.grade ?? "C", StringComparison.Ordinal) <= "ABCDEF".IndexOf(def.unlockMinGrade ?? "F", StringComparison.Ordinal);
             if (h.popularity < def.unlockMinPopularity || !gradeOk)
                 return ActionResult.Fail("not_allowed_role", def.displayName + " isn't interested in giving " + h.name + " their number yet.");
+            if (G.enabled && PlayerOpinion(def.id, p.playerId) <= G.numberRefuseOpinion)
+                return ActionResult.Fail("not_allowed_role", def.displayName + ": \"I've heard about you.\"");
             if (!NextRng("ask-number").Chance(def.unlockChance)) return ActionResult.Fail("cap_reached", def.displayName + " brushed you off this time.");
             npc.contactUnlocked = true;
             Emit(GameEventKind.HouseChanged, "contact_unlocked", h.id, p.playerId, def.id);
@@ -399,27 +412,44 @@ namespace FratRow.Game
             if (npcDef != null) witnesses.Remove(npcDef.id);
             bool caught = NextRng("crime-" + crime.id).Chance(DetectionChance(crime, location, witnesses.Count));
             string act = crime.name.ToLowerInvariant();
+            string phrase = (string.IsNullOrEmpty(crime.gossipPhrase) ? act + " at {rival}" : crime.gossipPhrase).Replace("{rival}", rival.name);
+            string rumorEvent = null, crimeEvent = null;
+            SmearClaimDef claim = null;
             if (npcDef != null)
             {
-                // The listener always knows who told them; that is the rumor's whole mechanism.
-                social.Observe("rumor_spread", p.playerId, rival.name, p.displayName + " told you that " + rival.name + " is bad news and throws terrible parties.", location, new[] { npcDef.id });
+                // The listener always knows who told them; that is the rumor's whole mechanism. item may name the claim.
+                claim = PickClaim(a.item, "smear-claim");
+                rumorEvent = social.Observe("rumor_spread", p.playerId, rival.name, p.displayName + " told you that " + rival.name + " " + claim.text + ".", location, new[] { npcDef.id });
             }
             if (witnesses.Count > 0)
             {
-                social.Observe(crime.id, p.playerId, rival.name, p.displayName + " (" + h.name + ") was seen: " + act + " at " + rival.name + ".", location, witnesses);
+                crimeEvent = social.Observe(crime.id, p.playerId, rival.name, p.displayName + " (" + h.name + ") was seen: " + act + " at " + rival.name + ".", location, witnesses);
                 foreach (var w in witnesses) { var n = Npc(w); if (n != null && n.isPnm) AddRushBonus(n, h.id, -Config.rush.crimePenalty); }
             }
             if (caught)
             {
-                if (crime.severity == "full") Bust(p, act + " at " + rival.name);
+                if (crime.severity == "full") Bust(p, act + " at " + rival.name, phrase);
                 else
                 {
                     h.dean = Clamp(h.dean - Config.police.traceDean, 0, 100);
                     h.heat = Clamp(h.heat + Config.police.traceHeat, 0, 100);
                     News("busted", "Campus police traced \"" + act + "\" back to " + h.name + ".", h.id, p.playerId, isPublic: true);
+                    // A traced lite crime leaks: the police blotter reaches the campus hubs (and anyone who saw or heard it).
+                    var kind = Config.StoryKind(crime.gossipKind);
+                    if (kind != null)
+                        Seed(kind.id, kind.id == "smear_backfire" ? G.backfireSeverity : kind.severity,
+                            GossipHubs().Concat(witnesses).Concat(npcDef != null ? new[] { npcDef.id } : new string[0]),
+                            h.id, p.playerId, otherHouseId: rival.id, detail: phrase, location: location);
                 }
                 return new ActionResult { ok = true, code = "busted", message = "Busted! " + (crime.severity == "full" ? "Campus police caught you." : "It got traced back to the house.") };
             }
+            if (npcDef != null)
+                Seed("smear", G.smearSeverity * (0.8f + 0.4f * Gossipiness(npcDef.id)), new[] { npcDef.id }, rival.id, origin: "player:" + p.playerId,
+                    fabricated: !ClaimTrue(claim, rival), detail: claim.text, socialEventId: rumorEvent, location: location, heardFrom: "player:" + p.playerId,
+                    beliefFor: id => HearsayBelief("smear", rival.id, false, 0.8f, id, social.KnowsPlayer(id, p.playerId) ? 0.65f : 0.45f));
+            else if (witnesses.Count > 0 && Config.StoryKind(crime.gossipKind) != null && crime.gossipKind != "snitched")
+                Seed(crime.gossipKind, Config.StoryKind(crime.gossipKind).severity + 5 * Math.Min(6, witnesses.Count), witnesses, h.id, p.playerId,
+                    otherHouseId: rival.id, detail: phrase, socialEventId: crimeEvent, location: location);
             // Effects apply only when undetected.
             float popGain = Math.Min(crime.actorPopGain, Math.Max(0, Config.scoring.sabotagePopCap - h.weekSabotagePop));
             h.weekSabotagePop += popGain;

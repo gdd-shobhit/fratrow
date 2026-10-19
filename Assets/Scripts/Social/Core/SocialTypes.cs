@@ -110,6 +110,28 @@ namespace FratRow.Social
         public int day;
         public long utcTicks;
         public List<string> witnesses = new List<string>();
+        /// <summary>Gossip receipts only: who the story is about as the teller named them (a player id, "players" for the
+        /// players' house, or a rival house name); "" when the teller didn't say. Additive save field.</summary>
+        public string subjectId = "";
+        /// <summary>Gossip receipts only: +1 flattering, -1 damaging for <see cref="subjectId"/>.</summary>
+        public int valence;
+    }
+    /// <summary>One NPC-to-NPC retelling for <see cref="SocialWorld.ShareGossip"/>. <c>viaEventId</c> links the teller's own record
+    /// (only for full-detail retellings); empty means an unlinked paraphrase.</summary>
+    [Serializable] public sealed class GossipShare
+    {
+        /// <summary>Optional caller-assigned id (≤ 64 chars). Recording an id that already exists is a no-op (idempotent replay).</summary>
+        public string eventId;
+        public string tellerId, listenerId, viaEventId, text, subjectId;
+        public int valence;
+    }
+    /// <summary>A world observation recorded in the same transaction as gossip shares (story origins, overheard lines, denials).</summary>
+    [Serializable] public sealed class GossipObservation
+    {
+        /// <summary>Optional caller-assigned id, as for <see cref="GossipShare.eventId"/>.</summary>
+        public string eventId;
+        public string kind, actorId, targetId, text, location;
+        public List<string> witnesses = new List<string>();
     }
     [Serializable] public sealed class PartyRecord
     {
@@ -158,6 +180,15 @@ namespace FratRow.Social
         public ConversationRequest request;
         public string observedEventId;
         public ConversationResult result;
+        /// <summary>Host-only: what the committed turn actually changed. Additive save field; null for older turns.</summary>
+        public TurnImpact impact;
+    }
+    /// <summary>Applied (post-budget) relationship deltas, grievance and commitment change of one committed turn.</summary>
+    [Serializable] public sealed class TurnImpact
+    {
+        public int trust, regard;
+        public bool grievance;
+        public string previousCommitment = "", commitment = "";
     }
     [Serializable] public sealed class ConversationHistoryEntry
     {
@@ -234,6 +265,11 @@ namespace FratRow.Social
     public interface ISocialStore
     {
         CampaignState Read();
+        /// <summary>
+        /// The committed state itself, without the deep copy <see cref="Read"/> makes. Read-only: never mutate it. Commits publish a
+        /// new object, so a reference obtained here never changes underneath the reader (safe across threads).
+        /// </summary>
+        CampaignState ReadShared();
         void Transact(Action<CampaignState> change);
     }
     public interface ISocialModelProvider : IDisposable

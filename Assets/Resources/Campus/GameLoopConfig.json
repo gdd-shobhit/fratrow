@@ -444,7 +444,9 @@
       "stashGain": "",
       "stashGainCount": 0,
       "rumorRegardLoss": 0,
-      "newsText": "{rival}\u0027s lawn was trashed overnight."
+      "newsText": "{rival}\u0027s lawn was trashed overnight.",
+      "gossipKind": "heist",
+      "gossipPhrase": "trashing {rival}\u0027s lawn"
     },
     {
       "id": "steal_mascot",
@@ -465,7 +467,9 @@
       "stashGain": "",
       "stashGainCount": 0,
       "rumorRegardLoss": 0,
-      "newsText": "{rival}\u0027s mascot has gone missing."
+      "newsText": "{rival}\u0027s mascot has gone missing.",
+      "gossipKind": "heist",
+      "gossipPhrase": "stealing {rival}\u0027s mascot"
     },
     {
       "id": "stink_bomb",
@@ -486,7 +490,9 @@
       "stashGain": "",
       "stashGainCount": 0,
       "rumorRegardLoss": 0,
-      "newsText": "Someone stink-bombed {rival}\u0027s party."
+      "newsText": "Someone stink-bombed {rival}\u0027s party.",
+      "gossipKind": "dirty_move",
+      "gossipPhrase": "sneaking a stink bomb into {rival}\u0027s party"
     },
     {
       "id": "steal_keg",
@@ -507,7 +513,9 @@
       "stashGain": "keg",
       "stashGainCount": 1,
       "rumorRegardLoss": 0,
-      "newsText": "{rival} ran dry after a keg vanished."
+      "newsText": "{rival} ran dry after a keg vanished.",
+      "gossipKind": "dirty_move",
+      "gossipPhrase": "stealing a keg from {rival}"
     },
     {
       "id": "call_cops_on",
@@ -528,7 +536,9 @@
       "stashGain": "",
       "stashGainCount": 0,
       "rumorRegardLoss": 0,
-      "newsText": "Police got a noise complaint about {rival}."
+      "newsText": "Police got a noise complaint about {rival}.",
+      "gossipKind": "snitched",
+      "gossipPhrase": "calling the cops on {rival}"
     },
     {
       "id": "spread_rumor",
@@ -549,7 +559,9 @@
       "stashGain": "",
       "stashGainCount": 0,
       "rumorRegardLoss": 10,
-      "newsText": "Rumors are going around about {rival}."
+      "newsText": "Rumors are going around about {rival}.",
+      "gossipKind": "smear_backfire",
+      "gossipPhrase": "spreading rumors about {rival}"
     }
   ],
   "locations": [
@@ -823,5 +835,463 @@
     "volunteerPerDay": 1,
     "rushTalkPerNpcPerDay": 1,
     "meetDeanPerWeek": 1
-  }
+  },
+  "gossip": {
+    "enabled": true,
+    "seedThreshold": 35,
+    "maxActiveStories": 16,
+    "maxNewStoriesPerWeek": 14,
+    "maxPerKindPerWeek": 3,
+    "capBypassSeverity": 80,
+    "roundHours": [
+      10,
+      15
+    ],
+    "brunchRounds": 2,
+    "tellBase": 0.75,
+    "negativityBias": 1.25,
+    "tieBrother": 1,
+    "tieCliqueTogether": 0.9,
+    "tieSameParty": 0.65,
+    "tieClique": 0.55,
+    "tieTogether": 0.45,
+    "negativeTieMin": 0.55,
+    "familiarityPerHour": 0.03,
+    "familiarityCap": 0.35,
+    "friendHours": 12,
+    "tieFriend": 0.6,
+    "stifleAfter": 2,
+    "levelingChance": 0.45,
+    "sharpenChance": 0.3,
+    "maxSpice": 2,
+    "spiceMultiplier": [
+      1,
+      1.25,
+      1.5
+    ],
+    "beliefBase": 0.35,
+    "beliefTie": 0.35,
+    "beliefRepeat": 0.3,
+    "loyaltyDiscount": 0.3,
+    "beliefThreshold": 0.6,
+    "multiSourceBelief": 0.4,
+    "spreadMinBelief": 0.25,
+    "heatRetentionBase": 0.55,
+    "heatRetentionPerSeverity": 0.35,
+    "retireHeat": 8,
+    "memoryWeeks": 3,
+    "opinionScale": 30,
+    "opinionCap": 50,
+    "positiveOpinionFactor": 0.6,
+    "destinationWeight": 0.35,
+    "rushWeight": 0.3,
+    "wordOfMouthScale": 0.12,
+    "wordOfMouthCap": 4,
+    "hubGossip": 0.75,
+    "hubCount": 3,
+    "legendaryFun": 75,
+    "flopFun": 35,
+    "notableSightingFactor": 1.6,
+    "partyStoriesMax": 3,
+    "rankSwingPlaces": 2,
+    "popularitySwing": 12,
+    "notablePledge": 15,
+    "saidGrievance": 45,
+    "saidTrustDrop": 15,
+    "saidRegardDrop": 10,
+    "saidWithdrew": 25,
+    "charmBase": 25,
+    "quoteChars": 140,
+    "smearSeverity": 50,
+    "exposedSeverity": 65,
+    "backfireSeverity": 55,
+    "askPerNpcPerDay": 1,
+    "denyPerNpcPerDay": 1,
+    "tracePerDay": 4,
+    "denyPower": 0.5,
+    "denyTrueFactor": 0.35,
+    "denyBackfireBelief": 0.3,
+    "exposeBeliefFactor": 0.2,
+    "rivalTraceBase": 0.15,
+    "rivalTraceCaution": 0.35,
+    "rivalTraceReach": 8,
+    "numberRefuseOpinion": -12,
+    "viralShare": 0.25,
+    "ledgerAllStories": false
+  },
+  "storyKinds": [
+    {
+      "id": "party_legendary",
+      "topic": "party",
+      "valence": 1,
+      "severity": 50,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house}\u0027s party Saturday was actually good.",
+        "{house} threw the party of the semester. People are still talking about it.",
+        "{house}\u0027s party was insane. People were dancing on the roof."
+      ]
+    },
+    {
+      "id": "party_flop",
+      "topic": "party",
+      "valence": -1,
+      "severity": 45,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house}\u0027s party was dead.",
+        "Nobody went to {house}\u0027s party. It was five guys and a speaker.",
+        "{house}\u0027s party was so dead people left to go study."
+      ]
+    },
+    {
+      "id": "party_raided",
+      "topic": "party",
+      "valence": -1,
+      "severity": 70,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "The cops shut down {house}\u0027s party.",
+        "The cops raided {house} and wrote everyone up on the lawn.",
+        "Like six cop cars hit {house}. People were jumping fences."
+      ]
+    },
+    {
+      "id": "raid_legend",
+      "topic": "party",
+      "valence": 1,
+      "severity": 60,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house}\u0027s party got raided, but it was going off before the cops came.",
+        "{house} got raided because it was too good. Legendary.",
+        "{house} partied so hard the whole police department showed up. Iconic."
+      ]
+    },
+    {
+      "id": "party_fight",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 50,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "There was a fight at {house}\u0027s party and someone got hurt.",
+        "A huge fight broke out at {house}. Somebody left bleeding.",
+        "{house}\u0027s party turned into a full brawl. Ambulance and everything."
+      ]
+    },
+    {
+      "id": "party_hospital",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 85,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "A freshman from {house}\u0027s party went to the hospital.",
+        "{house} got a freshman so drunk they had to call an ambulance.",
+        "Someone almost died at {house}. The Dean is losing it."
+      ]
+    },
+    {
+      "id": "celebrity_sighting",
+      "topic": "status",
+      "valence": 1,
+      "severity": 50,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{npc} was at {house}\u0027s party.",
+        "{npc} was at {house} all night. {house} is officially a thing now.",
+        "{npc} basically lives at {house} now."
+      ]
+    },
+    {
+      "id": "busted",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 55,
+      "houseWeight": 0.6,
+      "playerWeight": 1,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{player} from {house} got busted {detail}.",
+        "{player} from {house} got caught {detail} and spent the night with campus police.",
+        "{player} from {house} got arrested {detail}. Full handcuffs."
+      ]
+    },
+    {
+      "id": "heist",
+      "topic": "conduct",
+      "valence": 1,
+      "severity": 45,
+      "houseWeight": 0.6,
+      "playerWeight": 0.6,
+      "otherHouseWeight": -0.8,
+      "texts": [
+        "{player} from {house} was seen {detail}.",
+        "{house} pulled off a legendary move on {other}. {other} is fuming.",
+        "{house} humiliated {other}. People are calling it the prank of the decade."
+      ]
+    },
+    {
+      "id": "dirty_move",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 45,
+      "houseWeight": 0.8,
+      "playerWeight": 0.8,
+      "otherHouseWeight": -0.4,
+      "texts": [
+        "{player} from {house} was seen {detail}.",
+        "{house} pulled a dirty move on {other}. Low, even for frat guys.",
+        "{house} sabotaged {other} on purpose. People are saying they\u0027re desperate."
+      ]
+    },
+    {
+      "id": "snitched",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 55,
+      "houseWeight": 1,
+      "playerWeight": 0.8,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{player} from {house} called the cops on {other}.",
+        "{house} snitched on {other}\u0027s party. Snitches get stitches.",
+        "{house} is basically working for the cops now."
+      ]
+    },
+    {
+      "id": "house_trashed",
+      "topic": "conduct",
+      "valence": -1,
+      "severity": 40,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0.3,
+      "texts": [
+        "{house}\u0027s house got trashed overnight.",
+        "{other} trashed {house}\u0027s house. It\u0027s a disaster over there.",
+        "{house}\u0027s house got destroyed. Condemned-building destroyed."
+      ]
+    },
+    {
+      "id": "who_said",
+      "topic": "said",
+      "valence": -1,
+      "severity": 50,
+      "houseWeight": 0.3,
+      "playerWeight": 1,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{player} from {house} went off on {npc}{quote}",
+        "{player} from {house} totally humiliated {npc}{quote}",
+        "{player} from {house} made {npc} cry in front of everyone{quote}"
+      ]
+    },
+    {
+      "id": "who_charmed",
+      "topic": "said",
+      "valence": 1,
+      "severity": 50,
+      "houseWeight": 0.4,
+      "playerWeight": 1,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{npc} is going to {house}\u0027s party because {player} asked.",
+        "{player} from {house} totally won {npc} over.",
+        "{npc} and {player} from {house} are a thing now, apparently."
+      ]
+    },
+    {
+      "id": "stood_up",
+      "topic": "said",
+      "valence": -1,
+      "severity": 35,
+      "houseWeight": 0.3,
+      "playerWeight": 1,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{player} from {house} promised to meet {npc} at the door and never showed.",
+        "{player} from {house} stood {npc} up. Totally ghosted.",
+        "{player} from {house} stood {npc} up in front of the whole party."
+      ]
+    },
+    {
+      "id": "smear",
+      "topic": "smear",
+      "valence": -1,
+      "severity": 50,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "Apparently {house} {detail}.",
+        "Everyone\u0027s saying {house} {detail}.",
+        "{house} {detail}. Like, everyone knows."
+      ]
+    },
+    {
+      "id": "smear_exposed",
+      "topic": "smear",
+      "valence": -1,
+      "severity": 65,
+      "houseWeight": 1,
+      "playerWeight": 0.8,
+      "otherHouseWeight": 0.5,
+      "texts": [
+        "{house} made up the rumor that {other} {detail}.",
+        "{house} got caught spreading lies about {other}. Embarrassing.",
+        "{house} has been running a whole smear campaign against {other}. Pathetic."
+      ]
+    },
+    {
+      "id": "smear_backfire",
+      "topic": "smear",
+      "valence": -1,
+      "severity": 55,
+      "houseWeight": 1,
+      "playerWeight": 1,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{player} from {house} got caught trash-talking {other}.",
+        "{player} from {house} is going around lying about {other}.",
+        "{house} is so desperate they\u0027re spreading fake rumors about {other}."
+      ]
+    },
+    {
+      "id": "dean_probation",
+      "topic": "status",
+      "valence": -1,
+      "severity": 55,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house} is on probation with the Dean.",
+        "{house} is on probation. One more bad party and they\u0027re done.",
+        "{house} is basically getting shut down by the Dean."
+      ]
+    },
+    {
+      "id": "dean_suspended",
+      "topic": "status",
+      "valence": -1,
+      "severity": 75,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house} got suspended. No parties.",
+        "{house} got suspended by the Dean. They\u0027re finished.",
+        "{house} is about to lose their charter."
+      ]
+    },
+    {
+      "id": "on_the_rise",
+      "topic": "status",
+      "valence": 1,
+      "severity": 45,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house} is moving up. Everyone\u0027s going there now.",
+        "{house} is the it house right now.",
+        "{house} is running Greek Row. Nobody else even matters."
+      ]
+    },
+    {
+      "id": "falling_off",
+      "topic": "status",
+      "valence": -1,
+      "severity": 45,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{house} is slipping.",
+        "{house} is so over. Nobody\u0027s going there anymore.",
+        "{house} is dead. Social-death dead."
+      ]
+    },
+    {
+      "id": "pledged",
+      "topic": "rush",
+      "valence": 1,
+      "severity": 40,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": 0,
+      "texts": [
+        "{npc} pledged {house}.",
+        "{npc} pledged {house}. Huge get.",
+        "{house} got {npc}. Everyone wanted {npc}."
+      ]
+    },
+    {
+      "id": "pledge_snub",
+      "topic": "rush",
+      "valence": 1,
+      "severity": 50,
+      "houseWeight": 1,
+      "playerWeight": 0,
+      "otherHouseWeight": -0.6,
+      "texts": [
+        "{npc} picked {house} over {other}.",
+        "{npc} turned down {other} for {house}. Brutal.",
+        "{npc} laughed at {other}\u0027s bid and pledged {house}."
+      ]
+    }
+  ],
+  "smearClaims": [
+    {
+      "id": "watered",
+      "text": "waters down their beer",
+      "truth": ""
+    },
+    {
+      "id": "paid_guests",
+      "text": "pays people to show up to their parties",
+      "truth": ""
+    },
+    {
+      "id": "lame",
+      "text": "throws the lamest parties on Greek Row",
+      "truth": ""
+    },
+    {
+      "id": "bedbugs",
+      "text": "has bed bugs in the basement",
+      "truth": ""
+    },
+    {
+      "id": "dean",
+      "text": "is about to get shut down by the Dean",
+      "truth": "probation"
+    },
+    {
+      "id": "raided",
+      "text": "got raided and is lying about it",
+      "truth": "raided"
+    },
+    {
+      "id": "trashed",
+      "text": "lives in a trash heap",
+      "truth": "trashed"
+    }
+  ]
 }

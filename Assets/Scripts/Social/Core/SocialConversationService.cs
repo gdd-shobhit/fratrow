@@ -211,19 +211,22 @@ namespace FratRow.Social
             var decisionEvent = SocialWorld.AddEvent(s, "social_decision", "inference", npc.npcId, player, request.channel,
                 codec.Encode(proposal), new List<string> { npc.npcId });
             decisionEvent.relatedEventId = turn.observedEventId;
+            var impact = new TurnImpact { previousCommitment = commitment?.state ?? "" };
             foreach (var effect in proposal.relationship_effects)
             {
                 int delta = BudgetedDelta(s, npc.npcId, player, request.partyId, effect.scope, SocialRules.Delta(effect.magnitude));
-                if (effect.scope == "house") npc.fraternityRegard = Clamp(npc.fraternityRegard + delta);
+                if (effect.scope == "house") { npc.fraternityRegard = Clamp(npc.fraternityRegard + delta); impact.regard += delta; }
                 else
                 {
                     var trust = npc.trust.Find(t => t.playerId == player);
                     if (trust == null) npc.trust.Add(trust = new PersonalTrust { playerId = player });
                     trust.value = Clamp(trust.value + delta);
+                    impact.trust += delta;
                 }
             }
             if (!string.IsNullOrEmpty(proposal.grievance_event_id) && !npc.grievances.Any(g => g.eventId == proposal.grievance_event_id))
             {
+                impact.grievance = true;
                 var cause = s.events.Find(e => e.eventId == proposal.grievance_event_id);
                 var original = SocialWorld.GossipOrigin(s, cause);
                 npc.grievances.Add(new Grievance { eventId = cause.eventId, actorId = original?.actorId ?? cause.actorId,
@@ -242,6 +245,8 @@ namespace FratRow.Social
                 party.revision++; // capacity and commitments are part of the party snapshot
             }
             npc.revision++;
+            impact.commitment = commitment?.state ?? "";
+            turn.impact = impact;
             return turn.result = new ConversationResult { requestId = request.requestId, status = "committed", reply = proposal.reply,
                 decision = proposal.decision, commitment = commitment?.state, revision = npc.revision };
         }

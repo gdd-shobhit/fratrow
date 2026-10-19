@@ -78,6 +78,7 @@ namespace FratRow.Social
             if (insult) score -= 0.5;
             if (ownGrievance != null && !apology) score -= 0.25;
             if (commitment?.state == "deferred") score += 0.05;
+            score += Hearsay(s, c);
 
             var allowedDecisions = GroundedSocialTurn.Decisions(c).ToList();
             var allowedTopics = GroundedSocialTurn.Topics(c).ToList();
@@ -134,6 +135,22 @@ namespace FratRow.Social
                 Check(c, safe);
                 return safe;
             }
+        }
+
+        /// <summary>
+        /// Word of mouth: gossip receipts this NPC holds about the speaker (named) or the players' house nudge the decision, capped at ±0.18.
+        /// Only explicit receipts count; the NPC never sees gossip it was not told.
+        /// </summary>
+        public static double Hearsay(CampaignState s, ModelContext c)
+        {
+            double sum = 0;
+            foreach (var e in s.events)
+            {
+                if (e.kind != "gossip" || e.valence == 0 || !e.witnesses.Contains(c.NpcId)) continue;
+                if (e.subjectId == c.PlayerId) sum += 0.06 * e.valence;
+                else if (e.subjectId == "players") sum += 0.03 * e.valence;
+            }
+            return Math.Max(-0.18, Math.Min(0.18, sum));
         }
 
         static double ToneBias(string tone) =>
