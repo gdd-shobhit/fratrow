@@ -85,36 +85,62 @@ public class MainMenuEvents : MonoBehaviour
         }
         Debug.Log("[MainMenuEvents] Start button clicked - Creating session as host...");
 
-        // Initialize network services
+        // Initialize network services (also ensures NetworkManager.Singleton is set)
         if (NetworkBootstrap.Instance != null)
         {
             bool initialized = await NetworkBootstrap.Instance.InitializeServicesAsync();
             if (!initialized)
             {
-                Debug.LogError("[MainMenuEvents] Failed to initialize network services!");
+                Debug.LogError("[MainMenuEvents] Failed to initialize network services! " + NetworkBootstrap.Instance.LastServicesError);
+                HostLocallyOrGiveUp();
                 return;
             }
         }
 
-        // Create session
+        // CreateSession + WithRelayNetwork starts NGO host; do not call StartHost separately
         if (SessionManager.Instance != null)
         {
             bool sessionCreated = await SessionManager.Instance.CreateSessionAsync("PartyGame", 4);
             if (!sessionCreated)
             {
                 Debug.LogError("[MainMenuEvents] Failed to create session!");
+                HostLocallyOrGiveUp();
                 return;
             }
         }
 
-        // Start as host
-        if (NetworkBootstrap.Instance != null)
-        {
-            NetworkBootstrap.Instance.StartHost();
-        }
+        SceneManager.LoadScene(LobbySceneName, LoadSceneMode.Single);
+    }
 
-        // Load lobby scene
-        SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+    const string LobbySceneName = "Lobby";
+
+    /// <summary>Join code that connects directly to a host on this machine (development, no Unity Services).</summary>
+    const string LocalJoinCode = "LOCAL";
+
+    /// <summary>
+    /// Development fallback when Unity Services or Relay are unavailable: host over direct transport so the
+    /// lobby → game loop can still be played. Friends on this machine/LAN join with "LOCAL" or the host's IP.
+    /// </summary>
+    void HostLocallyOrGiveUp()
+    {
+        if (!NetworkBootstrap.LocalFallbackAllowed || NetworkBootstrap.Instance == null) return;
+        if (!NetworkBootstrap.Instance.StartLocalHost()) return;
+        Debug.LogWarning("[MainMenuEvents] Unity Services unavailable: hosting LOCALLY. Others on this machine join with code " +
+                         LocalJoinCode + ", or with this computer's IP on the LAN.");
+        SceneManager.LoadScene(LobbySceneName, LoadSceneMode.Single);
+    }
+
+    /// <summary>"LOCAL" or an IPv4 address means a direct connection instead of a Relay session code.</summary>
+    static bool TryGetDirectAddress(string code, out string address)
+    {
+        address = null;
+        if (string.Equals(code, LocalJoinCode, System.StringComparison.OrdinalIgnoreCase)) { address = "127.0.0.1"; return true; }
+        if (System.Net.IPAddress.TryParse(code, out var ip) && ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            address = ip.ToString();
+            return true;
+        }
+        return false;
     }
 
     private void OnJoinButtonClicked(ClickEvent evt)
@@ -149,16 +175,35 @@ public class MainMenuEvents : MonoBehaviour
 
         Debug.Log($"[MainMenuEvents] Joining session: {sessionCode}");
 
+        if (TryGetDirectAddress(sessionCode, out string directAddress))
+        {
+            if (!NetworkBootstrap.LocalFallbackAllowed || NetworkBootstrap.Instance == null || !NetworkBootstrap.Instance.StartLocalClient(directAddress))
+            {
+                Debug.LogError("[MainMenuEvents] Direct join to " + directAddress + " failed (development builds only).");
+                return;
+            }
+
+            if (joinPanel != null)
+            {
+                joinPanel.style.display = DisplayStyle.None;
+            }
+
+            SceneManager.LoadScene(LobbySceneName, LoadSceneMode.Single);
+            return;
+        }
+
         if (NetworkBootstrap.Instance != null)
         {
             bool initialized = await NetworkBootstrap.Instance.InitializeServicesAsync();
             if (!initialized)
             {
-                Debug.LogError("[MainMenuEvents] Failed to initialize network services!");
+                Debug.LogError("[MainMenuEvents] Failed to initialize network services! " + NetworkBootstrap.Instance.LastServicesError +
+                               (NetworkBootstrap.LocalFallbackAllowed ? " To join a local host instead, enter the code " + LocalJoinCode + "." : ""));
                 return;
             }
         }
 
+        // JoinSession starts NGO client via the session's Relay network; do not call StartClient separately
         if (SessionManager.Instance != null)
         {
             bool sessionJoined = await SessionManager.Instance.JoinSessionAsync(sessionCode);
@@ -174,12 +219,7 @@ public class MainMenuEvents : MonoBehaviour
             joinPanel.style.display = DisplayStyle.None;
         }
 
-        if (NetworkBootstrap.Instance != null)
-        {
-            // Wait for LobbySystems to spawn on client before loading Lobby scene (avoids LobbyManager null)
-            NetworkBootstrap.Instance.StartClient();    
-            SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-        }
+        SceneManager.LoadScene(LobbySceneName, LoadSceneMode.Single);
     }
 
     private void OnAllButtonsClicked(ClickEvent evt)

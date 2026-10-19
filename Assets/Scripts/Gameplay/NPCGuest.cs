@@ -71,8 +71,12 @@ public class NPCGuest : BaseCharacter, IInteractable
 
     public void Interact()
     {
-        // Interact logic for NPCs
-        // Rotate the NPC to player, Animation goes to idle/talking, add UI for talking, hook up rewards based on conversation
+        // Party filler guests: no campus dialogue. Named campus NPCs use NamedNpcVisual.
+    }
 
+    public void ApplyNamedIdentity(string npcId)
+    {
+        var named = Systems.Campus.NamedNpcDatabase.GetById(npcId);
+        if (named != null) stats.name = named.displayName;
     }
 }

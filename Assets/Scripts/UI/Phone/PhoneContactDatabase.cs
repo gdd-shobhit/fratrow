@@ -36,7 +36,9 @@ namespace Systems.Phone
 
         public static void EnsureInitialized()
         {
-            if (_initialized)
+            // Self-heal: runtime-created contacts/templates destroyed by an unused-asset sweep are rebuilt.
+            // Contact ids are deterministic (DeterministicId), so phone state keyed by id survives a rebuild.
+            if (_initialized && !_contacts.Exists(c => c == null) && !_templates.Exists(t => t == null))
             {
                 return;
             }
@@ -61,6 +63,8 @@ namespace Systems.Phone
                 SeedDefaultContacts();
             }
 
+            EnsureRosterContacts();
+
             var loadedTemplates = Resources.LoadAll<MessageTemplateSO>(TemplatesResourcesPath);
             if (loadedTemplates != null && loadedTemplates.Length > 0)
             {
@@ -81,6 +85,25 @@ namespace Systems.Phone
             return _byId.TryGetValue(id, out var c) ? c : null;
         }
 
+        public static ContactSO GetByDisplayName(string displayName)
+        {
+            EnsureInitialized();
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return null;
+            }
+
+            foreach (var c in _contacts)
+            {
+                if (string.Equals(c.displayName, displayName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return c;
+                }
+            }
+
+            return null;
+        }
+
         static void AddContact(ContactSO contact)
         {
             if (!_byId.TryAdd(contact.Id, contact))
@@ -91,21 +114,35 @@ namespace Systems.Phone
             _contacts.Add(contact);
         }
 
+        static SerializableGuid DeterministicId(string name)
+        {
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            var bytes = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes("contact:" + name));
+            return new SerializableGuid(
+                System.BitConverter.ToUInt32(bytes, 0),
+                System.BitConverter.ToUInt32(bytes, 4),
+                System.BitConverter.ToUInt32(bytes, 8),
+                System.BitConverter.ToUInt32(bytes, 12));
+        }
+
         static ContactSO MakeContact(string name, GuestClass guestClass, ContactGender gender, bool unlocked = true)
         {
             var c = ScriptableObject.CreateInstance<ContactSO>();
+            // Runtime-only asset held in a static list: keep it alive across Single scene loads (unused-asset sweep).
+            c.hideFlags = HideFlags.DontUnloadUnusedAsset;
             c.name = name;
             c.displayName = name;
             c.linkedGuestClass = guestClass;
             c.gender = gender;
             c.startsUnlocked = unlocked;
-            c.EnsureId();
+            c.SetId(DeterministicId(name));
             return c;
         }
 
         static MessageTemplateSO MakeTemplate(string name, MessageTemplateKind kind, string body, bool invite, float bonus, string reply, float affinity = 0f)
         {
             var t = ScriptableObject.CreateInstance<MessageTemplateSO>();
+            t.hideFlags = HideFlags.DontUnloadUnusedAsset; // survive scene loads (see MakeContact)
             t.name = name;
             t.kind = kind;
             t.body = body;
@@ -120,12 +157,77 @@ namespace Systems.Phone
         {
             AddContact(MakeContact("Brad", GuestClass.Jock, ContactGender.Guy));
             AddContact(MakeContact("Tyler", GuestClass.Jock, ContactGender.Guy));
-            AddContact(MakeContact("Megan", GuestClass.MeanGirl, ContactGender.Girl));
+            AddContact(MakeContact("Megan", GuestClass.MeanGirl, ContactGender.Girl, unlocked: false));
             AddContact(MakeContact("Ashley", GuestClass.MeanGirl, ContactGender.Girl));
             AddContact(MakeContact("Kevin", GuestClass.Nerd, ContactGender.Guy));
             AddContact(MakeContact("Priya", GuestClass.Nerd, ContactGender.Girl));
             AddContact(MakeContact("Sam", GuestClass.None, ContactGender.Both));
             AddContact(MakeContact("Jordan", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Alex", GuestClass.Jock, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Riley", GuestClass.MeanGirl, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Casey", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Morgan", GuestClass.Nerd, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Jamie", GuestClass.Jock, ContactGender.Both));
+            AddContact(MakeContact("Avery", GuestClass.MeanGirl, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Quinn", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Drew", GuestClass.Jock, ContactGender.Both, unlocked: false));
+        }
+
+        /// <summary>
+        /// Gives every campus roster NPC (Resources/Campus, see <see cref="Systems.Campus.NamedNpcDatabase.Roster"/>) a phone
+        /// contact, matched by display name (case-insensitive). Existing contacts — authored assets or legacy seeds — are
+        /// left untouched; only missing ones are created.
+        /// </summary>
+        static void EnsureRosterContacts()
+        {
+            var roster = Systems.Campus.NamedNpcDatabase.Roster;
+            if (roster == null || roster.npcs == null)
+            {
+                return;
+            }
+
+            foreach (var npc in roster.npcs)
+            {
+                if (npc == null)
+                {
+                    continue;
+                }
+
+                string name = string.IsNullOrWhiteSpace(npc.displayName) ? npc.id : npc.displayName;
+                if (string.IsNullOrWhiteSpace(name) || FindByDisplayName(name) != null)
+                {
+                    continue;
+                }
+
+                var contact = MakeContact(
+                    name,
+                    Systems.Campus.NamedNpcDatabase.ParseGuestClass(npc.guestClass),
+                    RosterGender(npc.gender),
+                    npc.startsUnlocked);
+                contact.bio = npc.summary;
+                AddContact(contact);
+            }
+        }
+
+        static ContactGender RosterGender(string gender)
+        {
+            if (string.Equals(gender, "girl", System.StringComparison.OrdinalIgnoreCase)) return ContactGender.Girl;
+            if (string.Equals(gender, "boy", System.StringComparison.OrdinalIgnoreCase)) return ContactGender.Guy;
+            return ContactGender.Both;
+        }
+
+        /// <summary>Lookup without triggering initialization (safe to call while seeding).</summary>
+        static ContactSO FindByDisplayName(string displayName)
+        {
+            foreach (var c in _contacts)
+            {
+                if (c != null && string.Equals(c.displayName, displayName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return c;
+                }
+            }
+
+            return null;
         }
 
         static void SeedDefaultTemplates()

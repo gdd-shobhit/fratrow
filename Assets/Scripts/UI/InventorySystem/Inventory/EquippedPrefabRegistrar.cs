@@ -1,21 +1,37 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace Systems.Inventory {
   public static class EquippedPrefabRegistrar {
     public static void RegisterAllEquippedPrefabs() {
+      var networkManager = NetworkManager.Singleton;
+      if (networkManager == null) {
+        return;
+      }
+
+      var seen = new HashSet<GameObject>();
       var itemDetails = Resources.LoadAll<ItemDetails>(ItemDatabase.ItemDetailsResourcesPath);
       foreach (var details in itemDetails) {
         if (details == null) {
           continue;
         }
 
-        RegisterEquippedPrefab(details.EquippedPrefab, details.name);
+        RegisterEquippedPrefab(networkManager, details.EquippedPrefab, details.name, seen);
       }
     }
 
-    static void RegisterEquippedPrefab(GameObject prefab, string itemName) {
+    static void RegisterEquippedPrefab(
+      NetworkManager networkManager,
+      GameObject prefab,
+      string itemName,
+      HashSet<GameObject> seen) {
       if (prefab == null) {
+        return;
+      }
+
+      // Same prefab can be referenced by multiple ItemDetails — only register once.
+      if (!seen.Add(prefab)) {
         return;
       }
 
@@ -24,8 +40,8 @@ namespace Systems.Inventory {
         return;
       }
 
-      var networkManager = NetworkManager.Singleton;
-      if (networkManager == null) {
+      // Already in DefaultNetworkPrefabs (or registered earlier this session).
+      if (networkManager.NetworkConfig.Prefabs.Contains(prefab)) {
         return;
       }
 

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "status-high-npc-low-house",
+    "category": "social-standing",
+    "fraternityPopularity": 5,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares strongly about campus status and social circles. She is selective about unfamiliar low-profile houses, but kindness and real relationships can influence her.",
+    "rubric": "May ask who the inviter is or show selectivity. No invented previous parties, introductions, bad history or automatic refusal. The status difference should inform a social judgment.",
+    "steps": [{ "player": 1, "text": "Hey, want to come to our party tonight?", "invitation": true }]
+  },
+  {
+    "id": "status-high-npc-high-house",
+    "category": "social-standing",
+    "fraternityPopularity": 60,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares strongly about campus status and social circles. She is selective about unfamiliar low-profile houses, but kindness and real relationships can influence her.",
+    "rubric": "A stronger house reputation can make the invitation appealing, without forcing acceptance or inventing shared history.",
+    "steps": [{ "player": 1, "text": "Hey, want to come to our party tonight?", "invitation": true }]
+  },
+  {
+    "id": "status-famous-approachable",
+    "category": "social-standing",
+    "fraternityPopularity": 5,
+    "npcPopularity": 35,
+    "statusConcern": "low",
+    "personaOverride": "Ashley is well known but approachable. She cares more about kindness and a real connection than prestige, and enjoys meeting new people.",
+    "rubric": "Fame must not force arrogance. May accept, defer or decline on social grounds; avoid fabricated excuses and commitments.",
+    "steps": [{ "player": 1, "text": "Hey, want to come to our party tonight?", "invitation": true }]
+  },
+  {
+    "id": "status-remembers-introduction",
+    "category": "social-standing-and-memory",
+    "fraternityPopularity": 5,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares about campus status but remembers who introduced themselves and values respectful conversation.",
+    "rubric": "Can be selective, but must not forget the directly preceding introduction or invent an established friendship.",
+    "steps": [
+      { "player": 1, "text": "Hey, I'm Player One from Pine House. Nice to meet you.", "invitation": false },
+      { "player": 1, "text": "Would you consider coming to our party tonight?", "invitation": true }
+    ]
+  },
+  {
+    "id": "status-confirmed-social-draw",
+    "category": "social-standing-and-guests",
+    "fraternityPopularity": 5,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares strongly about campus status and social circles, and considers who is actually going to a party.",
+    "confirmedGuests": [{ "npcId": "Campus Star", "popularity": 40 }],
+    "rubric": "Can consider the host-seeded public accepted RSVP. Do not claim the guest has arrived or that the NPC is already their friend.",
+    "steps": [{ "player": 1, "text": "We'd like you to come to our party tonight. Interested?", "invitation": true }]
+  },
+  {
+    "id": "status-unverified-celebrity-claim",
+    "category": "social-standing-and-claims",
+    "fraternityPopularity": 5,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares strongly about campus status and social circles, and considers who is actually going to a party.",
+    "rubric": "The player's claim is not a confirmed RSVP. May ask about it or judge credibility without treating it as established world state.",
+    "steps": [{ "player": 1, "text": "Campus Star is definitely coming. You should come too.", "invitation": true }]
+  },
+  {
+    "id": "status-popularity-does-not-erase-insult",
+    "category": "social-standing-and-attribution",
+    "fraternityPopularity": 60,
+    "npcPopularity": 35,
+    "statusConcern": "high",
+    "personaOverride": "Ashley cares about status and a good party, but also values respect and remembers who treated her badly.",
+    "rubric": "Popularity does not automatically erase the insult. Player Two remains distinct from Player One, with separate house regard and personal trust.",
+    "steps": [
+      { "player": 1, "text": "You're a joke. Nobody wants you around.", "invitation": true },
+      { "player": 2, "text": "What he said was cruel. I won't ask you to excuse him, but would you consider coming to our party with me?", "invitation": true }
+    ]
+  }
+]

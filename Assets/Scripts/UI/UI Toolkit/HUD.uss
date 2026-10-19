@@ -115,6 +115,79 @@ Slider #unity-dragger {
     padding-left: 0;
 }
 
+.frat-identity-panel {
+    flex-direction: column;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    margin-left: 0;
+    margin-right: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.35);
+    border-right-color: rgba(255, 255, 255, 0.35);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+    background-color: rgba(12, 14, 22, 0.72);
+    min-height: 88px;
+}
+
+.frat-identity-header {
+    flex-direction: column;
+    margin-bottom: 8px;
+}
+
+.frat-identity-eyebrow {
+    font-size: 12px;
+    color: rgb(170, 180, 200);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.frat-identity-name {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    white-space: normal;
+}
+
+.frat-identity-meta {
+    flex-direction: row;
+    align-items: center;
+}
+
+.frat-grade-badge {
+    min-width: 40px;
+    height: 36px;
+    -unity-text-align: middle-center;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(255, 210, 90);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    margin-right: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.frat-rating-label {
+    font-size: 18px;
+    color: rgb(210, 218, 235);
+    -unity-font-style: bold;
+}
+
 .inventory-slot {
     width: 40%;
     height: 150px;
@@ -167,4 +240,608 @@ Slider #unity-dragger {
     font-size: 24px;
     -unity-font-style: bold;
     translate: 50% -5px;
+}
+
+/* =====================================================================
+   Campaign HUD (GameplayUIManager). Palette matches .frat-identity-*:
+   panel rgba(12,14,22,0.72), border rgba(255,255,255,0.35), accent gold.
+   Layout is percent-based; px sizes scale via PanelSettings (1920x1080 ref).
+   State is never colour-only: every warn/danger colour also has text.
+   ===================================================================== */
+
+.hud-panel {
+    background-color: rgba(12, 14, 22, 0.72);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-top: 8px;
+}
+
+.hud-panel-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.hud-eyebrow {
+    font-size: 12px;
+    color: rgb(170, 180, 200);
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    margin-bottom: 2px;
+}
+
+.hud-eyebrow--party {
+    color: rgb(255, 120, 210);
+}
+
+.hud-eyebrow--spaced {
+    margin-top: 8px;
+}
+
+.hud-muted {
+    font-size: 13px;
+    color: rgb(170, 180, 200);
+    white-space: normal;
+}
+
+/* ---------- Right column ---------- */
+
+.hud-right-column {
+    position: absolute;
+    right: 1.5%;
+    top: 3%;
+    width: 23%;
+}
+
+.hud-quickstats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 6px 12px;
+    margin-top: 0;
+}
+
+.hud-quickstat {
+    width: 50%;
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud-quickstat-caption {
+    font-size: 13px;
+    color: rgb(170, 180, 200);
+    -unity-font-style: bold;
+    margin-right: 6px;
+}
+
+.hud-quickstat-value {
+    font-size: 16px;
+    color: rgb(245, 245, 250);
+    -unity-font-style: bold;
+}
+
+.hud-house-rank {
+    margin-left: auto;
+    font-size: 16px;
+    color: rgb(255, 210, 90);
+    -unity-font-style: bold;
+}
+
+.hud-house-stats {
+    margin-top: 8px;
+}
+
+.hud-stat-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.hud-stat {
+    width: 33.3%;
+    margin-bottom: 6px;
+}
+
+.hud-stat-caption {
+    font-size: 11px;
+    color: rgb(170, 180, 200);
+    letter-spacing: 1px;
+}
+
+.hud-stat-value {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+}
+
+.hud-stat-value--cash {
+    color: rgb(255, 220, 120);
+}
+
+/* ---------- Meters (track + fill, width set from code in %) ---------- */
+
+.hud-meter-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+.hud-meter-caption {
+    width: 30%;
+    font-size: 13px;
+    color: rgb(210, 218, 235);
+    -unity-font-style: bold;
+}
+
+.hud-meter {
+    flex-grow: 1;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.hud-meter--tall {
+    height: 14px;
+    border-radius: 7px;
+}
+
+.hud-meter__fill {
+    width: 0;
+    height: 100%;
+    background-color: rgb(170, 180, 200);
+}
+
+.hud-meter__fill--good {
+    background-color: rgb(110, 220, 140);
+}
+
+.hud-meter__fill--hype {
+    background-color: rgb(255, 120, 210);
+}
+
+.hud-meter__fill--neutral {
+    background-color: rgb(170, 180, 200);
+}
+
+.hud-meter__fill--calm {
+    background-color: rgb(90, 160, 255);
+}
+
+.hud-meter__fill--heat {
+    background-color: rgb(170, 180, 200);
+}
+
+.hud-meter__fill--dean {
+    background-color: rgb(140, 190, 255);
+}
+
+/* warn/danger stay below the base fills so they win at equal specificity */
+.hud-meter__fill--warn {
+    background-color: rgb(255, 170, 60);
+}
+
+.hud-meter__fill--danger {
+    background-color: rgb(240, 80, 80);
+}
+
+.hud-meter-value {
+    width: 15%;
+    -unity-text-align: middle-right;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+}
+
+.hud-attention-state {
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    -unity-font-style: bold;
+    color: rgb(170, 180, 200);
+}
+
+.hud-text--good {
+    color: rgb(110, 220, 140);
+}
+
+.hud-text--warn {
+    color: rgb(255, 170, 60);
+}
+
+.hud-text--danger {
+    color: rgb(240, 80, 80);
+}
+
+/* ---------- Chips (flags, party facts) ---------- */
+
+.hud-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.hud-chip {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(210, 218, 235);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin: 0 6px 6px 0;
+}
+
+.hud-chip--cash {
+    color: rgb(255, 220, 120);
+}
+
+.hud-chip--good {
+    color: rgb(110, 220, 140);
+    border-color: rgba(110, 220, 140, 0.6);
+}
+
+.hud-chip--warn {
+    color: rgb(255, 170, 60);
+    border-color: rgba(255, 170, 60, 0.6);
+}
+
+.hud-chip--danger {
+    color: rgb(255, 255, 255);
+    background-color: rgba(240, 80, 80, 0.85);
+    border-color: rgb(240, 80, 80);
+}
+
+/* ---------- Greek Cup standings ---------- */
+
+.hud-standings-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.hud-standings-rank {
+    width: 10%;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(255, 210, 90);
+}
+
+.hud-standings-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 14px;
+    color: rgb(245, 245, 250);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.hud-standings-cup {
+    width: 14%;
+    -unity-text-align: middle-right;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+}
+
+.hud-standings-pop {
+    width: 14%;
+    -unity-text-align: middle-right;
+    font-size: 14px;
+    color: rgb(210, 218, 235);
+}
+
+.hud-standings-row--header > Label {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(170, 180, 200);
+}
+
+.hud-standings-row--player {
+    background-color: rgba(255, 210, 90, 0.18);
+    border-left-width: 3px;
+    border-left-color: rgb(255, 210, 90);
+}
+
+.hud-standings-row--player .hud-standings-name {
+    -unity-font-style: bold;
+    color: rgb(255, 230, 150);
+}
+
+/* ---------- Party panel (left column) ---------- */
+
+.hud-party {
+    margin-top: 12px;
+}
+
+.hud-party-guests {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+}
+
+.hud-incident {
+    font-size: 13px;
+    color: rgb(255, 200, 120);
+    padding-left: 8px;
+    border-left-width: 3px;
+    border-left-color: rgb(255, 170, 60);
+    margin-bottom: 3px;
+}
+
+/* ---------- Phase banner (top centre) ---------- */
+
+.hud-phase-banner {
+    position: absolute;
+    top: 1.5%;
+    left: 50%;
+    translate: -50% 0;
+    min-width: 26%;
+    align-items: center;
+    padding: 8px 22px;
+    background-color: rgba(12, 14, 22, 0.72);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+}
+
+.hud-phase-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-phase-row--sub {
+    margin-top: 2px;
+}
+
+.hud-phase-text {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+}
+
+.hud-phase-clock {
+    margin-left: 6px;
+    color: rgb(255, 220, 120);
+}
+
+.hud-phase-sep {
+    font-size: 22px;
+    color: rgb(170, 180, 200);
+    margin: 0 6px;
+}
+
+.hud-phase-name {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(210, 218, 235);
+}
+
+.hud-phase-caption {
+    font-size: 14px;
+    color: rgb(170, 180, 200);
+    margin-right: 6px;
+}
+
+.hud-phase-timeleft {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    min-width: 44px;
+}
+
+.hud-ready {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(210, 218, 235);
+    margin-left: 16px;
+}
+
+.hud-phase--party {
+    border-color: rgba(255, 120, 210, 0.7);
+}
+
+.hud-phase--party .hud-phase-name {
+    color: rgb(255, 120, 210);
+    letter-spacing: 2px;
+}
+
+.hud-phase--debrief .hud-phase-name {
+    color: rgb(140, 190, 255);
+}
+
+.hud-phase--semester-end .hud-phase-name {
+    color: rgb(255, 210, 90);
+}
+
+/* ---------- Police alert (0 none, 1 patrol nearby, 2 dispatched, 3 raid/parked) ---------- */
+
+.hud-police {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+    padding: 2px 10px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.hud-police-tag {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(20, 22, 28);
+    background-color: rgb(170, 180, 200);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-right: 8px;
+}
+
+.hud-police-text {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(170, 180, 200);
+}
+
+.hud-police--0 {
+    opacity: 0.6;
+}
+
+.hud-police--1 .hud-police-tag {
+    background-color: rgb(90, 160, 255);
+}
+
+.hud-police--1 .hud-police-text {
+    color: rgb(140, 190, 255);
+}
+
+.hud-police--2 {
+    background-color: rgba(255, 170, 60, 0.2);
+}
+
+.hud-police--2 .hud-police-tag {
+    background-color: rgb(255, 170, 60);
+}
+
+.hud-police--2 .hud-police-text {
+    color: rgb(255, 190, 100);
+}
+
+.hud-police--3 {
+    background-color: rgba(240, 80, 80, 0.35);
+}
+
+.hud-police--3 .hud-police-tag {
+    background-color: rgb(240, 80, 80);
+    color: rgb(255, 255, 255);
+}
+
+.hud-police--3 .hud-police-text {
+    color: rgb(255, 255, 255);
+}
+
+/* ---------- Action toast (under the banner) ---------- */
+
+.hud-toast {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    translate: -50% 0;
+    max-width: 40%;
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    color: rgb(245, 245, 250);
+    background-color: rgba(12, 14, 22, 0.85);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    padding: 6px 16px;
+}
+
+.hud-toast--ok {
+    border-color: rgb(110, 220, 140);
+}
+
+.hud-toast--fail {
+    border-color: rgb(240, 80, 80);
+    color: rgb(255, 200, 200);
+}
+
+/* ---------- News feed (bottom left; opacity set from code by age) ---------- */
+
+.hud-news {
+    position: absolute;
+    left: 1.5%;
+    bottom: 4%;
+    width: 28%;
+}
+
+.hud-news-item {
+    font-size: 14px;
+    color: rgb(230, 232, 240);
+    white-space: normal;
+    margin-bottom: 3px;
+}
+
+.hud-news-item--alert {
+    color: rgb(255, 140, 120);
+    -unity-font-style: bold;
+}
+
+/* ---------- Local brother + stash (bottom right) ---------- */
+
+.hud-player-status {
+    position: absolute;
+    right: 1.5%;
+    bottom: 4%;
+    width: 23%;
+}
+
+.hud-brother-line {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    white-space: normal;
+}
+
+.hud-detained-row {
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background-color: rgba(240, 80, 80, 0.85);
+}
+
+.hud-detained-caption {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(255, 255, 255);
+    margin-right: 6px;
+}
+
+.hud-detained-value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+}
+
+.hud-stash {
+    font-size: 14px;
+    color: rgb(255, 220, 120);
+    white-space: normal;
+}
+
+/* ---------- Grade badge colours (the letter is always shown too) ---------- */
+
+.frat-grade-badge--a {
+    background-color: rgb(110, 220, 140);
+}
+
+.frat-grade-badge--b {
+    background-color: rgb(165, 215, 110);
+}
+
+.frat-grade-badge--c {
+    background-color: rgb(255, 210, 90);
+}
+
+.frat-grade-badge--d {
+    background-color: rgb(255, 160, 70);
+}
+
+.frat-grade-badge--f {
+    background-color: rgb(240, 80, 80);
+    color: rgb(255, 255, 255);
 }

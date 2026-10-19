@@ -1,7 +1,10 @@
 using System.Collections.Generic;
+using Systems.Campus;
 using Systems.Phone;
 using Unity.Netcode;
 using UnityEngine;
+using System.Linq;
+using FratRow.Social;
 
 /// <summary>
 /// NetworkBehaviour singleton for PartyManager.
@@ -51,6 +54,30 @@ public class NetworkedPartyManager : NetworkBehaviour
     public bool IsPartyOver => NetworkManager.ServerTime.Time >= _networkedParty.PartyEndTime;
     public float PartyDurationMinutes => partyDurationMinutes;
     public NetworkedParty NetworkedParty { get => _networkedParty; set => _networkedParty = value; }
+    public Vector3 EntrancePosition => Entrance != null ? Entrance.position : transform.position;
+
+    const string GuestSpawnObjectName = "GuestSpawnLocation";
+
+    /// <summary>
+    /// The party entrance (guest spawn point and "meet me at the door" spot). PartyManager persists from the menu
+    /// (DontDestroyOnLoad), so it cannot reference the Game scene's GuestSpawnLocation; resolve it from the campus
+    /// scene when unset, falling back to the PartyHouse campus location.
+    /// </summary>
+    Transform Entrance
+    {
+        get
+        {
+            if (guestSpawnLocation == null && CampusScene.IsActive)
+            {
+                var marker = GameObject.Find(GuestSpawnObjectName);
+                if (marker != null) guestSpawnLocation = marker.transform;
+                else if (CampusLocationRegistry.Instance != null && CampusLocationRegistry.Instance.TryGet("PartyHouse", out var house)) guestSpawnLocation = house.transform;
+            }
+
+            return guestSpawnLocation;
+        }
+    }
+
     private void Awake()
     {
         // If instance already exists and it's not this, destroy this
@@ -83,11 +110,22 @@ public class NetworkedPartyManager : NetworkBehaviour
         }
     }
 
+    /// <summary>True when the Unity-free campaign loop drives guests, timing and rewards (design/gdd/core-game-loop.md).</summary>
+    static bool CampaignDriven => NetworkedCampaign.Instance != null && NetworkedCampaign.Instance.IsServer && NetworkedCampaign.Instance.Session != null;
+
+    readonly Dictionary<int, NetworkObject> _campaignGuests = new Dictionary<int, NetworkObject>();
+
     private void Update()
     {
         // Nothing non-server gets past this
         // Everything after this needs a client side RPC to server to get data.
         if (!IsServer)
+        {
+            return;
+        }
+
+        // The campaign spawns/despawns guests from its own simulation and ends the night itself.
+        if (CampaignDriven)
         {
             return;
         }
@@ -116,10 +154,30 @@ public class NetworkedPartyManager : NetworkBehaviour
         }
     }
 
+    float GetOutreachScore()
+    {
+        var settings = OutreachSettings.GetOrDefault();
+        float popularity = NetworkedGameManager.Instance != null ? NetworkedGameManager.Instance.TotalPopularity : 0f;
+        Grade grade = NetworkedGameManager.Instance != null
+            ? NetworkedGameManager.Instance.myFraternity.Value.grade
+            : Grade.C;
+        float avgAff = NetworkedContactRoster.Instance != null
+            ? NetworkedContactRoster.Instance.AverageUnlockedAffinity()
+            : 0f;
+        int invites = NetworkedPhoneInvites.Instance != null ? NetworkedPhoneInvites.Instance.PendingCount : 0;
+        return settings.ComputeOutreach(popularity, grade, avgAff, invites);
+    }
+
+    float GetFraternityGradeArrivalModifier()
+    {
+        Grade grade = NetworkedGameManager.Instance != null
+            ? NetworkedGameManager.Instance.myFraternity.Value.grade
+            : Grade.C;
+        return FraternityGradeCalculator.ArrivalChanceModifier(grade);
+    }
+
     /// <summary>
-    /// Select and spawn one guest based on probability system.
-    /// Randomly selects one guest type and rolls probability for arrival.
-    /// Spawns either the selected guest or a "None" guest if probability fails.
+    /// Named invites first (RSVP via affinity + outreach), then anonymous archetype fillers.
     /// </summary>
     private void SpawnGuests()
     {
@@ -129,132 +187,274 @@ public class NetworkedPartyManager : NetworkBehaviour
             return;
         }
 
-        // Check if we've reached the guest limit
         if (_networkedParty.currentGuests.Count >= _networkedParty.GuestLimit)
         {
             Debug.Log($"Party reached guest limit ({_networkedParty.GuestLimit}). Cannot spawn more guests.");
             return;
         }
 
-        // Get current party popularity (updates as guests arrive)
         float partyPopularity = _networkedParty.Popularity;
-
-        // Get guest dictionary from NetworkedGameManager
+        // Reserve space for accepted and conditional social commitments before spawning fillers.
+        var social = NetworkedSocialConversation.Instance;
+        if (social != null && social.Enabled && social.World != null)
+        {
+            var snapshot = social.World.Store.Read();
+            int reserved = snapshot.npcs.Count(n => n.commitments.Any(c => c.partyId == social.CurrentPartyId && !c.arrived &&
+                (c.state == "accepted" || c.state == "conditional")));
+            if (_networkedParty.currentGuests.Count + reserved >= _networkedParty.GuestLimit) return;
+        }
         Dictionary<GuestClass, GuestSO> guestDict = NetworkedGameManager.Instance.guestClassesDict;
-
         if (guestDict == null || guestDict.Count == 0)
         {
             Debug.LogWarning("No guests available in NetworkedGameManager dictionary!");
             return;
         }
 
-        // Phone invites: consume one pending invite and bias that guest class's arrival roll
+        var outreach = OutreachSettings.GetOrDefault();
+        float outreachScore = GetOutreachScore();
+
         var invites = NetworkedPhoneInvites.Instance;
-        if (invites != null && invites.TryConsumeInvite(out var invite)
-            && invite.GuestClass != GuestClass.None
-            && guestDict.TryGetValue(invite.GuestClass, out var invitedGuestSO)
-            && invitedGuestSO != null)
+        if (invites != null && invites.TryConsumeInvite(out var invite))
         {
-            float invitedChance = Mathf.Clamp(
-                invitedGuestSO.GetModifiedArrivalChance(partyPopularity) + invite.ArrivalBonus,
-                0f,
-                100f);
-            float invitedRoll = Random.Range(0f, 100f);
-            if (invitedRoll <= invitedChance)
+            var contact = PhoneContactDatabase.GetById(invite.ContactId);
+            NamedNpcSO named = contact != null
+                ? NamedNpcDatabase.GetByContactName(contact.displayName)
+                : null;
+
+            if (named != null)
             {
-                SpawnGuest(invitedGuestSO);
-                Debug.Log(
-                    $"[PhoneInvite] {invitedGuestSO.guestName} arrived via invite! " +
-                    $"(Roll: {invitedRoll:F2} <= {invitedChance:F2}%)");
+                float affinity = NetworkedContactRoster.Instance != null
+                    ? NetworkedContactRoster.Instance.GetAffinity(named.npcId)
+                    : 0f;
+                float chance = Mathf.Clamp(
+                    50f + invite.ArrivalBonus + AffinityPartyModifiers.RsvpBonus(affinity)
+                    + outreachScore * outreach.namedRsvpPerOutreach,
+                    0f,
+                    100f);
+                float roll = Random.Range(0f, 100f);
+                if (roll <= chance)
+                {
+                    SpawnNamedGuest(named, affinity);
+                    Debug.Log($"[NamedInvite] {named.displayName} arrived (roll {roll:F1} <= {chance:F1})");
+                }
+                else
+                {
+                    SpawnGuest(guestDict[GuestClass.None]);
+                    Debug.Log($"[NamedInvite] {named.displayName} no-show (roll {roll:F1} > {chance:F1})");
+                }
+
+                return;
             }
-            else
+
+            if (invite.GuestClass != GuestClass.None
+                && guestDict.TryGetValue(invite.GuestClass, out var invitedGuestSO)
+                && invitedGuestSO != null)
             {
-                SpawnGuest(guestDict[GuestClass.None]);
-                Debug.Log(
-                    $"[PhoneInvite] {invitedGuestSO.guestName} invite missed. " +
-                    $"(Roll: {invitedRoll:F2} > {invitedChance:F2}%)");
+                float invitedChance = Mathf.Clamp(
+                    invitedGuestSO.GetModifiedArrivalChance(partyPopularity)
+                    + invite.ArrivalBonus
+                    + GetFraternityGradeArrivalModifier(),
+                    0f,
+                    100f);
+                float invitedRoll = Random.Range(0f, 100f);
+                if (invitedRoll <= invitedChance)
+                {
+                    SpawnGuest(invitedGuestSO);
+                }
+                else
+                {
+                    SpawnGuest(guestDict[GuestClass.None]);
+                }
+
+                return;
             }
-            return;
         }
 
-        // Randomly select one guest type other than none
-        // TODO: Don't make it random, each class would have its own probability based on the party popularity
-        GuestClass selectedGuestClass = (GuestClass)(Random.Range((int)(GuestClass.First + 1), (int)GuestClass.Count));
+        GuestClass selectedGuestClass = (GuestClass)Random.Range((int)(GuestClass.First + 1), (int)GuestClass.Count);
         GuestSO selectedGuestSO = guestDict[selectedGuestClass];
-
-        // Calculate modified arrival chance based on party popularity
-        float arrivalChance = selectedGuestSO.GetModifiedArrivalChance(partyPopularity);
-
-        // Roll probability (0-100)
-        float roll = Random.Range(0f, 100f);
-
-        if (roll <= arrivalChance)
+        float arrivalChance = selectedGuestSO.GetModifiedArrivalChance(partyPopularity)
+                              + outreachScore * outreach.fillerArrivalPerOutreach
+                              + GetFraternityGradeArrivalModifier();
+        arrivalChance = Mathf.Clamp(arrivalChance, 0f, 100f);
+        float fillerRoll = Random.Range(0f, 100f);
+        if (fillerRoll <= arrivalChance)
         {
-            // Guest arrives! Spawn them
             SpawnGuest(selectedGuestSO);
-            Debug.Log($"{selectedGuestSO.guestName} arrived! (Roll: {roll:F2} <= {arrivalChance:F2}%)");
         }
         else
         {
-            // Guest doesn't arrive - spawn "None" guest instead
             SpawnGuest(guestDict[GuestClass.None]);
-            Debug.Log($"{selectedGuestSO.guestName} didn't arrive. (Roll: {roll:F2} > {arrivalChance:F2}%) - Spawning None guest");
         }
     }
 
-    /// <summary>
-    /// Spawn a guest from a GuestSO
-    /// </summary>
+    bool SpawnNamedGuest(NamedNpcSO named, float affinity, string partyId = null)
+    {
+        Dictionary<GuestClass, GuestSO> guestDict = NetworkedGameManager.Instance.guestClassesDict;
+        if (!guestDict.TryGetValue(named.guestClass, out var guestSO) || guestSO == null)
+        {
+            guestDict.TryGetValue(GuestClass.None, out guestSO);
+        }
+
+        if (guestSO == null)
+        {
+            return false;
+        }
+
+        float pop = named.basePopularity + AffinityPartyModifiers.PopularityOffset(affinity);
+        float trouble = named.baseTrouble + AffinityPartyModifiers.TroubleOffset(affinity);
+        return SpawnGuest(guestSO, named.displayName, pop, trouble, named.baseCash, named.npcId, partyId);
+    }
+
     private void SpawnGuest(GuestSO guestSO)
     {
-        if (guestSO == null || _networkedParty == null)
-            return;
+        SpawnGuest(guestSO, null, guestSO.popularity, guestSO.troubleMaker, guestSO.cashvalue);
+    }
 
-        // Create a GameObject for the guest
-        GameObject guestObject = Unity.Netcode.NetworkObject.Instantiate(guestSO.prefab, guestSpawnLocation);
+    private bool SpawnGuest(GuestSO guestSO, string displayName, float popularity, float trouble, float cash, string npcId = null, string partyId = null)
+    {
+        if (guestSO == null || _networkedParty == null)
+            return false;
+
+        if (guestSO.prefab == null || guestSO.prefab.GetComponent<NetworkedNPCGuest>() == null || guestSO.prefab.GetComponent<NPCGuest>() == null)
+        { Debug.LogError("Guest prefab must have NPCGuest and NetworkedNPCGuest baked before spawn"); return false; }
+
+        // Spawn at the entrance as a root object: a NetworkObject must not sit under a non-networked scene transform.
+        GameObject guestObject = NetworkObject.Instantiate(guestSO.prefab, EntrancePosition, Entrance != null ? Entrance.rotation : Quaternion.identity);
 
         NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();
-        if (npcGuest == null)
+
+        npcGuest.InitializeFromSO(guestSO);
+        if (!string.IsNullOrEmpty(displayName))
         {
-            npcGuest = guestObject.AddComponent<NPCGuest>();
+            guestObject.name = $"PartyGuest_{displayName}";
+            npcGuest.SetCharacterStats(popularity, trouble, cash);
         }
 
-        // Initialize the guest with the ScriptableObject data and add to party
-        npcGuest.InitializeFromSO(guestSO);
-        _networkedParty.AddGuest(npcGuest);
+        if (!_networkedParty.AddGuest(npcGuest)) { Destroy(guestObject); return false; }
 
         var networkedGuest = guestObject.GetComponent<NetworkedNPCGuest>();
-        if (networkedGuest == null)
-        {
-            networkedGuest = guestObject.AddComponent<NetworkedNPCGuest>();
-        }
-        networkedGuest.InitializeGuestData(guestSO);
+        networkedGuest.InitializeGuestData(guestSO, npcId, partyId);
 
         guestObject.GetComponent<NetworkObject>().Spawn(true);
 
         _networkedParty.AddGuestServerRPC(
             guestObject.GetComponent<NetworkObject>().NetworkObjectId,
-            guestSO.popularity,
-            guestSO.troubleMaker,
-            guestSO.cashvalue);
+            popularity,
+            trouble,
+            cash);
+        return true;
+    }
 
-        if (IsServer && npcGuest.Abilities.Count > 0)
+    public void PollSocialAttendanceServer(NetworkedSocialConversation social)
+    {
+        if (!IsServer || !IsPartyActive || social.World == null) return;
+        string partyId = social.CurrentPartyId;
+        social.World.ObserveEntrance(partyId, social.PlayersAtEntrance(EntrancePosition), NetworkedSocialConversation.Now);
+        foreach (var npc in social.World.Store.Read().npcs)
         {
-            //TODO: Implement abilities
-            foreach (Ability ability in npcGuest.Abilities)
-            {
-                if (ability != null && ability.AbilityType == AbilityType.Passive)
-                {
-                    // TODO: Give passive boost
-                }
-            }
+            var commitment = npc.commitments.Find(c => c.partyId == partyId && c.state == "accepted");
+            if (commitment == null || _networkedParty.currentGuests.Any(g => g != null && g.TryGetComponent<NetworkedNPCGuest>(out var net) && net.NpcId == npc.npcId && net.PartyId == partyId)) continue;
+            var data = NamedNpcDatabase.GetById(npc.npcId);
+            if (data != null && SpawnNamedGuest(data, npc.fraternityRegard, partyId)) social.World.MarkArrived(npc.npcId, partyId);
         }
+    }
 
+    public void ResumeSocialPartyServer(float remainingSeconds)
+    {
+        if (!IsServer || _networkedParty == null || IsPartyActive) return;
+        _networkedParty._partyState.Value = PartyState.Active;
+        _networkedParty._partyStartTime.Value = (float)NetworkManager.ServerTime.Time - (partyDurationMinutes * 60 - remainingSeconds);
+        _networkedParty._partyEndTime.Value = (float)NetworkManager.ServerTime.Time + remainingSeconds;
+        NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
+    }
+
+    // ---------------- Campaign mode (host) ----------------
+
+    /// <summary>Host: the campaign's party night began. Opens the NetworkedParty with the core's capacity and timing.</summary>
+    public void BeginCampaignPartyServer(int capacity, float partySeconds, int weekNumber)
+    {
+        if (!IsServer || _networkedParty == null) return;
+        _networkedParty._guestLimit.Value = Mathf.Max(1, capacity);
+        _networkedParty._dayNumber.Value = weekNumber;
+        _networkedParty._popularity.Value = 0f;
+        _networkedParty._troubleMaker.Value = 0f;
+        _networkedParty._cashValue.Value = 0f;
+        _networkedParty._partyStartTime.Value = (float)NetworkManager.ServerTime.Time;
+        _networkedParty._partyEndTime.Value = (float)NetworkManager.ServerTime.Time + partySeconds;
+        _networkedParty._partyState.Value = PartyState.Active;
+        Debug.Log($"[NetworkedPartyManager] Campaign party started (capacity {capacity}).");
+    }
+
+    /// <summary>Host: spawn the networked body for a guest the campaign admitted.</summary>
+    public void SpawnCampaignGuest(int guestId, GuestClass archetype, string npcId, string partyId)
+    {
+        if (!IsServer || _networkedParty == null || _campaignGuests.ContainsKey(guestId)) return;
+        var guestDict = NetworkedGameManager.Instance != null ? NetworkedGameManager.Instance.guestClassesDict : null;
+        if (guestDict == null || guestDict.Count == 0) return;
+        int before = _networkedParty.currentGuests.Count;
+        bool spawned;
+        var named = string.IsNullOrEmpty(npcId) ? null : NamedNpcDatabase.GetById(npcId);
+        if (named != null)
+        {
+            float regard = 0f;
+            var social = NetworkedSocialConversation.Instance;
+            if (social != null && social.World != null)
+                regard = social.World.Store.Read().npcs.Find(n => n.npcId == npcId)?.fraternityRegard ?? 0;
+            spawned = SpawnNamedGuest(named, regard, partyId);
+        }
+        else
+        {
+            if (!guestDict.TryGetValue(archetype, out var so) || so == null) guestDict.TryGetValue(GuestClass.None, out so);
+            spawned = so != null && SpawnGuest(so, null, so.popularity, so.troubleMaker, so.cashvalue);
+        }
+        if (!spawned || _networkedParty.currentGuests.Count <= before) return;
+        var guest = _networkedParty.currentGuests[_networkedParty.currentGuests.Count - 1];
+        if (guest != null && guest.TryGetComponent<NetworkObject>(out var netObj)) _campaignGuests[guestId] = netObj;
+    }
+
+    /// <summary>Host: a guest left (bored, kicked out, ambulance, stink bomb...).</summary>
+    public void DespawnCampaignGuest(int guestId)
+    {
+        if (!IsServer || !_campaignGuests.TryGetValue(guestId, out var netObj)) return;
+        _campaignGuests.Remove(guestId);
+        if (netObj == null) return;
+        if (_networkedParty != null && netObj.TryGetComponent<NPCGuest>(out var guest)) _networkedParty.RemoveGuest(guest);
+        if (netObj.IsSpawned) netObj.Despawn(true);
+    }
+
+    /// <summary>Host: the night is over (time, or raid). Everyone goes home; rewards are settled by the campaign.</summary>
+    public void EndCampaignPartyServer()
+    {
+        if (!IsServer) return;
+        foreach (int id in _campaignGuests.Keys.ToArray()) DespawnCampaignGuest(id);
+        _campaignGuests.Clear();
+        if (_networkedParty != null)
+        {
+            _networkedParty.currentGuests.RemoveAll(g => g == null);
+            _networkedParty._partyState.Value = PartyState.Ended;
+        }
+        Debug.Log("[NetworkedPartyManager] Campaign party ended.");
+    }
+
+    /// <summary>Host: mirror live metrics into the existing NetworkedParty variables (existing UI bindings keep working).</summary>
+    public void MirrorCampaignPartyServer(bool active, float fun, float trouble, int cash, int capacity)
+    {
+        if (!IsServer || _networkedParty == null) return;
+        if (!Mathf.Approximately(_networkedParty._popularity.Value, Mathf.Round(fun))) _networkedParty._popularity.Value = Mathf.Round(fun);
+        if (!Mathf.Approximately(_networkedParty._troubleMaker.Value, Mathf.Round(trouble))) _networkedParty._troubleMaker.Value = Mathf.Round(trouble);
+        if (!Mathf.Approximately(_networkedParty._cashValue.Value, cash)) _networkedParty._cashValue.Value = cash;
+        if (active && capacity > 0 && _networkedParty._guestLimit.Value != capacity) _networkedParty._guestLimit.Value = capacity;
     }
 
     public void StartPartyServer()
     {
         if (!IsServer) return;
+        if (CampaignDriven)
+        {
+            // Parties start from the weekly calendar (or an early Start Weekend), never ad hoc.
+            NetworkedCampaign.Instance.StartWeekendServer();
+            return;
+        }
 
         Debug.Log($"[NetworkedPartyManager] Server starting party");
         // If start party was called with default parameter
@@ -272,14 +472,18 @@ public class NetworkedPartyManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void EndPartyServerRPC()
     {
-        if (!IsServer) return;
+        if (!IsServer || CampaignDriven) return;
 
         Debug.Log("[NetworkedPartyManager] Server ending party.");
 
-        // Sync via NetworkedParty
         if (_networkedParty != null)
         {
             _networkedParty.EndPartyServerRPC();
         }
+
+        NetworkedPhoneInvites.Instance?.ClearAllServer();
+        NetworkedWeekendReady.Instance?.ClearReadyServer();
+        NetworkedCampusCalendar.Instance?.EnterDebriefThenAdvanceServer();
+        CampusPersistence.SaveFromServer();
     }
 }

@@ -70,6 +70,10 @@ public class NetworkedParty : NetworkBehaviour
     public void StartPartyServerRPC()
     {
         if (!IsServer || _partyState.Value == PartyState.Active) return;
+        if (CampaignDriven) { NetworkedCampaign.Instance.StartWeekendServer(); return; }
+
+        NetworkedSocialConversation.Instance?.StartSocialPartyServer();
+        Systems.Campus.NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
 
         Debug.Log($"[NetworkedParty] Server starting party - Day {_dayNumber.Value}, Guest Limit: {_guestLimit.Value}");
 
@@ -99,12 +103,21 @@ public class NetworkedParty : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void EndPartyServerRPC()
     {
-        if (!IsServer) return;
+        if (!IsServer || CampaignDriven) return;
+
+        if (_partyState.Value == PartyState.Ended) return;
+        NetworkedSocialConversation.Instance?.EndSocialPartyServer();
 
         Debug.Log("[NetworkedParty] Server ending party.");
 
         _partyState.Value = PartyState.Ended;
         End();
+        if (NetworkedSocialConversation.Instance != null && NetworkedSocialConversation.Instance.Enabled)
+        {
+            foreach (var guest in currentGuests.ToArray())
+                if (guest != null && guest.TryGetComponent<NetworkObject>(out var networked) && networked.IsSpawned) networked.Despawn(true);
+            currentGuests.Clear();
+        }
 
         OnPartyEndedClientRPC();
     }
@@ -120,8 +133,12 @@ public class NetworkedParty : NetworkBehaviour
         DistributePartyEndRewards();
     }
 
+    /// <summary>When the campaign loop runs, it scores and settles parties itself (Sunday debrief).</summary>
+    static bool CampaignDriven => NetworkedCampaign.Instance != null && NetworkedCampaign.Instance.IsServer && NetworkedCampaign.Instance.Session != null;
+
     private void DistributePartyEndRewards()
     {
+        if (CampaignDriven) return;
         if (_partyState.Value != PartyState.Ended)
         {
             Debug.LogWarning($"Distributing rewards when party state was: {_partyState.Value}");
@@ -131,7 +148,17 @@ public class NetworkedParty : NetworkBehaviour
         NetworkedGameManager.Instance.AddTotalCashValue(CashValue);
         NetworkedGameManager.Instance.AddTotalPopularityValue(Popularity);
 
-        Debug.Log($"Party rewards distributed: +{CashValue} Cash, +{Popularity} Popularity");
+        float surviveBoost = FraternityGradeCalculator.SurviveChaosBoost(TroubleMaker);
+        if (surviveBoost > 0f)
+        {
+            NetworkedGameManager.Instance.AddTotalPopularityValue(surviveBoost);
+            Debug.Log($"[NetworkedParty] Survived chaos boost +{surviveBoost:F1} popularity (trouble={TroubleMaker:F1})");
+        }
+
+        NetworkedGameManager.Instance.AddTotalTroubleMaking(TroubleMaker);
+        NetworkedGameManager.Instance.RecalculateFraternityGradeServer();
+
+        Debug.Log($"Party rewards distributed: +{CashValue} Cash, +{Popularity} Popularity (+{surviveBoost:F1} survive), +{TroubleMaker} Trouble");
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

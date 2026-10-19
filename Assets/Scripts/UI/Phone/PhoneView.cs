@@ -1,3 +1,4 @@
+using Systems.Campus;
 using StarterAssets;
 using Unity.Netcode;
 using UnityEngine;
@@ -31,6 +32,9 @@ namespace Systems.Phone
         Button _homeMessages;
         Button _closeButton;
         Button _navBack;
+        Button _readyWeekend;
+        Button _startWeekend;
+        Label _weekendStatus;
 
         VisualElement _viewHome;
         VisualElement _viewContacts;
@@ -45,6 +49,7 @@ namespace Systems.Phone
         PhoneApp _app = PhoneApp.Home;
         ContactSO _activeContact;
         bool _isOpen;
+        bool _weekendEventsBound;
 
         public bool IsOpen => _isOpen;
 
@@ -76,6 +81,7 @@ namespace Systems.Phone
 
         void OnDisable()
         {
+            BindWeekendReadyEvents(false);
             if (controller != null)
             {
                 controller.OnThreadChanged -= HandleThreadChanged;
@@ -126,6 +132,9 @@ namespace Systems.Phone
             _templateRow = root.Q<VisualElement>("template-row");
             _homeContacts = root.Q<Button>("app-contacts");
             _homeMessages = root.Q<Button>("app-messages");
+            _readyWeekend = root.Q<Button>("btn-ready-weekend");
+            _startWeekend = root.Q<Button>("btn-start-weekend");
+            _weekendStatus = root.Q<Label>("weekend-ready-status");
 
             if (_closeButton != null)
             {
@@ -147,13 +156,112 @@ namespace Systems.Phone
                 _homeMessages.clicked -= OnOpenMessages;
                 _homeMessages.clicked += OnOpenMessages;
             }
+            if (_readyWeekend != null)
+            {
+                _readyWeekend.clicked -= OnToggleReadyWeekend;
+                _readyWeekend.clicked += OnToggleReadyWeekend;
+            }
+            if (_startWeekend != null)
+            {
+                _startWeekend.clicked -= OnStartWeekend;
+                _startWeekend.clicked += OnStartWeekend;
+            }
 
             if (_phoneRoot != null)
             {
                 _phoneRoot.style.display = DisplayStyle.None;
             }
 
+            BindWeekendReadyEvents(true);
+            RefreshWeekendUi();
             ShowApp(PhoneApp.Home);
+        }
+
+        void BindWeekendReadyEvents(bool subscribe)
+        {
+            var ready = NetworkedWeekendReady.Instance;
+            if (ready == null)
+            {
+                return;
+            }
+
+            if (subscribe && !_weekendEventsBound)
+            {
+                ready.OnReadyChanged += RefreshWeekendUi;
+                _weekendEventsBound = true;
+            }
+            else if (!subscribe && _weekendEventsBound)
+            {
+                ready.OnReadyChanged -= RefreshWeekendUi;
+                _weekendEventsBound = false;
+            }
+        }
+
+        void OnToggleReadyWeekend()
+        {
+            var ready = NetworkedWeekendReady.Instance;
+            if (ready == null)
+            {
+                Debug.LogWarning("[PhoneView] NetworkedWeekendReady missing");
+                return;
+            }
+
+            ready.SetReadyServerRpc(!ready.IsLocalReady);
+        }
+
+        void OnStartWeekend()
+        {
+            var ready = NetworkedWeekendReady.Instance;
+            if (ready == null)
+            {
+                return;
+            }
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost)
+            {
+                Debug.LogWarning("[PhoneView] Only host can Start Weekend");
+                return;
+            }
+
+            ready.StartWeekendServerRpc();
+            Hide();
+        }
+
+        void RefreshWeekendUi()
+        {
+            var ready = NetworkedWeekendReady.Instance;
+            int readyCount = ready != null ? ready.ReadyCount : 0;
+            int connected = NetworkManager.Singleton != null ? NetworkManager.Singleton.ConnectedClientsIds.Count : 0;
+            bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+            bool localReady = ready != null && ready.IsLocalReady;
+            bool allReady = ready != null && ready.AllConnectedReady();
+
+            if (_readyWeekend != null)
+            {
+                _readyWeekend.text = localReady ? "Unready" : "Ready for Weekend";
+            }
+
+            if (_startWeekend != null)
+            {
+                _startWeekend.style.display = isHost ? DisplayStyle.Flex : DisplayStyle.None;
+                _startWeekend.SetEnabled(allReady);
+            }
+
+            if (_weekendStatus != null)
+            {
+                _weekendStatus.text = $"Ready {readyCount}/{Mathf.Max(1, connected)}";
+            }
+
+            var cal = NetworkedCampusCalendar.Instance;
+            if (_statusLabel != null && cal != null && cal.Phase == GamePhase.Weekday)
+            {
+                float t = cal.GetCurrentInGameTime();
+                int hour = Mathf.FloorToInt(t) % 24;
+                int minute = Mathf.FloorToInt((t - Mathf.Floor(t)) * 60f);
+                string[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                string day = days[Mathf.Clamp(cal.DayOfWeek, 0, 6)];
+                _statusLabel.text = $"{day} {hour:00}:{minute:00}";
+            }
         }
 
         void OnOpenContacts() => ShowApp(PhoneApp.Contacts);
@@ -184,10 +292,7 @@ namespace Systems.Phone
             ShowApp(PhoneApp.Home);
             ApplyCursor(true);
             phoneHold?.SetHoldingPhone(true);
-            if (_statusLabel != null)
-            {
-                _statusLabel.text = "Fri 10:42 PM";
-            }
+            RefreshWeekendUi();
         }
 
         public void Hide()
@@ -233,6 +338,7 @@ namespace Systems.Phone
             if (app == PhoneApp.Contacts) RebuildContacts();
             if (app == PhoneApp.Messages) RebuildMessageList();
             if (app == PhoneApp.Thread) RebuildThread();
+            if (app == PhoneApp.Home) RefreshWeekendUi();
         }
 
         void RefreshLists()

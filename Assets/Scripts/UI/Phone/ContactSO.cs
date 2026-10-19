@@ -40,6 +40,11 @@ namespace Systems.Phone
             }
         }
 
+        public void SetId(SerializableGuid newId)
+        {
+            id = newId;
+        }
+
         void OnValidate() => EnsureId();
     }
 }

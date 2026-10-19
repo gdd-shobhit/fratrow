@@ -50,15 +50,13 @@ public class NetworkBootstrap : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+        EnsureNetworkManagerReady();
     }
 
     private void Start()
     {
-        var nm = NetworkManager.Singleton;
-        if (nm != null)
-        {
-            nm.OnServerStarted += OnServerStarted;
-        }
+        EnsureNetworkManagerReady();
+        SubscribeServerStarted();
     }
 
     private void OnDestroy()
@@ -68,6 +66,52 @@ public class NetworkBootstrap : MonoBehaviour
         {
             nm.OnServerStarted -= OnServerStarted;
         }
+    }
+
+    /// <summary>
+    /// NetworkManager.Singleton is assigned in OnEnable. With Enter Play Mode Options
+    /// (no domain/scene reload) that can be skipped after a script recompile, leaving
+    /// Singleton null until something re-registers it. Multiplayer Sessions then fail with
+    /// "Cannot start when NetworkManager.Singleton is not set."
+    /// </summary>
+    public bool EnsureNetworkManagerReady()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
+            return true;
+
+        nm = FindFirstObjectByType<NetworkManager>();
+        if (nm == null)
+        {
+            Debug.LogError("[NetworkBootstrap] No NetworkManager found in loaded scenes.");
+            return false;
+        }
+
+        if (!nm.gameObject.activeInHierarchy)
+            nm.gameObject.SetActive(true);
+
+        if (NetworkManager.Singleton == null)
+            nm.SetSingleton();
+
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("[NetworkBootstrap] Failed to register NetworkManager.Singleton.");
+            return false;
+        }
+
+        Debug.Log("[NetworkBootstrap] NetworkManager.Singleton was missing; re-registered from scene instance.");
+        SubscribeServerStarted();
+        return true;
+    }
+
+    private void SubscribeServerStarted()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null)
+            return;
+
+        nm.OnServerStarted -= OnServerStarted;
+        nm.OnServerStarted += OnServerStarted;
     }
 
     private void OnServerStarted()
@@ -95,11 +139,14 @@ public class NetworkBootstrap : MonoBehaviour
         if (_isInitialized)
         {
             Debug.Log("[NetworkBootstrap] Services already initialized.");
-            return true;
+            return EnsureNetworkManagerReady();
         }
 
         try
         {
+            if (!EnsureNetworkManagerReady())
+                return false;
+
             Debug.Log("[NetworkBootstrap] Initializing Unity Services...");
 
             // Initialize Unity Services Core
@@ -125,15 +172,83 @@ public class NetworkBootstrap : MonoBehaviour
             }
 
             _isInitialized = true;
+            LastServicesError = string.Empty;
             Debug.Log("[NetworkBootstrap] Services initialization complete.");
             return true;
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[NetworkBootstrap] Failed to initialize services: {e.Message}");
+            LastServicesError = DescribeServicesFailure(e);
+            Debug.LogError($"[NetworkBootstrap] Failed to initialize services: {LastServicesError}\n{e}");
             return false;
         }
     }
+
+    /// <summary>Human-readable reason for the last Unity Services failure (empty when none).</summary>
+    public string LastServicesError { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// UnityServices.InitializeAsync wraps the real cause ("Some services couldn't be initialized"). Surface the inner
+    /// exceptions and the most common cause: the editor project is not linked to a Unity Cloud project.
+    /// </summary>
+    static string DescribeServicesFailure(System.Exception e)
+    {
+        var reasons = new System.Collections.Generic.List<string>();
+        if (string.IsNullOrEmpty(Application.cloudProjectId))
+            reasons.Add("This project is not linked to a Unity Cloud project (Edit > Project Settings > Services > link the existing 'fratrow' project).");
+        for (var inner = e; inner != null; inner = inner.InnerException)
+        {
+            if (inner is System.AggregateException aggregate)
+            {
+                foreach (var each in aggregate.Flatten().InnerExceptions) reasons.Add(each.GetType().Name + ": " + each.Message);
+                break;
+            }
+            reasons.Add(inner.GetType().Name + ": " + inner.Message);
+        }
+        return string.Join(" | ", reasons);
+    }
+
+    // ---------------- Local (no Unity Services) networking for development ----------------
+
+    /// <summary>True when this session was started with direct transport instead of a Relay session.</summary>
+    public bool IsLocalMode { get; private set; }
+
+    /// <summary>Default direct-transport port for local development sessions.</summary>
+    public const ushort LocalPort = 7777;
+
+    /// <summary>
+    /// Development fallback: host over direct transport (no Unity Services / Relay). Clients on this machine or LAN join
+    /// with <see cref="StartLocalClient"/>. Returns false when the NetworkManager is unavailable or already running.
+    /// </summary>
+    public bool StartLocalHost(ushort port = LocalPort)
+    {
+        var networkManager = NetworkManager.Singleton;
+        if (!EnsureNetworkManagerReady() || networkManager == null || networkManager.IsServer || networkManager.IsClient) return false;
+        var transport = networkManager.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        if (transport == null) { Debug.LogError("[NetworkBootstrap] UnityTransport missing; cannot host locally."); return false; }
+        transport.SetConnectionData("127.0.0.1", port, "0.0.0.0");
+        EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
+        IsLocalMode = networkManager.StartHost();
+        Debug.Log(IsLocalMode ? $"[NetworkBootstrap] Local host started on port {port} (no Unity Services)." : "[NetworkBootstrap] Local host failed to start.");
+        return IsLocalMode;
+    }
+
+    /// <summary>Development fallback: connect directly to a local/LAN host at <paramref name="address"/>.</summary>
+    public bool StartLocalClient(string address, ushort port = LocalPort)
+    {
+        var networkManager = NetworkManager.Singleton;
+        if (!EnsureNetworkManagerReady() || networkManager == null || networkManager.IsServer || networkManager.IsClient) return false;
+        var transport = networkManager.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        if (transport == null) { Debug.LogError("[NetworkBootstrap] UnityTransport missing; cannot join locally."); return false; }
+        transport.SetConnectionData(address, port);
+        EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
+        IsLocalMode = networkManager.StartClient();
+        Debug.Log(IsLocalMode ? $"[NetworkBootstrap] Connecting directly to {address}:{port} (no Unity Services)." : "[NetworkBootstrap] Local client failed to start.");
+        return IsLocalMode;
+    }
+
+    /// <summary>Local fallback is offered only in the editor and development builds.</summary>
+    public static bool LocalFallbackAllowed => Application.isEditor || Debug.isDebugBuild;
 
     /// <summary>
     /// Start hosting a game (creates server and client).

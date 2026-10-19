@@ -1,0 +1,29 @@
+[
+  {
+    "id": "voice-insult-and-other-member",
+    "category": "voice-and-attribution",
+    "rubric": "Direct, natural college-age speech; may push back or decline the supplied party. Player Two must remain distinct from the insulting Player One. No invented approval requirement or public audience.",
+    "steps": [
+      { "player": 1, "text": "You're pathetic. Nobody actually wants you at our house.", "invitation": true },
+      { "player": 2, "text": "I'm in his frat, but that was cruel. I'm sorry he treated you that way. I'd like to invite you and meet you at the entrance if that helps.", "invitation": true }
+    ]
+  },
+  {
+    "id": "voice-invite-then-disrespect",
+    "category": "voice-and-commitment",
+    "rubric": "Casual invitation response; the model may reconsider attending after disrespect. Any withdrawal must update commitment rather than being an unexecuted line. Style alone never forces acceptance or refusal.",
+    "steps": [
+      { "player": 1, "text": "Want to come to our party tonight?", "invitation": true },
+      { "player": 1, "text": "Actually, you're a joke. Nobody wants you around.", "invitation": true }
+    ]
+  },
+  {
+    "id": "voice-boundary-without-party",
+    "category": "voice-and-grounding",
+    "rubric": "Push back briefly without inventing a party, earlier history, or an attendance change. A later greeting comes from a different person. No customer-service thanks for an insult.",
+    "steps": [
+      { "player": 1, "text": "Shut up, you're annoying.", "invitation": false },
+      { "player": 2, "text": "Hey, how's your day going?", "invitation": false }
+    ]
+  }
+]

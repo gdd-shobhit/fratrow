@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Systems.Inventory;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
@@ -71,6 +72,14 @@ public class SessionManager : MonoBehaviour
 
             Debug.Log($"[SessionManager] Creating session '{sessionName}' with max {maxPlayers} players...");
 
+            if (NetworkBootstrap.Instance != null && !NetworkBootstrap.Instance.EnsureNetworkManagerReady())
+            {
+                Debug.LogError("[SessionManager] NetworkManager.Singleton is not ready; cannot create a Relay session.");
+                return false;
+            }
+
+            EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
+
             var options = new SessionOptions
             {
                 Name = sessionName,
@@ -111,6 +120,14 @@ public class SessionManager : MonoBehaviour
             }
 
             Debug.Log($"[SessionManager] Joining session with code: {sessionCode}...");
+
+            if (NetworkBootstrap.Instance != null && !NetworkBootstrap.Instance.EnsureNetworkManagerReady())
+            {
+                Debug.LogError("[SessionManager] NetworkManager.Singleton is not ready; cannot join a Relay session.");
+                return false;
+            }
+
+            EquippedPrefabRegistrar.RegisterAllEquippedPrefabs();
 
             var options = new JoinSessionOptions();
             _currentSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(sessionCode, options);
@@ -171,6 +188,12 @@ public class SessionManager : MonoBehaviour
     /// </summary>
     public string GetSessionCode()
     {
+        if (_currentSession == null && NetworkBootstrap.Instance != null && NetworkBootstrap.Instance.IsLocalMode)
+        {
+            // Development direct-transport session: friends join with this code (see MainMenuEvents).
+            return "LOCAL";
+        }
+
         return _currentSession?.Code ?? string.Empty;
     }
 
