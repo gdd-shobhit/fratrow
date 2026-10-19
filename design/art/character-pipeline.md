@@ -1,8 +1,9 @@
 # Character Pipeline — Modular Humanoid (Female first)
 
-> Status: **M1 done 2026-10-18** (master rig + sliders, evidence in
-> `production/qa/evidence/m1-female-base/`) · next: M2 Unity import ·
-> Branch: `feat/female-base-character`
+> Status: **M2 done 2026-10-18** — master rig + sliders (M1) imported to Unity
+> as a valid Humanoid; CityPeople walk and phone-walk play on it. Evidence in
+> `production/qa/evidence/m1-female-base/` and `.../m2-unity-humanoid/` ·
+> next: M3 first cosmetic · Branch: `feat/female-base-character`
 > Inspo: `characters1.png` (first three girls), `characters2.png` (cosmetic backlog).
 
 ## Goal
@@ -150,6 +151,7 @@ Max 4 bone influences per vertex. One skin material + one material per cosmetic.
 | `ArtSource/Characters/Characters_Female.blend` | The three assembled girls for review (M4) |
 | `tools/blender/charkit/*.py` | Re-runnable pipeline scripts (see README there) |
 | `Assets/Art/Characters/Female/` | FBX exports Unity imports |
+| `Assets/Art/Characters/Editor/` | Unity import rules (`CharacterModelImporter`) and the Humanoid check tool |
 
 Naming: `SK_` skeleton, `SKM_` skinned mesh, `SM_` static mesh, `CH_` assembled
 character, `M_` material, `BR_` body-region material. Cosmetics are
@@ -165,6 +167,33 @@ character, `M_` material, `BR_` body-region material. Cosmetics are
   sockets, mesh modifiers applied, shape keys exported.
 - Unity import: Rig = **Humanoid**, Avatar = Create From This Model, scale 1, no
   rotation fix-up needed.
+
+## Unity import
+
+`Assets/Art/Characters/Editor/CharacterModelImporter.cs` applies the rules to
+every FBX under `Assets/Art/Characters/`, so nobody sets import options by hand:
+
+- All character FBX: scale 1, blend shapes on (normals recalculated), rig
+  transforms kept (`optimizeGameObjects` off, so sockets can be found by name),
+  no cameras/lights/animation.
+- Base models (`SK_*`, `CH_*`): **Humanoid**, avatar created from the model,
+  explicit Mixamo → Unity bone map (54 human bones incl. eyes and all fingers).
+- **T-pose reference, A-pose bind.** On first import the importer computes a
+  T-pose reference skeleton (arms/forearms/hands aimed sideways, legs straight
+  down) and re-imports with it — the automatic equivalent of the Avatar window's
+  *Enforce T-Pose*. Without it, every Humanoid clip plays with the arms ~40° off.
+  `userData: charkit-avatar-v1` in the `.meta` marks it done; bump
+  `AvatarVersion` to re-bake every base model after changing the logic.
+- Region materials (`BR_*`) import via the material description and render as a
+  pale placeholder; the real skin material arrives with the runtime builder.
+
+**Check tool:** *Tools → FratRow → Characters → Run Humanoid Check (M2)* (or
+`CharacterHumanoidCheck.Run(model, clip, outDir, frames)`) plays a Humanoid
+clip on a character in a hidden preview scene and writes a filmstrip PNG to
+`production/qa/evidence/`; it never touches the open scene. It samples with
+`AnimationMode` and bakes skinning per frame — a manually evaluated
+`PlayableGraph` does not move bones in a preview scene, and a manually
+rendered preview camera does not re-skin.
 
 ## Tuning knobs
 

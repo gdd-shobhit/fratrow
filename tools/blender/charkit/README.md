@@ -33,8 +33,12 @@ below. While iterating, `importlib.reload()` the modules you edited.
 | 3 | `bind` | Heat weights, face-set hand weights + smoothing, eye weights, 4-influence limit | top of `bind.py` |
 | 4 | `body_shapes` | 16 body sliders (shape keys) | `STRENGTH` and radii in `body_shapes.py`, presets in `config.BODY_PRESETS` |
 | 5 | `validate` | Checks the contract (names, weights, budgets, symmetry, sliders); reports, never fixes | — |
+| 6 | `export_fbx` | Export to `Assets/Art/Characters/Female/SK_Female_Base.fbx` (`run()`), then `verify(path)` round-trips it | `FBX_SETTINGS` |
 
-`build.run()` runs all five. `review.py` holds the deformation test poses
+`build.run()` runs stages 1–5; export is separate so you can rebuild without
+touching Unity. On the Unity side, `Assets/Art/Characters/Editor/` applies the
+import rules automatically (Humanoid, T-pose reference, blend shapes) — see the
+pipeline doc's *Unity import* section. `review.py` holds the deformation test poses
 (`rest`, `t_pose`, `arms_up`, `squat`, `walk`, `fists`, `twist`), a preset
 line-up (`preview_variants`) and a Workbench render helper used for the evidence
 in `production/qa/evidence/`.
