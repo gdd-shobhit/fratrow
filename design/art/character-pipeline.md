@@ -1,9 +1,12 @@
 # Character Pipeline — Modular Humanoid (Female first)
 
-> Status: **M2 done 2026-10-18** — master rig + sliders (M1) imported to Unity
-> as a valid Humanoid; CityPeople walk and phone-walk play on it. Evidence in
-> `production/qa/evidence/m1-female-base/` and `.../m2-unity-humanoid/` ·
-> next: M3 first cosmetic · Branch: `feat/female-base-character`
+> Status: **M3 done 2026-10-18** — cosmetic pipeline end to end: the blonde's
+> off-shoulder crop top (skinned) and gold hoops (rigid) built in Blender,
+> imported as CosmeticItems, worn through `CharacterAppearance` with skin
+> masking, synced body sliders and tints; walk verified on Base and Curvy.
+> Evidence in `production/qa/evidence/m1-female-base/`, `.../m2-unity-humanoid/`,
+> `.../m3-cosmetic-pipeline/` · next: M4 the characters1 trio ·
+> Branch: `feat/female-base-character`
 > Inspo: `characters1.png` (first three girls), `characters2.png` (cosmetic backlog).
 
 ## Goal
@@ -17,7 +20,7 @@ rig, and every Humanoid animation in the project plays on every character.
 | Layer | What it is | Varies by |
 |---|---|---|
 | 1. Skeleton `SK_Human` | One armature for all characters (girls now, guys later). Mixamo bone names, imports to Unity as **Humanoid**. | Never per character |
-| 2. Body `SKM_F_Body` | One female body mesh, split into hideable regions. | Shape keys (body type), skin tone, face texture |
+| 2. Body `SKM_F_Body` | One female body mesh; worn items hide the skin they cover. | Shape keys (body type), skin tone, face texture |
 | 3. Cosmetics | Skinned items bound to `SK_Human`, rigid items on socket bones. | Slot, mesh, colours |
 | 4. Recipe | Body values + skin tone + face + one item per slot + colours. | Per character |
 
@@ -27,15 +30,15 @@ Anything that must bend with the body is a **skinned** mesh bound to `SK_Human`
 (weights copied from the body by script). Static meshes are only for **rigid**
 accessories, which parent to a `Socket_*` bone.
 
-| Slot | Kind | Hides body regions |
+| Slot | Kind | Skin it hides |
 |---|---|---|
 | Hair | skinned (head/neck) | — |
-| Top | skinned | per item, e.g. crop top → Chest |
-| Bottom | skinned | per item, e.g. cargo pants → Pelvis, Thigh, Calf |
+| Top | skinned | its own skin mask (computed) |
+| Bottom | skinned | its own skin mask |
 | FullBody | skinned | dress/jumpsuit; replaces Top + Bottom |
 | Legwear | skinned | socks, leg warmers, fishnets |
-| Shoes | skinned | Feet (+ Calf for boots) |
-| HeadTop / Face / Ear / Hand / Back | rigid on socket | — |
+| Shoes | skinned | its own skin mask |
+| Ears / Face / HeadTop / Hand / Back | rigid on socket | — |
 
 ## Skeleton `SK_Human`
 
@@ -61,12 +64,34 @@ Hips
   code finds them by name.
 - Fingers are full three-segment chains so the hand can hold the phone and cups.
 
-## Body regions
+## Hiding skin under clothes
 
-Regions are **material slots** on the single body mesh, named `BR_<Region>`.
-Unity imports each slot as a submesh; the runtime builder (later phase) drops the
-submeshes a recipe hides and merges the rest under one skin material, so a dressed
-character is still one draw call for skin.
+Each skinned item carries its own **skin mask**: the body vertices it covers.
+`CharacterAppearance` (Unity) hides every body triangle whose three vertices are
+all masked by a worn item, and merges what remains into one submesh under one
+skin material, so a dressed character is one draw call for skin and covered skin
+costs nothing. Triangles crossing an item's edge stay visible, which is the
+margin that prevents gaps.
+
+- **How the mask is computed** (`charkit/cosmetic.py`): items grown from the
+  body record exactly which body vertices survived their hem/neckline/cuff cuts,
+  and of those keep only the ones under *tight* fabric (a ray along the skin
+  normal hits the item within 2.5 cm). Skin under loose fabric, like a puffed
+  sleeve, stays visible: it can be seen through the gap at the fabric's edge.
+- **Body vertex ids**: the body's second UV channel (`BodyVertexId`, Unity
+  `uv2`) holds each vertex's index. Unity splits and reorders vertices on
+  import; every copy keeps its id, so masks stay valid. Lightmap UV generation
+  is off for character meshes so nothing overwrites it.
+- A mask is only valid for the body topology it was computed on (vertex count
+  and topology hash are stored with the item); rebuild items after changing the
+  body.
+
+### Body regions (coarse fallback)
+
+The body also keeps **material slots** per region, named `BR_<Region>`, derived
+from the source face sets. They are no longer how skin is hidden (an off-shoulder
+top covers the chest but not the shoulders, which share `BR_Chest`), but they
+remain useful as named areas, e.g. for region-specific skin effects.
 
 | Region | Covers |
 |---|---|
@@ -80,6 +105,48 @@ character is still one draw call for skin.
 
 Region assignment is derived from the base mesh's sculpt face sets by
 `tools/blender/charkit/body_prepare.py`, so it is reproducible.
+
+## Building a cosmetic
+
+One module per item in `tools/blender/charkit/items/` (copy
+`f_top_offshoulder_crop.py` for garments, `f_ear_hoop_small.py` for rigid
+accessories). A garment is built from the master body:
+
+1. **Shell** — copy the body regions it covers (`body_bmesh`), then cut clean
+   hems/necklines/cuffs with planes (`cut`); cutting along the low-poly body's
+   triangles would leave zig-zag edges.
+2. **Mask source** — `covered_body_vertices` records the body vertices that
+   survived the cuts (before anything moves).
+3. **Relax** — Laplacian smoothing that never lets a vertex closer to the skin
+   than an offset, so fabric bridges hollows (cleavage, armpits) like cloth.
+4. **Shape** — item-specific detail (puff sleeves, flares), faded out near open
+   edges so hems hug the body.
+5. **Decimate, solidify, clearance** — to the triangle budget, thickness inward,
+   then `ensure_clearance` pushes any vertex closer than 3 mm back out.
+6. **Bind** (`bind_to_body`) — bone weights and all 16 body sliders copied from
+   the skin under each vertex; each slider is checked against the shaped body
+   and sunken vertices pushed out. Any vertex > 15 cm from the skin aborts the
+   build (catches broken geometry).
+7. **Mask + export** — `skin_mask`, then `export` writes `<name>.fbx` (with the
+   armature) and `<name>.cosmetic.json` into `Assets/Art/Characters/Female/Cosmetics/`.
+
+Rigid items are modelled where they sit on the rest-pose body and list
+`attachments` (node → `Socket_*`); Unity keeps that placement relative to the
+socket. Check every item with `review.mask_preview` and `review.preview_variants`
+(body presets, all sliders maxed, test poses) before exporting.
+
+## Unity runtime (`Assets/Scripts/Characters`, assembly `FratRow.Characters`)
+
+| Type | Role |
+|---|---|
+| `CosmeticItem` (ScriptableObject) | One wearable: slot, skinned/rigid, model, skin mask, socket attachments, default colours. Generated from the sidecar by `CharacterModelImporter` — rebuild in Blender rather than editing. |
+| `CharacterAppearance` (component on the character) | `Apply()`: spawns items and re-binds skinned ones to the character's bones by name, parents rigid ones to sockets, syncs body sliders onto the body and every item, hides masked skin (body mesh copy cached per item combination, one submesh), tints skin and items via property blocks. |
+| `BodyMask` | Pure mask logic (decode, union, triangle filter, cache key); covered by `Assets/Tests/EditMode/Characters/BodyMaskTests.cs`. |
+
+Skin uses the shared `Assets/Art/Characters/Materials/M_Skin.mat` (URP Lit),
+tinted per character. **Tools → FratRow → Characters → Run Dressed Check (M3)**
+dresses the base with the crop top and hoops on the Base and Curvy presets and
+writes walk filmstrips to `production/qa/evidence/m3-cosmetic-pipeline/`.
 
 ## Body shape sliders
 
@@ -146,12 +213,14 @@ Max 4 bone influences per vertex. One skin material + one material per cosmetic.
 
 | Path | Contents |
 |---|---|
-| `ArtSource/Characters/SK_Human_Female.blend` | Master: skeleton + body (source of truth) |
-| `ArtSource/Characters/Cosmetics_Female.blend` | Cosmetic items, bound to the master armature (M3+) |
+| `ArtSource/Characters/SK_Human_Female.blend` | Master: skeleton + body (source of truth); cosmetics live in its `Cosmetics_Female` collection, rebuildable from the item scripts |
 | `ArtSource/Characters/Characters_Female.blend` | The three assembled girls for review (M4) |
-| `tools/blender/charkit/*.py` | Re-runnable pipeline scripts (see README there) |
-| `Assets/Art/Characters/Female/` | FBX exports Unity imports |
-| `Assets/Art/Characters/Editor/` | Unity import rules (`CharacterModelImporter`) and the Humanoid check tool |
+| `tools/blender/charkit/*.py` | Re-runnable pipeline scripts (see README there); `items/` = one module per cosmetic |
+| `Assets/Art/Characters/Female/` | Base FBX; `Cosmetics/` holds item FBX + `.cosmetic.json` + generated `CosmeticItem` assets |
+| `Assets/Art/Characters/Materials/` | Shared character materials (`M_Skin`) |
+| `Assets/Art/Characters/Editor/` | Unity import rules (`CharacterModelImporter`, `CosmeticSidecar`) and the check tools |
+| `Assets/Scripts/Characters/` | Runtime: `CosmeticItem`, `CharacterAppearance`, `BodyMask` |
+| `Assets/Tests/EditMode/Characters/` | EditMode tests for the runtime logic |
 
 Naming: `SK_` skeleton, `SKM_` skinned mesh, `SM_` static mesh, `CH_` assembled
 character, `M_` material, `BR_` body-region material. Cosmetics are

@@ -21,6 +21,7 @@ EYES = "SKM_F_Eyes"
 EYE_MATERIAL = "M_Eye"
 REGION_PREFIX = "BR_"
 FACE_SET_ATTR = "src_face_set"  # source face-set id per face, kept for skeleton.py
+VERTEX_ID_UV = "BodyVertexId"   # 2nd UV channel (Unity uv2): body vertex index, for skin masks
 
 # --- Proportion pass (source metres: feet on Z=0, before height scaling) ------
 HEAD_SCALE = 0.90                # inspo heads are smaller than the base mesh's

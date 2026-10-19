@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using FratRow.Characters;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -28,16 +29,82 @@ namespace FratRow.Art.Characters.Editor
         const int TileWidth = 480;
         const int TileHeight = 720;
 
+        /// <summary>Folder holding the female CosmeticItem assets.</summary>
+        public const string CosmeticsDir = "Assets/Art/Characters/Female/Cosmetics";
+
+        /// <summary>Shared skin material (URP Lit, tinted per character by CharacterAppearance).</summary>
+        public const string SkinMaterialPath = "Assets/Art/Characters/Materials/M_Skin.mat";
+
         /// <summary>Runs the check on the default character and clip.</summary>
         [MenuItem("Tools/FratRow/Characters/Run Humanoid Check (M2)")]
         public static void RunDefault() => Run(DefaultModel, DefaultClip, DefaultEvidenceDir, 6);
 
         /// <summary>
+        /// M3 check: dresses the base character with the blonde's crop top and hoops through
+        /// CharacterAppearance (re-bound bones, synced sliders, skin mask, sockets, tints) on
+        /// the Base and Curvy body presets, and writes walk filmstrips.
+        /// </summary>
+        [MenuItem("Tools/FratRow/Characters/Run Dressed Check (M3)")]
+        public static void RunDressed()
+        {
+            var items = new[] { "SKM_F_Top_OffShoulderCrop", "SM_F_Ear_HoopSmall" }
+                .Select(id => AssetDatabase.LoadAssetAtPath<CosmeticItem>($"{CosmeticsDir}/{id}.asset")).ToList();
+            if (items.Any(i => i == null))
+            {
+                Debug.LogError("[HumanoidCheck] cosmetic assets missing; re-import Assets/Art/Characters/Female/Cosmetics");
+                return;
+            }
+            Material skin = EnsureSkinMaterial();
+            var presets = new (string label, BodySlider[] sliders)[]
+            {
+                ("Base", new BodySlider[0]),
+                ("Curvy", new[]
+                {
+                    new BodySlider("Bust_Large", 0.7f), new BodySlider("Hips_Wide", 0.9f), new BodySlider("Butt_Large", 0.9f),
+                    new BodySlider("Thighs_Thick", 0.8f), new BodySlider("Waist_Narrow", 0.5f), new BodySlider("Calves_Thick", 0.4f),
+                    new BodySlider("Arms_Thick", 0.3f), new BodySlider("Belly_Soft", 0.2f),
+                }),
+            };
+            foreach (var (label, sliders) in presets)
+            {
+                Run(DefaultModel, DefaultClip, "production/qa/evidence/m3-cosmetic-pipeline", 6, character =>
+                {
+                    var appearance = character.AddComponent<CharacterAppearance>();
+                    appearance.Items.AddRange(items);
+                    appearance.Sliders.AddRange(sliders);
+                    appearance.SkinMaterial = skin;
+                    appearance.SkinColor = new Color(0.93f, 0.78f, 0.68f);
+                    appearance.Apply();
+                    var mesh = appearance.Body.sharedMesh;
+                    Debug.Log($"[HumanoidCheck] dressed '{label}': body now {TriangleCount(mesh)} tris in {mesh.subMeshCount} submesh, " +
+                              $"{character.GetComponentsInChildren<Renderer>().Length} renderers");
+                }, label);
+            }
+        }
+
+        /// <summary>Loads the shared skin material, creating it (URP Lit, matte) if missing.</summary>
+        public static Material EnsureSkinMaterial()
+        {
+            var skin = AssetDatabase.LoadAssetAtPath<Material>(SkinMaterialPath);
+            if (skin != null)
+                return skin;
+            Directory.CreateDirectory(Path.GetDirectoryName(SkinMaterialPath));
+            skin = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "M_Skin" };
+            skin.SetColor("_BaseColor", Color.white);
+            skin.SetFloat("_Smoothness", 0.25f);
+            AssetDatabase.CreateAsset(skin, SkinMaterialPath);
+            return skin;
+        }
+
+        /// <summary>
         /// Samples <paramref name="frames"/> evenly spaced frames of the first clip in
         /// <paramref name="clipAssetPath"/> on <paramref name="modelPath"/> and writes
-        /// &lt;outDir&gt;/&lt;model&gt;__&lt;clip&gt;.png. Returns the PNG path, or null on failure.
+        /// &lt;outDir&gt;/&lt;model&gt;[_label]__&lt;clip&gt;.png. <paramref name="dress"/> runs on the
+        /// instantiated character before sampling (e.g. to add a CharacterAppearance).
+        /// Returns the PNG path, or null on failure.
         /// </summary>
-        public static string Run(string modelPath, string clipAssetPath, string outDir, int frames)
+        public static string Run(string modelPath, string clipAssetPath, string outDir, int frames,
+                                 System.Action<GameObject> dress = null, string label = null)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             var avatar = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<Avatar>().FirstOrDefault();
@@ -57,6 +124,10 @@ namespace FratRow.Art.Characters.Editor
             var proxies = new System.Collections.Generic.List<(SkinnedMeshRenderer smr, Mesh baked, Transform proxy)>();
             var target = new RenderTexture(TileWidth, TileHeight, 24);
             var strip = new Texture2D(TileWidth * (frames + 1), TileHeight, TextureFormat.RGB24, false);
+            // The preview scene renders with the open scene's global fog; turn it off
+            // without marking that scene dirty (what PreviewRenderUtility does).
+            bool fog = RenderSettings.fog;
+            Unsupported.SetRenderSettingsUseFogNoDirty(false);
             try
             {
                 var character = (GameObject)PrefabUtility.InstantiatePrefab(model, scene);
@@ -66,6 +137,7 @@ namespace FratRow.Art.Characters.Editor
                 animator.avatar = avatar;
                 animator.applyRootMotion = false;
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                dress?.Invoke(character);
                 ReportMesh(character);
 
                 // A manually rendered preview camera does not re-skin SkinnedMeshRenderers,
@@ -76,16 +148,34 @@ namespace FratRow.Art.Characters.Editor
                     SceneManager.MoveGameObjectToScene(proxy, scene);
                     var baked = new Mesh { name = proxy.name };
                     proxy.AddComponent<MeshFilter>().sharedMesh = baked;
-                    proxy.AddComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
+                    var proxyRenderer = proxy.AddComponent<MeshRenderer>();
+                    proxyRenderer.sharedMaterials = smr.sharedMaterials;
+                    // Carry over tints (skin colour, item colours) set as property blocks.
+                    for (int m = 0; m < smr.sharedMaterials.Length; m++)
+                    {
+                        var block = new MaterialPropertyBlock();
+                        smr.GetPropertyBlock(block, m);
+                        proxyRenderer.SetPropertyBlock(block, m);
+                    }
                     smr.enabled = false;
                     proxies.Add((smr, baked, proxy.transform));
                 }
 
-                var light = new GameObject("Key").AddComponent<Light>();
-                light.type = LightType.Directional;
-                light.intensity = 1.3f;
-                light.transform.rotation = Quaternion.Euler(35f, 150f, 0f);
-                SceneManager.MoveGameObjectToScene(light.gameObject, scene);
+                // White key from the camera side plus a soft fill, so colours read true
+                // instead of being dominated by the open scene's sky ambient.
+                foreach (var (lightName, euler, intensity) in new[]
+                {
+                    ("Key", new Vector3(30f, 225f, 0f), 1.4f),
+                    ("Fill", new Vector3(15f, 120f, 0f), 0.5f),
+                })
+                {
+                    var light = new GameObject(lightName).AddComponent<Light>();
+                    light.type = LightType.Directional;
+                    light.color = Color.white;
+                    light.intensity = intensity;
+                    light.transform.rotation = Quaternion.Euler(euler);
+                    SceneManager.MoveGameObjectToScene(light.gameObject, scene);
+                }
 
                 var camera = new GameObject("Camera").AddComponent<Camera>();
                 SceneManager.MoveGameObjectToScene(camera.gameObject, scene);
@@ -126,13 +216,15 @@ namespace FratRow.Art.Characters.Editor
                 }
 
                 Directory.CreateDirectory(outDir);
-                string path = Path.Combine(outDir, $"{model.name}__{clip.name}.png").Replace('\\', '/');
+                string file = string.IsNullOrEmpty(label) ? model.name : $"{model.name}_{label}";
+                string path = Path.Combine(outDir, $"{file}__{clip.name}.png").Replace('\\', '/');
                 File.WriteAllBytes(path, strip.EncodeToPNG());
                 Debug.Log($"[HumanoidCheck] wrote {Path.GetFullPath(path)}");
                 return path;
             }
             finally
             {
+                Unsupported.SetRenderSettingsUseFogNoDirty(fog);
                 EditorSceneManager.ClosePreviewScene(scene);
                 foreach (var p in proxies)
                     Object.DestroyImmediate(p.baked);
@@ -147,10 +239,19 @@ namespace FratRow.Art.Characters.Editor
             foreach (var smr in character.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 Mesh mesh = smr.sharedMesh;
-                Debug.Log($"[HumanoidCheck] {smr.name}: {mesh.vertexCount} verts, {mesh.triangles.Length / 3} tris, " +
+                Debug.Log($"[HumanoidCheck] {smr.name}: {mesh.vertexCount} verts, {TriangleCount(mesh)} tris, " +
                           $"{mesh.subMeshCount} submeshes, {mesh.blendShapeCount} blend shapes, {smr.bones.Length} bones, " +
                           $"bind-pose height {mesh.bounds.size.y:0.000} m");
             }
+        }
+
+        /// <summary>Triangle count that works on non-readable meshes too.</summary>
+        static long TriangleCount(Mesh mesh)
+        {
+            long indices = 0;
+            for (int s = 0; s < mesh.subMeshCount; s++)
+                indices += mesh.GetIndexCount(s);
+            return indices / 3;
         }
 
         static void BakeProxies(System.Collections.Generic.List<(SkinnedMeshRenderer smr, Mesh baked, Transform proxy)> proxies)

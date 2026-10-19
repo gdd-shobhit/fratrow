@@ -82,6 +82,11 @@ def run():
     mats = [m.name for m in body.data.materials]
     if mats != [C.REGION_PREFIX + r for r in C.REGIONS]:
         problems.append(f"body material slots {mats} != regions {list(C.REGIONS)}")
+    ids = body.data.uv_layers.get(C.VERTEX_ID_UV)
+    if ids is None or [uv.name for uv in body.data.uv_layers][:2] != ["UVMap", C.VERTEX_ID_UV]:
+        problems.append(f"body UV channels must be ['UVMap', '{C.VERTEX_ID_UV}'] (Unity uv, uv2)")
+    elif any(int(ids.data[l.index].uv.x) != l.vertex_index for l in body.data.loops):
+        problems.append(f"{C.VERTEX_ID_UV} does not match vertex indices; re-run body_prepare.add_vertex_ids")
     keys = [k.name for k in body.data.shape_keys.key_blocks[1:]] if body.data.shape_keys else []
     if keys != list(C.SHAPE_KEYS):
         problems.append(f"shape keys {keys} != config.SHAPE_KEYS")

@@ -250,6 +250,21 @@ def cleanup(body):
     mesh.shade_smooth()
 
 
+def add_vertex_ids(body):
+    """Second UV channel holding each loop's vertex index (u) — the body vertex id.
+
+    Cosmetic skin masks name body vertices by this id. Unity reorders and splits
+    vertices on import, but every copy of a vertex keeps its id in uv2.
+    """
+    mesh = body.data
+    layer = mesh.uv_layers.get(C.VERTEX_ID_UV) or mesh.uv_layers.new(name=C.VERTEX_ID_UV)
+    for loop in mesh.loops:
+        layer.data[loop.index].uv = (float(loop.vertex_index), 0.0)
+    mesh.uv_layers.active = mesh.uv_layers["UVMap"]
+    for uv in mesh.uv_layers:
+        uv.active_render = uv.name == "UVMap"
+
+
 def run(hbm_blend=None):
     hbm_blend = hbm_blend or C.HBM_BLEND
     if not hbm_blend:
@@ -261,6 +276,7 @@ def run(hbm_blend=None):
     scale = scale_to_height(body, source_eyes)
     eyes = build_eyes(source_eyes)
     cleanup(body)
+    add_vertex_ids(body)
     print(f"[body_prepare] body {tris} tris {budgets}, eyes {_tris(eyes.data)} tris, height scale {scale:.4f}")
     print(f"[body_prepare] source faces per region: {regions}")
     return body, eyes

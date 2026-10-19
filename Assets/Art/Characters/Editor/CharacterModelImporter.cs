@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using FratRow.Characters;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,19 +13,29 @@ namespace FratRow.Art.Characters.Editor
     /// (design/art/character-pipeline.md).
     ///
     /// Every character FBX: scale 1, blend shapes on, rig transforms kept (sockets
-    /// are found by name), no cameras/lights/animation.
+    /// are found by name), no cameras/lights/animation, and no generated lightmap
+    /// UVs (uv2 carries the body vertex ids skin masks rely on).
     ///
     /// Base models (file name SK_* or CH_*) become Humanoid with an explicit
     /// Mixamo-name bone map and a T-pose reference skeleton. The meshes are bound
     /// in A-pose; Humanoid retargeting measures clips against the avatar's
     /// reference pose, so the reference must be T-pose or every clip plays with
     /// the arms offset. This is what the Avatar window's "Enforce T-Pose" does,
-    /// applied automatically on the first import.
+    /// applied automatically on the first import. Skinned cosmetics (SKM_*) import
+    /// as Generic without an avatar (rig type None would strip the skin);
+    /// CharacterAppearance re-binds them to the character. Rigid cosmetics (SM_*)
+    /// import as static meshes.
+    ///
+    /// Each cosmetic's &lt;name&gt;.cosmetic.json sidecar becomes a CosmeticItem asset
+    /// (&lt;name&gt;.asset) in the same folder, created or updated on import.
     /// </summary>
     public class CharacterModelImporter : AssetPostprocessor
     {
         /// <summary>Folder the rules apply to.</summary>
         public const string Root = "Assets/Art/Characters/";
+
+        /// <summary>File suffix of cosmetic sidecars written by tools/blender/charkit/cosmetic.py.</summary>
+        public const string SidecarSuffix = ".cosmetic.json";
 
         /// <summary>
         /// Written to the importer's userData once the T-pose avatar is applied.
@@ -54,10 +67,24 @@ namespace FratRow.Art.Characters.Editor
             importer.importLights = false;
             importer.importAnimation = false;
             importer.optimizeGameObjects = false;
+            importer.generateSecondaryUV = false;
+            // CharacterAppearance copies and trims the base body mesh, so it must be
+            // CPU-readable; cosmetics are only re-bound, so they stay GPU-only.
+            importer.isReadable = IsBaseModel(assetPath);
             if (IsBaseModel(assetPath))
             {
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            }
+            else if (Path.GetFileName(assetPath).StartsWith("SKM_"))
+            {
+                // Rig type None would drop the skin and import a static mesh.
+                importer.animationType = ModelImporterAnimationType.Generic;
+                importer.avatarSetup = ModelImporterAvatarSetup.NoAvatar;
+            }
+            else
+            {
+                importer.animationType = ModelImporterAnimationType.None; // rigid SM_* items
             }
         }
 
@@ -94,6 +121,8 @@ namespace FratRow.Art.Characters.Editor
 
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
+            foreach (string path in imported.Where(p => p.StartsWith(Root) && p.EndsWith(SidecarSuffix)))
+                CosmeticSidecar.Import(path);
             foreach (string path in imported.Where(IsBaseModel))
             {
                 var importer = (ModelImporter)AssetImporter.GetAtPath(path);
@@ -105,6 +134,93 @@ namespace FratRow.Art.Characters.Editor
                     Debug.Log($"[CharacterModelImporter] {path}: avatar valid={avatar.isValid} human={avatar.isHuman}, " +
                               $"{importer.humanDescription.human.Length} human bones mapped ({state})");
             }
+        }
+    }
+
+    /// <summary>Turns a charkit .cosmetic.json sidecar into a CosmeticItem asset next to it.</summary>
+    public static class CosmeticSidecar
+    {
+        [Serializable]
+        class Sidecar
+        {
+            public int schema;
+            public string id;
+            public string model;
+            public BodyInfo body;
+            public string slot;
+            public string kind;
+            public string hiddenBodyVertices;
+            public Attachment[] attachments;
+            public MaterialInfo[] materials;
+        }
+
+        [Serializable]
+        class BodyInfo
+        {
+            public int vertexCount;
+            public string topologyHash;
+        }
+
+        [Serializable]
+        class Attachment
+        {
+            public string node;
+            public string socket;
+        }
+
+        [Serializable]
+        class MaterialInfo
+        {
+            public string name;
+            public float[] color;
+            public bool recolorable;
+        }
+
+        const int SupportedSchema = 1;
+
+        /// <summary>Creates or updates &lt;folder&gt;/&lt;id&gt;.asset from the sidecar at <paramref name="jsonPath"/>.</summary>
+        public static CosmeticItem Import(string jsonPath)
+        {
+            Sidecar data = JsonUtility.FromJson<Sidecar>(File.ReadAllText(jsonPath));
+            if (data == null || data.schema != SupportedSchema || string.IsNullOrEmpty(data.id))
+            {
+                Debug.LogError($"[CosmeticSidecar] {jsonPath}: unreadable or unsupported schema {data?.schema}");
+                return null;
+            }
+            string folder = Path.GetDirectoryName(jsonPath).Replace('\\', '/');
+            string assetPath = $"{folder}/{data.id}.asset";
+            var item = AssetDatabase.LoadAssetAtPath<CosmeticItem>(assetPath);
+            bool created = item == null;
+            if (created)
+                item = ScriptableObject.CreateInstance<CosmeticItem>();
+
+            item.id = data.id;
+            item.slot = Enum.TryParse(data.slot, out CosmeticSlot slot) ? slot : CosmeticSlot.Top;
+            item.kind = string.Equals(data.kind, "rigid", StringComparison.OrdinalIgnoreCase) ? CosmeticKind.Rigid : CosmeticKind.Skinned;
+            item.model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{data.model}");
+            item.bodyVertexCount = data.body?.vertexCount ?? 0;
+            item.bodyTopologyHash = data.body?.topologyHash;
+            item.hiddenBodyVertices = data.hiddenBodyVertices ?? "";
+            item.attachments = (data.attachments ?? Array.Empty<Attachment>())
+                .Select(a => new CosmeticAttachment { node = a.node, socket = a.socket }).ToArray();
+            item.materials = (data.materials ?? Array.Empty<MaterialInfo>())
+                .Select(m => new CosmeticMaterial
+                {
+                    name = m.name,
+                    color = m.color != null && m.color.Length >= 3 ? new Color(m.color[0], m.color[1], m.color[2]) : Color.white,
+                    recolorable = m.recolorable,
+                }).ToArray();
+
+            if (item.model == null)
+                Debug.LogWarning($"[CosmeticSidecar] {data.id}: model '{data.model}' not found next to the sidecar");
+            if (created)
+                AssetDatabase.CreateAsset(item, assetPath);
+            else
+                EditorUtility.SetDirty(item);
+            AssetDatabase.SaveAssetIfDirty(item);
+            Debug.Log($"[CosmeticSidecar] {assetPath}: {item.slot} {item.kind}, model={(item.model ? item.model.name : "missing")}, " +
+                      $"mask={item.HiddenMask().Count(h => h)} body vertices");
+            return item;
         }
     }
 

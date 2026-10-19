@@ -82,29 +82,52 @@ def apply_pose(name):
     bpy.context.view_layer.update()
 
 
-def preview_variants(variants, spacing=0.75):
+def set_sliders(values, items=()):
+    """Set body slider values {name: 0..1} on the body and on worn items (same key names)."""
+    for obj in [bpy.data.objects[C.BODY]] + [bpy.data.objects[n] for n in items]:
+        if obj.data.shape_keys:
+            for key in obj.data.shape_keys.key_blocks[1:]:
+                key.value = values.get(key.name, 0.0)
+
+
+def preview_variants(variants, spacing=0.75, items=(), pose=None):
     """Bake each {name: slider values (+ "height")} into a static copy, side by side.
 
-    Returns the created objects; delete them with clear_previews(). The rig and
-    the master body are left at their current slider values afterwards.
+    `items` are worn cosmetics (their sliders follow the body) and their skin
+    masks are applied to the body copy, as Unity draws it; `pose` is a POSES
+    name applied while baking. Returns the created objects; delete them with
+    clear_previews(). Sliders and pose are restored afterwards.
     """
+    import bmesh
+    from . import cosmetic
+    hidden = set()
+    for name in items:
+        hidden |= set(cosmetic.skin_mask(bpy.data.objects[name]))
     body = bpy.data.objects[C.BODY]
-    eyes = bpy.data.objects[C.EYES]
-    keys = body.data.shape_keys.key_blocks
-    saved = {k.name: k.value for k in keys[1:]}
+    sources = [body, bpy.data.objects[C.EYES]] + [bpy.data.objects[n] for n in items]
+    keyed = [o for o in sources if o.data.shape_keys]
+    saved = {o.name: {k.name: k.value for k in o.data.shape_keys.key_blocks[1:]} for o in keyed}
     coll = bpy.data.collections.get("_preview") or bpy.data.collections.new("_preview")
     if coll.name not in bpy.context.scene.collection.children:
         bpy.context.scene.collection.children.link(coll)
     made = []
     try:
+        if pose:
+            apply_pose(pose)
         for n, (label, values) in enumerate(variants.items()):
-            for k in keys[1:]:
-                k.value = values.get(k.name, 0.0)
+            set_sliders(values, items)
             bpy.context.view_layer.update()
             depsgraph = bpy.context.evaluated_depsgraph_get()
             x = (n - (len(variants) - 1) / 2) * spacing
-            for src in (body, eyes):
+            for src in sources:
                 mesh = bpy.data.meshes.new_from_object(src.evaluated_get(depsgraph))
+                if src is body and hidden:
+                    bm = bmesh.new()
+                    bm.from_mesh(mesh)
+                    bmesh.ops.delete(bm, context="FACES_ONLY", geom=[
+                        f for f in bm.faces if all(v.index in hidden for v in f.verts)])
+                    bm.to_mesh(mesh)
+                    bm.free()
                 obj = bpy.data.objects.new(f"_preview_{label}_{src.name}", mesh)
                 obj.matrix_world = src.matrix_world
                 obj.scale = Vector((1, 1, 1)) * values.get("height", 1.0)
@@ -112,8 +135,45 @@ def preview_variants(variants, spacing=0.75):
                 coll.objects.link(obj)
                 made.append(obj)
     finally:
-        for k in keys[1:]:
-            k.value = saved[k.name]
+        for o in keyed:
+            for k in o.data.shape_keys.key_blocks[1:]:
+                k.value = saved[o.name][k.name]
+        if pose:
+            reset_pose()
+    return made
+
+
+def mask_preview(item_names, offset_x=0.8):
+    """Static copies of the body with the items' skin masks applied, plus the items.
+
+    What Unity will draw: look at it from every side to catch see-through gaps.
+    Returns the created objects; delete them with clear_previews().
+    """
+    import bmesh
+    from . import cosmetic
+    clear_previews()
+    body = bpy.data.objects[C.BODY]
+    hidden = set()
+    for name in item_names:
+        hidden |= set(cosmetic.skin_mask(bpy.data.objects[name]))
+    coll = bpy.data.collections.new("_preview")
+    bpy.context.scene.collection.children.link(coll)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mesh = bpy.data.meshes.new_from_object(body.evaluated_get(depsgraph))
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if all(v.index in hidden for v in f.verts)],
+                     context="FACES_ONLY")
+    bm.to_mesh(mesh)
+    bm.free()
+    made = [bpy.data.objects.new("_preview_masked_body", mesh)]
+    for name in item_names:
+        src = bpy.data.objects[name]
+        made.append(bpy.data.objects.new(f"_preview_{name}",
+                                         bpy.data.meshes.new_from_object(src.evaluated_get(depsgraph))))
+    for obj in made:
+        obj.location.x = offset_x
+        coll.objects.link(obj)
     return made
 
 

@@ -36,7 +36,26 @@ below. While iterating, `importlib.reload()` the modules you edited.
 | 6 | `export_fbx` | Export to `Assets/Art/Characters/Female/SK_Female_Base.fbx` (`run()`), then `verify(path)` round-trips it | `FBX_SETTINGS` |
 
 `build.run()` runs stages 1–5; export is separate so you can rebuild without
-touching Unity. On the Unity side, `Assets/Art/Characters/Editor/` applies the
+touching Unity.
+
+## Cosmetics
+
+`cosmetic.py` is the garment toolkit (shell from body regions, plane cuts,
+cloth-like relax, decimate/solidify/clearance, bind weights + sliders, skin
+mask, FBX + `.cosmetic.json` export). Each item is one module in `items/`
+exposing `run(out_dir)`:
+
+```python
+from charkit import export_fbx
+from charkit.items import f_top_offshoulder_crop as top
+top.run(os.path.join(export_fbx.FEMALE_DIR, "Cosmetics"))
+```
+
+Before exporting a new item, check it with `review.mask_preview([name])` (look
+for see-through gaps from every side) and `review.preview_variants(presets,
+items=[name], pose=...)` (body presets, all sliders maxed, test poses). Rebuild
+every item after any change to the body or skeleton: skin masks are tied to the
+body's topology. On the Unity side, `Assets/Art/Characters/Editor/` applies the
 import rules automatically (Humanoid, T-pose reference, blend shapes) — see the
 pipeline doc's *Unity import* section. `review.py` holds the deformation test poses
 (`rest`, `t_pose`, `arms_up`, `squat`, `walk`, `fists`, `twist`), a preset
