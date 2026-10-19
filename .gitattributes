@@ -1,1 +1,11 @@
 *.hdr filter=lfs diff=lfs merge=lfs -text
+# Character pipeline (design/art/character-pipeline.md). Scoped to our own art
+# folders so existing vendor-pack FBX files are not converted to LFS pointers.
+ArtSource/**/*.blend filter=lfs diff=lfs merge=lfs -text
+ArtSource/**/*.png filter=lfs diff=lfs merge=lfs -text
+Assets/Art/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+Assets/Art/**/*.png filter=lfs diff=lfs merge=lfs -text
+production/qa/evidence/**/*.png filter=lfs diff=lfs merge=lfs -text
+ArtSource/** !text !filter !merge !diff
+Assets/Art/** !text !filter !merge !diff
+production/qa/evidence/** !text !filter !merge !diff
