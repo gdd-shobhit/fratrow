@@ -226,8 +226,11 @@ Naming: `SK_` skeleton, `SKM_` skinned mesh, `SM_` static mesh, `CH_` assembled
 character, `M_` material, `BR_` body-region material. Cosmetics are
 `SKM_F_<Slot>_<Name>` (e.g. `SKM_F_Top_OffShoulderCrop`).
 
-`.blend`, `.fbx` and `.png` under these folders are tracked by Git LFS
-(`.gitattributes`).
+`.blend`, `.fbx` and `.png` files are stored as **normal git files**: Git LFS is
+disabled for this repository on GitHub's side (its LFS API answers 403 "Git LFS
+is disabled for this repository"; only GitHub Support can re-enable it). Keep
+art files lean — compressed `.blend`, low-poly FBX, evidence PNGs ≤ ~1 MB. If LFS
+is re-enabled, convert with `git lfs migrate import --include="ArtSource/**,Assets/Art/**,production/qa/evidence/**"`.
 
 ## Export conventions (Blender → Unity)
 
