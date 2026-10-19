@@ -40,7 +40,7 @@ Every reply is a template concatenation. Talia's "Hey!" is the bubbly tone bank'
 ### The game's default, measured: heuristic provider, Haiku 4.5 judge
 
 `Tests/NpcPlaytest --provider heuristic --tester scripted --sample 12 --seed 7` (same five lines to 12 NPCs
-spread over all seven voice tones). Full output: [NpcPlaytest-heuristic-scripted-2026-10-18.md](NpcPlaytest-heuristic-scripted-2026-10-18.md).
+spread over all seven voice tones). Full output: [NpcPlaytest-heuristic-scripted-2026-10-18.md](NpcPlaytest-heuristic-scripted-2026-10-18.md); persona run: [NpcPlaytest-persona-2b-scripted-2026-10-18.md](NpcPlaytest-persona-2b-scripted-2026-10-18.md).
 
 | Metric | Value |
 |---|---|
@@ -81,9 +81,39 @@ Remaining 2B weaknesses seen in these transcripts: occasional odd phrasing ("I'm
 small details (bring your own drinks), sarcasm read literally by the RSVP labeler, and reuse of the persona's
 example lines.
 
-**Not yet measured (NOT ASSESSED):** judged scores for persona 2B, persona 4B and the Haiku-voiced ceiling. Those runs
-were stopped by Claude Code when the machine ran low on memory (4.6 GB of 31.8 GB free at the time). Re-run with
-the commands at the bottom.
+### Persona 2B vs the default, measured on identical inputs
+
+Same 12 NPCs, same five scripted lines, same Haiku 4.5 judge (`--tester scripted --sample 12 --seed 7`):
+
+| Metric | Heuristic (game default) | Persona 2B |
+|---|---|---|
+| Replies duplicated verbatim by another NPC | 75% | **0%** |
+| Cross-NPC word-trigram overlap | 0.124 | **0.009** |
+| Distinct-2 | 0.41 | **0.77** |
+| Mean reply length | 30 chars | 115 chars |
+| Judge in-character / responsive / natural / variety / coherence | 2.3 / 2.0 / 2.1 / 1.7 / 3.5 | **3.6 / 3.6 / 3.1 / 3.5** / 3.1 |
+| **Judge overall** | 2.3 | **3.4** |
+| RSVP words consistent with the saved decision | 12 / 12 | **7 / 12** |
+| Latency p50 / p95 | ~0 | 2.0 / 5.5 s (shared RTX 4080) |
+
+Persona mode is far more alive, but this run exposed RSVP-reconciliation defects (the skill's verdict for it is
+**FAIL**). The judge's five complaints and the fixes, each now a regression test:
+
+| Judge complaint (quoted reply) | Fix |
+|---|---|
+| Tessa: "Nope, not tonight." saved as *respond* | refusal phrases widened (nope, not tonight, hard pass, won't attend, …) |
+| Benji: "I'll come, but only if they give me a list…" / "If the music works…, yeah." saved as *accept* | a sentence with a condition plus a yes/no is *defer* |
+| Malik / Benji: an accepted NPC relabeled *defer* on a non-committal line | an accepted or declined RSVP only changes on explicit wording |
+| Priya: "Details, or I won't attend." saved as *accept* in reply to "what are you into?" | before an invite, only an explicit unconditional yes/no creates an RSVP |
+
+Re-run on those five NPCs after the first three fixes: RSVP consistency **0/5 → 3/5**, judge overall 3.6, 25/25
+turns committed, p50/p95 1.5/3.1 s. Of the two still flagged, Benji's conditional "…, yeah" is fixed by the last
+change (verified by unit test on that exact sentence, not by another model run); Malik's flip-flop ("I think I
+will! Wait, no?") is genuine 2B incoherence, saved as *defer*.
+
+**Not yet measured (NOT ASSESSED):** grounded 2B with the judge, persona 4B, the Haiku-voiced ceiling and the adaptive
+Haiku-tester runs. Claude Code stopped that batch when the machine ran low on memory (4.6 GB of 31.8 GB free).
+Re-run with the commands at the bottom.
 
 ## What changed in the code
 
@@ -117,7 +147,7 @@ Without step 1 you are still on the heuristic, and no prompt change can make it 
 | Option | Quality | Latency | Cost / constraints |
 |---|---|---|---|
 | Heuristic (today's default) | 2.3/5 judged; canned | ~0 ms | free; no GPU |
-| Local 2B, persona | distinct voices, small-model slips | ~1.5–2 s on RTX 4080; much slower on CPU (`--social-timeout 90`) | free, offline, private; ~2.5 GB VRAM; licensing review before shipping |
+| Local 2B, persona | 3.4/5 judged; distinct voices, small-model slips | p50 1.5–2 s, p95 3–5.5 s on RTX 4080; much slower on CPU (`--social-timeout 90`) | free, offline, private; ~2.5 GB VRAM; licensing review before shipping |
 | Local 4B, persona | expected better coherence (not yet judged) | earlier 4B runs: ~2–5 s | ~4 GB VRAM; misses the 2 GB memory target |
 | Cloud model (e.g. Claude Haiku 4.5) | ChatGPT-class | ~1–2 s per call over the API | about $0.001–0.003 per turn, needs internet, and a relay server, because an API key can't ship in the client; content moderation |
 

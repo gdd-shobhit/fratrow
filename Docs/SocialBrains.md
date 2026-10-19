@@ -3,6 +3,8 @@
 > **Update, 18 October 2026 (evening): persona replies and NPC playtests.** NPCs gave near-identical answers
 > because no model wrote the words: without a model the keyword heuristic picks canned phrases (judged 2.3/5, 75% of
 > replies duplicated verbatim across NPCs), and with a model the grounded composer still assembled template lines.
+> Persona replies on the same 2B model, same inputs: judged 3.4/5, 0% verbatim duplicates; RSVP-wording defects that
+> run exposed are fixed and regression-tested.
 > See [`Reports/NpcDialogueDiagnosis-2026-10-18.md`](Reports/NpcDialogueDiagnosis-2026-10-18.md).
 >
 > - **Persona replies (default reply mode when a model is enabled):** `PersonaSocialTurn` lets the model speak in

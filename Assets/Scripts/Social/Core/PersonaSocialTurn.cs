@@ -193,9 +193,16 @@ namespace FratRow.Social
             return set;
         }
 
-        static readonly Regex SaysYes = new Regex(@"\b(i'?m in\b|count me in|i'?ll (be there|come through|come by|swing by|pull up|show up|stop by|go)\b|see you (there|saturday|then)|i'?m (coming|going)\b|yeah,? i'?ll come|i'?ll come\b)", RegexOptions.IgnoreCase);
-        static readonly Regex SaysNo = new Regex(@"\b(not coming|i'?ll pass|pass on (it|that|the party|this)|can'?t make it|won'?t (be there|come|make it|go)\b|not going|count me out|no thanks|i'?m out\b|skip (it|this|that|the party))", RegexOptions.IgnoreCase);
+        static readonly Regex SaysYes = new Regex(@"\b(i'?m in\b|count me in|i'?ll (be there|come through|come by|swing by|pull up|show up|stop by|go)\b|see you (there|saturday|then)|i'?m (coming|going)\b|(definitely|totally) (coming|going|there)\b|yeah,? i'?ll come|i'?ll come\b)", RegexOptions.IgnoreCase);
+        static readonly Regex SaysNo = new Regex(@"\b(not coming|i'?ll pass|gonna pass|hard pass|pass on (it|that|the party|this)|can'?t make it|won'?t (be there|come|make it|go|attend)\b|not (going|gonna (go|come|make it))\b|not tonight|not this time|nope\b|count me out|no thanks|i'?m out\b|i'?d rather not|skip (it|this|that|the party))", RegexOptions.IgnoreCase);
         static readonly Regex SaysMaybe = new Regex(@"\b(maybe|think about it|not sure|we'?ll see|i'?ll see|depends|idk|undecided|let me know|might (come|go|swing|stop))\b", RegexOptions.IgnoreCase);
+        /// <summary>Conditions turn a yes or no into "undecided" (only the entrance counteroffer is an executable condition).</summary>
+        static readonly Regex Conditional = new Regex(@"\b(if|unless|only if|as long as|provided)\b|,\s*or\b|\bor (else|i won'?t|i'?m not)\b", RegexOptions.IgnoreCase);
+        static readonly Regex BareYes = new Regex(@"\b(yeah|yes|yep|sure|ok|okay)\b", RegexOptions.IgnoreCase);
+        /// <summary>A sentence that both states a condition and agrees or refuses ("If the music works, yeah."). A separate
+        /// sentence with an "if" ("I'll be there. Let me know if…") does not count.</summary>
+        static bool ConditionalAnswer(string reply) => Regex.Split(reply, @"(?<=[.!?])\s+").Any(s =>
+            Conditional.IsMatch(s) && (SaysYes.IsMatch(s) || SaysNo.IsMatch(s) || BareYes.IsMatch(s)));
         static readonly Regex NamesEntrance = new Regex(@"\b(door|entrance|front|outside|meet me)\b", RegexOptions.IgnoreCase);
 
         /// <summary>Returns why a reply disagrees with an attendance decision, or null when it fits. Deliberately coarse:
@@ -217,15 +224,20 @@ namespace FratRow.Social
             }
         }
 
-        /// <summary>The model's label, corrected when the words are unambiguous: an explicit yes, no or maybe in the reply
-        /// wins over a contradicting label. Without explicit wording the label stands (slang like "say less" is a yes the
-        /// patterns cannot see). A counteroffer needs the entrance condition in the words.</summary>
+        /// <summary>The model's label, corrected when the words are unambiguous, in this order:
+        /// (1) an explicit yes or no in the reply wins over a contradicting label; a yes or no hedged by "maybe" or a
+        /// condition ("only if…", "…, or I won't") is undecided; (2) without explicit wording the label stands (slang like
+        /// "say less" is a yes the patterns cannot see), except that (3) an accepted or declined RSVP only changes on
+        /// explicit wording, and (4) before being invited only an explicit, unconditional yes or no creates an RSVP.
+        /// A counteroffer needs the entrance condition.</summary>
         public string Reconcile(string labeled, string reply)
         {
             Override = null;
             var allowed = GroundedSocialTurn.Decisions(context).ToList();
             bool yes = SaysYes.IsMatch(reply), no = SaysNo.IsMatch(reply), maybe = SaysMaybe.IsMatch(reply);
-            string worded = yes && !no ? "accept" : no && !yes ? "decline" : maybe && !yes && !no ? "defer" : null;
+            bool conditional = ConditionalAnswer(reply) && !NamesEntrance.IsMatch(reply);
+            string worded = yes && no ? null : (yes || no) && conditional ? "defer" : yes ? "accept" :
+                no ? (maybe ? "defer" : "decline") : maybe ? "defer" : null;
             string decision = labeled;
             if (labeled == "counteroffer" && !NamesEntrance.IsMatch(reply)) decision = worded ?? "defer";
             else if (worded != null && labeled != worded && !(labeled == "counteroffer" && worded == "accept"))
@@ -235,10 +247,19 @@ namespace FratRow.Social
                 if (labeled == "respond" && (reaffirm || worded == "defer")) decision = "respond";
                 else decision = worded;
             }
+            // A conditional answer is never a firm acceptance, even when the agreement is too informal for the patterns.
+            if (decision == "accept" && conditional) decision = "defer";
+            bool firm = ExistingCommitment == "accepted" || ExistingCommitment == "declined";
+            if (worded == null && decision != "respond" && firm && decision != (ExistingCommitment == "accepted" ? "accept" : "decline")) decision = "respond";
+            if (worded != "accept" && worded != "decline" && decision != "respond" && ExistingCommitment == "" && !Invited()) decision = "respond";
             if (!allowed.Contains(decision)) decision = decision == "accept" && allowed.Contains("defer") ? "defer" : "respond";
             if (decision != labeled) Override = labeled + "->" + decision;
             return decision;
         }
+
+        /// <summary>Whether the speaker has invited this NPC or asked about the party, now or earlier in this chat.</summary>
+        bool Invited() => SpeechCues.IsInvite(context.CurrentText ?? "") ||
+            context.Conversation.Any(l => l.speaker == "player" && SpeechCues.IsInvite(l.text));
 
         /// <summary>Builds and validates the proposal from the state label and the voiced reply.</summary>
         public SocialProposal Decode(string stateJson, string reply, IStateCodec codec)

@@ -222,7 +222,7 @@ static class Program
                 Assert(t.Decode(Label("accept"), "Maybe, I'll think about it.", codec).decision == "defer", "Explicit maybe stayed an acceptance");
                 Assert(t.Decode(Label("accept"), "Bro, say less.", codec).decision == "accept" && t.Override == null, "Slang acceptance without explicit wording was overridden");
                 Assert(t.Decode(Label("respond"), "Mostly lifting, you?", codec).decision == "respond", "Small talk gained an RSVP");
-                Assert(t.Decode(Label("counteroffer"), "I'll come if you bring snacks.", codec).decision == "accept", "Counteroffer without the entrance condition survived");
+                Assert(t.Decode(Label("counteroffer"), "I'll come if you bring snacks.", codec).decision == "defer", "Counteroffer with an invented condition was not treated as undecided");
                 var cruel = t.Decode(Label("respond", current), "Wow. Rude.", codec);
                 Assert(cruel.grievance_event_id == c.ObservedEventId, "Grievance label did not restore the received speech ID");
                 try { t.Decode(codec.Encode(new { decision = "respond", trust = "furious", regard = "unchanged", grievance = "", resolve = "" }), "Hey.", codec); throw new Exception("Invalid magnitude accepted"); }
@@ -230,8 +230,39 @@ static class Program
                 Assert(t.StateGrammar.Contains("\"\\\"accept\\\"\"") && !t.StateGrammar.Contains(c.ObservedEventId), "State grammar omits live decisions or leaks a raw host ID");
                 return t.Build("respond", "unchanged", "unchanged", "", "", "Hey.");
             }
-            var labeled = await f.Service.SubmitAsync(f.P1.playerId, f.Request("hey"));
+            var labeled = await f.Service.SubmitAsync(f.P1.playerId, f.Request("party Saturday, you in?"));
             Assert(failure == null, failure ?? ""); Assert(labeled.status == "committed", "Label checks did not run to completion");
+            using var h = new Fixture(); string playtestFailure = null;
+            // Regressions from the 18 Oct persona playtest (Tessa, Benji, Malik, Priya).
+            h.Provider.Decide = c => { try { return Playtest(c); } catch (Exception e) { playtestFailure = e.Message; throw; } };
+            SocialProposal Playtest(ModelContext c)
+            {
+                var t = new PersonaSocialTurn(c);
+                string L(string decision) => codec.Encode(new { decision, trust = "unchanged", regard = "unchanged", grievance = "", resolve = "" });
+                if (c.CurrentText == "what are you into?")
+                    Assert(t.Decode(L("accept"), "Details, or I won't attend.", codec).decision == "respond", "RSVP saved before any invitation");
+                if (c.CurrentText == "party Saturday, you should come")
+                {
+                    Assert(t.Decode(L("accept"), "I'll come, but only if they give me a list of the guests.", codec).decision == "defer", "Conditional yes saved as a firm accept");
+                    Assert(t.Decode(L("accept"), "Maybe. But if the playlist is good, yeah, I'll be there.", codec).decision == "defer", "Hedged yes saved as a firm accept");
+                    Assert(t.Decode(L("respond"), "Nope, not tonight. Too busy.", codec).decision == "decline", "Plain refusal stayed an ordinary reply");
+                    Assert(t.Decode(L("accept"), "If the music works and you bring a decent crowd, yeah.", codec).decision == "defer", "Conditional informal yes saved as a firm accept");
+                    Assert(t.Decode(L("accept"), "I'll be there. Let me know if you need anything.", codec).decision == "accept", "An unrelated 'if' sentence downgraded a plain yes");
+                    return t.Build("accept", "unchanged", "unchanged", "", "", "Bro, say less.");
+                }
+                if (c.CurrentText == "you seem hard to impress")
+                {
+                    Assert(t.ExistingCommitment == "accepted", "Fixture did not record the acceptance");
+                    Assert(t.Decode(L("defer"), "Eww, yeah, but hey, I'm just as happy coming!", codec).decision == "respond", "Accepted RSVP silently downgraded to undecided");
+                    Assert(t.Decode(L("decline"), "Actually no, I'm not coming.", codec).decision == "decline", "Explicit withdrawal was blocked");
+                }
+                return t.Build("respond", "unchanged", "unchanged", "", "", "Hey.");
+            }
+            foreach (var line in new[] { "what are you into?", "party Saturday, you should come", "you seem hard to impress" })
+            {
+                var r = await h.Service.SubmitAsync(h.P1.playerId, h.Request(line));
+                Assert(playtestFailure == null, playtestFailure ?? ""); Assert(r.status == "committed", "Playtest regression turn did not commit: " + line);
+            }
             using var g = new Fixture(); var noParty = g.Request("hey"); noParty.partyId = null;
             g.Provider.Decide = c => { var t = new PersonaSocialTurn(c); Assert(t.Reconcile("accept", "I'm in!") == "respond", "An RSVP survived without a live party"); return t.Build("respond", "unchanged", "unchanged", "", "", "Hey."); };
             Assert((await g.Service.SubmitAsync(g.P1.playerId, noParty)).status == "committed", "No-party label check did not run");
