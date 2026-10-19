@@ -243,10 +243,77 @@ namespace FratRow.Social
             });
             return result;
         }
-        internal static SocialEvent AddEvent(CampaignState s, string kind, string source, string actor, string target,
-            string location, string text, List<string> witnesses)
+        /// <summary>
+        /// Host-only: NPC-to-NPC gossip retellings, all in one transaction (the journal rewrites full state per transaction).
+        /// Each share becomes a "gossip" rumor receipt witnessed by the listener. A linked share (<c>viaEventId</c>) is an explicit
+        /// knowledge transfer and is only recorded if the teller witnessed that record; unknown NPCs, self-talk, empty or over-long
+        /// text are skipped. Returns one receipt id per share in order ("" when skipped). Never throws for bad shares.
+        /// Example: <c>world.ShareGossip(new[] { new GossipShare { tellerId = "Megan", listenerId = "Ivy", viaEventId = seenId, text = "..." } })</c>
+        /// </summary>
+        public List<string> ShareGossip(IEnumerable<GossipShare> shares) => RecordGossip(null, shares).Value;
+
+        /// <summary>
+        /// Host-only: gossip observations, then gossip shares, in ONE transaction. Observations are world events (like
+        /// <see cref="Observe"/>, unknown witnesses dropped); shares follow <see cref="ShareGossip"/> rules and may link to an
+        /// observation recorded earlier in the same call. Caller-assigned ids are kept; an id that already exists is not recorded
+        /// again (a replay after reload is idempotent). Gossip records do not bump NPC revisions, so they never invalidate an
+        /// in-flight conversation. Returns (observation ids, share ids), "" where skipped. Never throws for bad input.
+        /// </summary>
+        public KeyValuePair<List<string>, List<string>> RecordGossip(IEnumerable<GossipObservation> observations, IEnumerable<GossipShare> shares)
         {
-            var e = new SocialEvent { eventId = Id(), kind = kind, source = source, actorId = actor,
+            var seen = (observations ?? Enumerable.Empty<GossipObservation>()).ToList();
+            var list = (shares ?? Enumerable.Empty<GossipShare>()).ToList();
+            var observed = new List<string>();
+            var ids = new List<string>();
+            if (list.Count == 0 && seen.Count == 0) return new KeyValuePair<List<string>, List<string>>(observed, ids);
+            Store.Transact(s =>
+            {
+                observed.Clear();
+                ids.Clear();
+                var byId = new Dictionary<string, SocialEvent>();
+                foreach (var e in s.events) byId[e.eventId] = e;
+                foreach (var o in seen)
+                {
+                    if (!string.IsNullOrEmpty(o?.eventId) && byId.ContainsKey(o.eventId)) { observed.Add(o.eventId); continue; }
+                    var witnesses = (o?.witnesses ?? new List<string>()).Where(w => Npc(s, w) != null).Distinct().ToList();
+                    string text = (o?.text ?? "").Trim();
+                    if (o == null || string.IsNullOrEmpty(o.kind) || witnesses.Count == 0 || text.Length == 0 || (o.eventId?.Length ?? 0) > 64) { observed.Add(""); continue; }
+                    var e = AddEvent(s, o.kind, "world", o.actorId, o.targetId, o.location ?? "campus", text.Length <= 400 ? text : text.Substring(0, 400), witnesses,
+                        string.IsNullOrEmpty(o.eventId) ? null : o.eventId);
+                    e.subjectId = o.subjectId ?? "";
+                    e.valence = Math.Sign(o.valence);
+                    e.topicId = o.topicId ?? "";
+                    // No revision bump: hearsay arriving mid-turn must not invalidate an in-flight conversation.
+                    byId[e.eventId] = e;
+                    observed.Add(e.eventId);
+                }
+                foreach (var share in list)
+                {
+                    if (!string.IsNullOrEmpty(share?.eventId) && byId.ContainsKey(share.eventId)) { ids.Add(share.eventId); continue; }
+                    var teller = share == null ? null : Npc(s, share.tellerId);
+                    var listener = share == null ? null : Npc(s, share.listenerId);
+                    string text = (share?.text ?? "").Trim();
+                    SocialEvent via = null;
+                    bool linked = !string.IsNullOrEmpty(share?.viaEventId);
+                    bool valid = teller != null && listener != null && teller != listener && text.Length > 0 && text.Length <= 300 && (share.eventId?.Length ?? 0) <= 64 &&
+                        (!linked || (byId.TryGetValue(share.viaEventId, out via) && via.witnesses.Contains(teller.npcId)));
+                    if (!valid) { ids.Add(""); continue; }
+                    var e = AddEvent(s, "gossip", "rumor", teller.npcId, listener.npcId, "gossip", text, new List<string> { listener.npcId },
+                        string.IsNullOrEmpty(share.eventId) ? null : share.eventId);
+                    e.relatedEventId = via?.eventId;
+                    e.subjectId = share.subjectId ?? "";
+                    e.valence = Math.Sign(share.valence);
+                    e.topicId = share.topicId ?? "";
+                    byId[e.eventId] = e;
+                    ids.Add(e.eventId);
+                }
+            });
+            return new KeyValuePair<List<string>, List<string>>(observed, ids);
+        }
+        internal static SocialEvent AddEvent(CampaignState s, string kind, string source, string actor, string target,
+            string location, string text, List<string> witnesses, string eventId = null)
+        {
+            var e = new SocialEvent { eventId = eventId ?? Id(), kind = kind, source = source, actorId = actor,
                 targetId = target, fraternityId = s.fraternityId, location = location, text = text,
                 witnesses = witnesses, day = s.day, utcTicks = DateTime.UtcNow.Ticks };
             s.events.Add(e); return e;

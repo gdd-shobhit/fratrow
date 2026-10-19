@@ -16,6 +16,8 @@ namespace FratRow.Game
         public const string ServeDrinks = "serve_drinks", CardCheck = "card_check", Dj = "dj", TurnDownMusic = "turn_down_music";
         public const string BreakUpFight = "break_up_fight", HelpGuest = "help_guest", FixDamage = "fix_damage", KickOut = "kick_out";
         public const string BeerRun = "beer_run", TalkToPolice = "talk_to_police";
+        // Gossip (design/gdd/campus-gossip.md §3.7): target = NPC, item = story id.
+        public const string AskGossip = "ask_gossip", DenyRumor = "deny_rumor", TraceRumor = "trace_rumor", ExposeRumor = "expose_rumor";
         // Any phase but semester end, at the house (item = optional drink id)
         public const string Drink = "drink";
     }
@@ -62,7 +64,9 @@ namespace FratRow.Game
     {
         PhaseChanged, DayChanged, News, GuestArrived, GuestLeft, IncidentOpened, IncidentResolved,
         PoliceDispatched, PoliceWarning, Raid, PlayerBusted, PartyStarted, PartyEnded, WeekSettled,
-        MemberJoined, SemesterEnded, StashChanged, RoleChanged, HouseChanged
+        MemberJoined, SemesterEnded, StashChanged, RoleChanged, HouseChanged,
+        /// <summary>A story was seeded (value = story id; flag = about the players).</summary>
+        Gossip
     }
 
     /// <summary>Transient notification drained by the adapter each frame (not persisted).</summary>

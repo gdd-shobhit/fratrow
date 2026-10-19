@@ -57,6 +57,8 @@ namespace FratRow.Game
         /// <summary>Freshman/underage: alcohol served to them is a party crime.</summary>
         public bool underage;
         public float gpa = 3.0f;
+        /// <summary>How much this person talks about others, 0..1 (design/gdd/campus-gossip.md §4.2). -1 = derive from clique/status.</summary>
+        public float gossip = -1;
         public List<RosterHouseAffinity> rivalAffinity = new List<RosterHouseAffinity>();
         public List<RosterScheduleEntry> schedule = new List<RosterScheduleEntry>();
     }
@@ -84,6 +86,8 @@ namespace FratRow.Game
         public float partyTroubleMin = 0, partyTroubleMax = 20;
         public float partyCashMin = 2, partyCashMax = 8;
         public float gpaMin = 2.5f, gpaMax = 3.5f;
+        /// <summary>Gossipiness range for copies; -1 = derive like an unauthored roster NPC.</summary>
+        public float gossipMin = -1, gossipMax = -1;
         /// <summary>Chance a boy copy is a PNM.</summary>
         public float pnmChance;
         public float underageChance = 0.3f;
@@ -149,6 +153,7 @@ namespace FratRow.Game
                 SocialVoice.Validate(n.voice);
                 if (!Enum.TryParse<StatusConcern>(n.statusConcern, out _)) throw new FormatException("Invalid statusConcern: " + n.id);
                 if (n.popularity < 0 || n.popularity > 100) throw new FormatException("Roster popularity must be 0..100: " + n.id);
+                if (n.gossip > 1 || (n.gossip < 0 && n.gossip != -1)) throw new FormatException("Roster gossip must be 0..1 (or -1 to derive): " + n.id);
                 foreach (var s in n.schedule)
                     if (s.day < 0 || s.day > 6 || s.start < 0 || s.start > 24 || s.end < 0 || s.end > 24 || string.IsNullOrWhiteSpace(s.location))
                         throw new FormatException("Invalid schedule entry: " + n.id);
@@ -216,6 +221,9 @@ namespace FratRow.Game
                         rivalAffinity = (t.rivalLean ?? new List<RosterHouseAffinity>()).Select(l => new RosterHouseAffinity { houseId = l.houseId, value = l.value + rng.Range(-8, 9) }).ToList(),
                         schedule = GenerateSchedule(t.favoriteLocations, rng)
                     };
+                    // Separate stream: adding the trait must not change any existing copy's name, persona or schedule.
+                    if (t.gossipMin >= 0)
+                        npc.gossip = (float)Math.Round(GameRng.For(catalog.seed, "archetype-gossip:" + t.id, copy).Range(t.gossipMin, Math.Max(t.gossipMin, Math.Min(1f, t.gossipMax))), 2);
                     npcs.Add(npc);
                 }
             }

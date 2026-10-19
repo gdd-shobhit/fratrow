@@ -176,13 +176,14 @@ namespace FratRow.Game
                 var hosts = ConnectedPlayers.Where(x => x.location == Config.playerHomeLocation).ToList();
                 if (hosts.Count > 0) cited = hosts[NextRng("raid-cite").Range(0, hosts.Count)].playerId;
             }
-            if (!string.IsNullOrEmpty(cited)) Bust(Player(cited), "serving alcohol to minors");
+            if (!string.IsNullOrEmpty(cited)) Bust(Player(cited), "serving alcohol to minors", "serving drinks to freshmen");
             EndPlayersParty(raided: true);
             BeginDebrief();
         }
 
-        /// <summary>Busted: fine from the treasury, heat, Dean penalty, record, and a detention timeout.</summary>
-        void Bust(PlayerState player, string reason)
+        /// <summary>Busted: fine from the treasury, heat, Dean penalty, record, a detention timeout, and a "busted" story
+        /// told by whoever saw it (or, with no witnesses, the police blotter reaching the campus hubs).</summary>
+        void Bust(PlayerState player, string reason, string gossipDetail = null)
         {
             if (player == null) return;
             var h = PlayerHouse;
@@ -195,6 +196,9 @@ namespace FratRow.Game
             player.detainedUntil = State.time + t.detainSeconds;
             News("busted", player.displayName + " (" + h.name + ") was busted for " + reason + ".", h.id, player.playerId, isPublic: true);
             Emit(GameEventKind.PlayerBusted, reason, h.id, player.playerId, value: t.detainSeconds);
+            var saw = NpcsAt(player.location);
+            Seed("busted", (Config.StoryKind("busted")?.severity ?? 55) + 5 * Math.Min(5, player.record - 1), saw.Count > 0 ? saw : GossipHubs(),
+                h.id, player.playerId, detail: gossipDetail ?? "for " + reason, location: string.IsNullOrEmpty(player.location) ? "campus" : player.location);
         }
 
         /// <summary>Design §4.4 detection probability for a crime at a location.</summary>

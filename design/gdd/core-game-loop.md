@@ -3,6 +3,7 @@
 > **Status**: Draft v1 (2026-10-18) — backend implemented in `Assets/Scripts/Game/Core` (`FratRow.Game`).
 > **Tuning**: every number below is a key in `Assets/Resources/Campus/GameLoopConfig.json` unless marked *fixed*.
 > **Related**: `Docs/SocialBrains.md` (conversational NPC backend), `design/gdd/campus-roster.md` (NPC roster),
+> `design/gdd/campus-gossip.md` (rumor mill: stories, spreading, word of mouth),
 > `docs/architecture/adr-0001-unity-free-game-core.md` (why the rules live outside MonoBehaviours).
 
 ## 1. Overview
@@ -127,7 +128,10 @@ is detained. Each action produces an **ActionResult** and usually a **news item*
 | `set_cover` | anywhere | President or Treasurer. Cover charge 0–20. |
 | `clean_house` | `PartyHouse` | Clears `trashed`, heat −3. |
 | `prank` rival | rival house | Crime. Needs `prank_kit` (§3.6). |
-| `spread_rumor` NPC, rival | in person with the NPC | Crime-lite. Lowers the NPC's regard for that rival. |
+| `spread_rumor` NPC, rival (item = claim id) | in person with the NPC | Crime-lite. Lowers the NPC's regard for that rival and plants a traceable smear story that spreads (gossip GDD §3.6). |
+| `ask_gossip` NPC | in person or text | Hear what the NPC has heard, in their version, with story ids (gossip GDD §3.7). |
+| `deny_rumor` NPC, story | in person or text | Lower belief in a bad story about us. Backfires on people who hadn't heard it. |
+| `trace_rumor` NPC, story / `expose_rumor` story | in person or text / anywhere | Follow a rumor to its source; publicly debunk a traced rival lie. |
 | `steal_mascot` rival | rival house, evenings (17–20) | Crime. Popularity +4 if not caught. |
 | `claim_role` | anywhere | Take a free role. |
 | `drink` [item] | `PartyHouse`, any phase but SemesterEnd | One serving from the shared stash or open containers; the brother's `drunk` rises. Past the threshold his speech is rewritten (`design/gdd/drunk-mechanic.md`). |
@@ -215,7 +219,8 @@ cited (busted).
 target is usually the players' house, otherwise the next house up. The actions are:
 
 - `prank`: target `trashed`, popularity −2.
-- `rumor`: up to 2 random NPCs witness a rival badmouthing the house, and their rush interest in it −5.
+- `rumor`: up to 2 random NPCs witness a rival badmouthing the house, and their rush interest in it −5. The claim becomes a
+  `smear` story that spreads and can be traced and exposed (gossip GDD §3.6). Rivals also trace and expose the players' smears.
 - `poach`: a rival's PNM interest +8.
 
 `guard_house` blocks the next one. The players get a news item when it happens, attributed only if a
@@ -231,7 +236,7 @@ some guests leave), subject to `guard_house`.
 
 1. **Score** each party (§4.6). **Rank** the houses. Award Greek Cup points `cupPoints[rank]` (10/6/3/1).
    On probation the points are ×0.5. A suspended house scores 0.
-2. **Popularity**: `rankPop[rank]` + party quality + notable guests + raid/infamy (§4.2). Clamped 0–100.
+2. **Popularity**: `rankPop[rank]` + party quality + notable guests + raid/infamy + campus word of mouth (§4.2). Clamped 0–100.
 3. **Cash**: cover charge, plus dues (`dues × members`), plus a sponsorship for 1st place, minus fines.
 4. **Heat**: −`weeklyHeatCooldown`, and −8 if `cleanup_crew` was bought.
 5. **Dean**: ±GPA adjustment (§4.3). A Dean below `probationDean` puts the house on **probation** next week
@@ -242,13 +247,16 @@ some guests leave), subject to `guard_house`.
 8. **News**: weekly headlines are published. "Campus news" events go to every NPC's memory (public knowledge).
 9. **Social sync**: the social party ends (unresolved promises are marked missed, the social `day` advances), a
    new planned party is created for next week, and rival standings are pushed to the NPC context.
+10. **Gossip**: the weekend's stories are seeded (party outcomes, stand-ups, rival parties, rank and popularity swings), two Sunday
+    brunch rounds spread them, and the players get the rumor-mill digest (gossip GDD §3.5).
 
 ### 3.9 Daily tick (each weekday boundary)
 
 Heat −`dailyHeatDecay` (Risk Manager on the roster: −2 more). Patrol count is recomputed. Rival daily
-actions run. Daily action counters reset. A **morning briefing** news line summarises the day: confirmed
-and undecided RSVPs, rivals' public party themes, where police are watching, a trashed-house reminder, and
-"party tomorrow night" on Friday. Named NPCs follow their schedules (existing
+actions run, and rivals may trace and expose a smear the players started. Daily action counters reset. A **morning briefing** news
+line summarises the day: confirmed and undecided RSVPs, rivals' public party themes, where police are watching, a trashed-house
+reminder, the hottest story on campus ("Word on campus"), and "party tomorrow night" on Friday. During the day, gossip rounds run at
+10:00 and 15:00; at day end stories cool and retire (gossip GDD §3.4–3.5). Named NPCs follow their schedules (existing
 `NetworkedCampusNpcDirector`, driven by the core clock).
 
 ### 3.10 Recruitment (Rush and Bid Day)
@@ -327,7 +335,10 @@ Grade thresholds are unchanged from `FraternityGradeCalculator`: A ≥ 85, B ≥
 
 **4.2 Weekly popularity delta**
 
-`Δpop = rankPop[rank] + (fun − 50)/10 + Σ(notable guest pop)/notableDivisor + raidTerm`
+`Δpop = rankPop[rank] + (fun − 50)/10 + Σ(notable guest pop)/notableDivisor + raidTerm + clamp(0.12 × wordOfMouth, ±4)`
+
+`wordOfMouth` is the mean hearsay opinion of the house over every named non-member (gossip GDD §4.4). It reflects stories spread since
+earlier weekends; Saturday's own stories are seeded after this step and count from next week.
 
 - A positive Δ is scaled by `max(0.1, 1 − pop/popularitySoftCap)` (soft cap 150) so leaders slow down.
 - Rivals then regress `weeklyRegress` (10 %) toward their starting popularity each week.
@@ -447,6 +458,7 @@ Arrivals are drawn as `floor(expected) + Bernoulli(frac)`. Each filler's archety
 | `CampusLocation` registry | Adapter | Resolves a player's position to a `locationId`. Adds rival house locations. |
 | Roster data | Data | `Assets/Resources/Campus/CampusRoster.json`. Loaded by `NamedNpcDatabase`, `PhoneContactDatabase` and the core. |
 | Config data | Data | `Assets/Resources/Campus/GameLoopConfig.json`. Loaded by the core (Unity reads it via `TextAsset`; the harness reads the file). |
+| Campus gossip (`design/gdd/campus-gossip.md`) | both | Reads party, crime, police, rival, Dean, rush and settlement events to seed stories; its opinions feed destination appeal (§4.8), rush interest (§4.7) and Δpop (§4.2). Adds four actions (§3.4). |
 | Drunk mechanic (`design/gdd/drunk-mechanic.md`) | Core ↔ Core | Brothers drink from the same stash/`openServings` as guests (`BeginParty` keeps containers opened earlier in the week). Drunk brothers' talk/invite/rush text is rewritten in `Conversation`, and `talk_to_police` / crime detection take a drunk penalty. |
 
 ### 6.1 Identity
@@ -474,6 +486,7 @@ All are in `GameLoopConfig.json`:
 - Heat and Dean: `dailyHeatDecay`, `weeklyHeatCooldown`, `probationDean`, `suspensionDean`, `bustHeat`, `bustDean`
 - Rush: `rushTalkInterest`, `rivalBidInterest`, `acceptBidInterest`, `walkOnPnms`
 - Scoring: `cupPoints[]`, `rankPop[]`, `notableDivisor`, `raidScoreFactor`, `infamyFun`, `infamyBonus`
+- Gossip: the `gossip` section, `storyKinds[]`, `smearClaims[]`, `crimes[].gossipKind` (safe ranges in the gossip GDD §7)
 
 ## 8. Acceptance Criteria
 
@@ -494,3 +507,4 @@ All are in `GameLoopConfig.json`:
 9. All 65 existing social integrity checks still pass. New social changes (rival standings, many NPCs,
    heuristic provider) have their own checks.
 10. The Unity adapter assemblies compile against the editor's references (`tools/ci/unity-compile-check.ps1`).
+11. The campus gossip acceptance criteria (gossip GDD §8) pass, and criteria 1–8 above still pass with gossip enabled.

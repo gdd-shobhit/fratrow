@@ -248,6 +248,7 @@ namespace FratRow.Game
                 dt -= step;
                 Step(step);
             }
+            FlushGossipLedger();
         }
 
         void Step(double dt)
@@ -264,6 +265,7 @@ namespace FratRow.Game
                         State.phaseElapsed -= Config.weekdaySecondsPerDay;
                         EndOfWeekday();
                     }
+                    GossipClock();
                     break;
                 case Phase.Party:
                     State.partyTickAccumulator += dt;
@@ -286,6 +288,7 @@ namespace FratRow.Game
 
         void EndOfWeekday()
         {
+            FinishGossipDay();
             if (State.day >= 4)
             {
                 BeginParty();
@@ -300,7 +303,8 @@ namespace FratRow.Game
         public ActionResult StartWeekendEarly()
         {
             if (State.phase != Phase.Weekday) return ActionResult.Fail("wrong_phase", "The weekend can only start during the week.");
-            while (State.day < 4) { State.day++; DailyTick(); }
+            while (State.day < 4) { FinishGossipDay(); State.day++; DailyTick(); }
+            FinishGossipDay();
             State.weekendStartedEarly = true;
             BeginParty();
             return ActionResult.Ok("Weekend started.");
@@ -316,6 +320,7 @@ namespace FratRow.Game
 
         void AdvanceFromDebrief()
         {
+            FinishGossipDay();
             if (State.week + 1 >= Config.semesterWeeks) { BeginSemesterEnd(); return; }
             State.week++;
             BeginWeek(first: false);
@@ -340,6 +345,7 @@ namespace FratRow.Game
 
         void BeginDebrief()
         {
+            FinishGossipDay();
             SetPhase(Phase.Debrief, 6);
             Settle();
         }
@@ -399,6 +405,7 @@ namespace FratRow.Game
                 h.heat = Clamp(h.heat - decay, 0, 100);
             }
             RivalDaily();
+            RivalTraceSmears();
             MorningBriefing();
         }
 
@@ -418,6 +425,8 @@ namespace FratRow.Game
             var hottest = State.houses.OrderByDescending(x => x.heat).First();
             if (hottest.heat >= Config.police.patrolHeatStep) lines.Add("Police are watching " + (hottest.isPlayer ? "OUR house" : hottest.name) + ".");
             if (h.trashed) lines.Add("Our house is still trashed.");
+            string word = MorningGossipLine();
+            if (word != null) lines.Add(word);
             if (State.day == 4) lines.Add("Party tomorrow night!");
             News("briefing", string.Join(" ", lines), h.id);
         }

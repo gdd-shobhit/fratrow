@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +92,7 @@ namespace FratRow.Social
             if (insult) score -= 0.5;
             if (ownGrievance != null && !apology) score -= 0.25;
             if (commitment?.state == "deferred") score += 0.05;
+            score += Hearsay(s, c);
             score += DrunkBias(tone, c.SpeakerCondition);
 
             var allowedDecisions = GroundedSocialTurn.Decisions(c).ToList();
@@ -149,6 +151,33 @@ namespace FratRow.Social
                 return safe;
             }
         }
+
+        /// <summary>
+        /// Word of mouth: gossip this NPC currently holds about the speaker (named) or the players' house nudges the decision, capped at
+        /// ±0.18. Only explicit records count (the NPC never sees gossip it was not told). Per story, only the latest record counts, so
+        /// disbelief, a successful denial or a debunk (valence 0) cancels it; records older than <see cref="HearsayWeeks"/> social days fade out.
+        /// </summary>
+        public static double Hearsay(CampaignState s, ModelContext c)
+        {
+            var latest = new Dictionary<string, SocialEvent>();
+            int untopiced = 0;
+            foreach (var e in s.events)
+            {
+                if ((e.kind != "gossip" && string.IsNullOrEmpty(e.topicId)) || !e.witnesses.Contains(c.NpcId)) continue;
+                latest[string.IsNullOrEmpty(e.topicId) ? "receipt:" + untopiced++ : e.topicId] = e; // later records replace earlier ones
+            }
+            double sum = 0;
+            foreach (var e in latest.Values)
+            {
+                if (e.valence == 0 || s.day - e.day >= HearsayWeeks) continue;
+                if (e.subjectId == c.PlayerId) sum += 0.06 * e.valence;
+                else if (e.subjectId == "players") sum += 0.03 * e.valence;
+            }
+            return Math.Max(-0.18, Math.Min(0.18, sum));
+        }
+
+        /// <summary>Social days (one per party night) before a story stops mattering to the deterministic provider.</summary>
+        public const int HearsayWeeks = 3;
 
         static double ToneBias(string tone) =>
             tone == "bubbly" ? 0.08 : tone == "laid-back" ? 0.05 : tone == "playful" ? 0.03 : tone == "reserved" || tone == "dry" ? -0.05 : 0;

@@ -25,6 +25,10 @@ namespace FratRow.Game
         {
             var p = State.party;
             var player = PlayerHouse;
+            var standingBefore = Ranked().Select(h => h.id).ToList();
+            SnapshotWeekendDestinations();
+            State.storiesThisWeek = 0; // the gossip week runs Sunday to Saturday
+            State.gossipWeekStart = DayIndex;
             ScoreRivalParties();
             p.score = PlayersPartyScore();
 
@@ -48,6 +52,9 @@ namespace FratRow.Game
                     delta += (p.fun - 50f) / 10f + p.notablePopularity / Config.scoring.notableDivisor;
                 else if (rp != null) delta += rp.notablePopularity / (Config.scoring.notableDivisor * 2);
                 delta += Clamp(h.weekSabotagePop, -Config.scoring.sabotagePopCap, Config.scoring.sabotagePopCap);
+                // Word of mouth: what campus has been saying about the house all week (design/gdd/campus-gossip.md §4.4).
+                float wordOfMouth = G.enabled ? Clamp(WordOfMouth(h.id) * G.wordOfMouthScale, -G.wordOfMouthCap, G.wordOfMouthCap) : 0;
+                delta += wordOfMouth;
                 if (delta > 0) delta *= Math.Max(0.1f, 1f - h.popularity / Config.scoring.popularitySoftCap);
                 h.popularity = Clamp(h.popularity + delta, 0, 100);
                 var def = Config.House(h.id);
@@ -55,7 +62,8 @@ namespace FratRow.Game
                 week.entries.Add(new WeekEntry
                 {
                     houseId = h.id, score = scores[rank].score, rank = rank + 1, cupPoints = points, popDelta = delta, raided = raided,
-                    guests = h.isPlayer ? p.guests.Count : rp?.namedGuests ?? 0, fun = h.isPlayer ? p.fun : 0, suspended = h.suspended
+                    guests = h.isPlayer ? p.guests.Count : rp?.namedGuests ?? 0, fun = h.isPlayer ? p.fun : 0, suspended = h.suspended,
+                    wordOfMouth = wordOfMouth
                 });
             }
             week.guests = p.guests.Count;
@@ -101,12 +109,18 @@ namespace FratRow.Game
                 if (h.gpa >= Config.dean.gpaHigh) h.dean += Config.dean.gpaDean;
                 else if (h.gpa < Config.dean.gpaLow) h.dean -= Config.dean.gpaDean;
                 h.dean = Clamp(h.dean, 0, 100);
-                bool wasSanctioned = h.probation || h.suspended;
+                bool wasSanctioned = h.probation || h.suspended, wasSuspended = h.suspended;
                 h.suspended = h.dean < Config.dean.suspensionDean;
                 h.probation = !h.suspended && h.dean < Config.dean.probationDean;
                 if (h.suspended) News("dean", h.name + " has been SUSPENDED by the Dean for next weekend.", h.id, isPublic: true);
                 else if (h.probation) News("dean", h.name + " is on probation next week.", h.id, isPublic: true);
                 else if (wasSanctioned && h.isPlayer) News("dean", h.name + " is back in good standing with the Dean.", h.id);
+                // A new sanction leaks from the house's own members and the campus hubs.
+                if ((h.suspended && !wasSuspended) || (h.probation && !wasSanctioned))
+                {
+                    string kind = h.suspended ? "dean_suspended" : "dean_probation";
+                    Seed(kind, Config.StoryKind(kind)?.severity ?? 55, GossipHubs().Concat(h.npcMembers), h.id, location: Config.quadLocation);
+                }
             }
 
             // 6. Rush.
@@ -118,7 +132,11 @@ namespace FratRow.Game
             PushStandings();
 
             // 8. Social: end this party, publish weekly campus news (one memory per NPC).
-            social.EndParty(State.socialPartyId, cancelled: player.suspended);
+            // A party suspended at party time was already cancelled and cleared (BeginParty). One still open here happened, even if
+            // this settlement just suspended the house for NEXT week.
+            bool partyHappened = !string.IsNullOrEmpty(State.socialPartyId);
+            social.EndParty(State.socialPartyId, cancelled: !partyHappened);
+            var missed = partyHappened ? social.Commitments(State.socialPartyId).Where(c => c.state == "missed").ToList() : new List<CommitmentView>();
             State.socialPartyId = "";
             var winner = House(week.entries[0].houseId);
             var lines = new List<string> { winner.name + " threw the best party of week " + (State.week + 1) + "." };
@@ -128,6 +146,9 @@ namespace FratRow.Game
             social.PublishNews("Campus news: " + string.Join(" ", lines), AllNpcIds());
             News("party_result", "Week " + (State.week + 1) + " results: " + string.Join(", ", week.entries.Select(e => "#" + e.rank + " " + House(e.houseId).name + " (" + e.score.ToString("0") + ")")) + ".",
                 player.id, isPublic: true);
+            // 9. Gossip: Saturday's stories are seeded and Sunday brunch spreads them (design/gdd/campus-gossip.md §3.5).
+            GossipWeekend(standingBefore, week, missed);
+            weekendDestinations = null;
             Emit(GameEventKind.WeekSettled, "week " + (State.week + 1), player.id, value: playerRank);
         }
 
@@ -164,11 +185,12 @@ namespace FratRow.Game
             var h = House(houseId);
             if (npc == null || def == null || h == null) return 0;
             int rank = RankOf(h);
+            float hearsay = G.enabled ? G.rushWeight * Opinion(npcId, h.id) : 0;
             if (h.isPlayer)
                 return Clamp(Config.rush.playerInterestBase + social.RegardForPlayers(npcId) / 2f + RushBonus(npc, h.id)
-                    + (State.houses.Count - rank) * Config.rush.rankBonus, 0, 100);
+                    + (State.houses.Count - rank) * Config.rush.rankBonus + hearsay, 0, 100);
             return Clamp(h.popularity * ConcernWeight(def) * Config.rush.rivalPopularityFactor + RivalRegard(npc, h.id) + RushBonus(npc, h.id)
-                + (State.houses.Count - rank) * Config.rush.rivalRankBonus + 5, 0, 100);
+                + (State.houses.Count - rank) * Config.rush.rivalRankBonus + 5 + hearsay, 0, 100);
         }
 
         void ApplyPartyRushEffects()
@@ -230,12 +252,19 @@ namespace FratRow.Game
         void JoinHouse(NpcGameState npc, HouseState h)
         {
             if (h == null) return;
+            // Turning down the players' bid for a rival is rush drama; a notable pledge is news either way.
+            bool snub = !h.isPlayer && npc.bids.Contains(Config.playerHouseId);
             npc.memberOf = h.id;
             npc.destination = "";
             h.memberCount++;
             h.npcMembers.Add(npc.npcId);
+            gossipVersion++; // members ignore gossip about their own house
             social.SetAffiliation(npc.npcId, AffiliationFor(h.id));
             string name = RosterNpc(npc.npcId)?.displayName ?? npc.npcId;
+            float pledgePop = RosterNpc(npc.npcId)?.popularity ?? 0;
+            if (snub || pledgePop >= G.notablePledge)
+                Seed(snub ? "pledge_snub" : "pledged", (snub ? 40 : 25) + pledgePop * 1.2f, new[] { npc.npcId }.Concat(h.npcMembers).Concat(GossipHubs()),
+                    h.id, npcId: npc.npcId, otherHouseId: snub ? Config.playerHouseId : "", location: h.homeLocation);
             News("member", name + " accepted a bid from " + h.name + ".", h.id, npcId: npc.npcId, isPublic: true);
             Emit(GameEventKind.MemberJoined, name, h.id, npcId: npc.npcId, flag: h.isPlayer);
         }

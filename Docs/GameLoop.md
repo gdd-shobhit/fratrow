@@ -46,6 +46,22 @@ and the old contact-roster recruit request now extends a Bid Day bid. Pressing *
 panel (`NpcTalkPanel`). It offers asking for a number, inviting them, a rush pitch (PNMs only), free text, and leaving, and every
 reply comes from the social backend. Yarn Spinner has been removed: no scripted lines can contradict what an NPC remembers.
 
+## Campus gossip
+
+Campus talks. A raid, a fight, a freshman in the hospital, a celebrity at your party, a brother getting busted, a prank someone saw,
+an insult that actually hurt someone, a broken "meet me at the door" promise, a big pledge, a Dean sanction, or a house shooting up
+or crashing down the cup table each becomes a **story**, but only if it clears a significance gate. Small talk and small slights never
+do. Stories spread twice a day (10:00, 15:00) and twice at Sunday brunch, one hop at a time. They travel between people who are actually together:
+the same spot on their schedule, the same clique, house brothers, close friends, people who partied at the same house. Nasty stories need
+a close tie. Names fade ("one of the ABR guys"), details get exaggerated, and tellers stop once everyone they meet already knows. NPCs
+act on what they **believe**. It changes where they party, how interested pledges are, whether they'll give you their number, and
+how a conversation goes, since gossip about you is in their memory. Every Sunday, campus word of mouth adds up to ±4 to each house's popularity.
+
+You can `ask_gossip` (hear someone's version, with story ids), `deny_rumor` (works on believers, backfires on people who hadn't
+heard, never works on witnesses), `trace_rumor` (who told them?) and `expose_rumor` (blow up a rival's traced lie). `spread_rumor` now
+plants a real story the listener can pin on you, and rivals trace and expose those. You get a rumor-mill digest every Sunday, a
+"Word on campus" line every morning and an alert when a story about anyone goes viral. Full rules: [`design/gdd/campus-gossip.md`](../design/gdd/campus-gossip.md).
+
 ## Scene checklist (one-time)
 
 1. **GameManager.prefab** needs `NetworkedCampaign` alongside the existing campus and social components.
@@ -87,14 +103,19 @@ typing `LOCAL` or the host's IP into the Join field.
   tests. They cover RSVP arrivals, conditional entrance promises, witnesses entering memory, raids and their
   mitigation over 30 seeds, insults creating grievances and withdrawn RSVPs, Bid Day, probation and suspension, roles, busts and detention, police parking, save/load
   determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover.
-  They also cover the drunk mechanic (`DrunkTests.cs`, `design/gdd/drunk-mechanic.md`).
+  They also cover the drunk mechanic (`DrunkTests.cs`, `design/gdd/drunk-mechanic.md`) and run the 27 campus-gossip tests
+  (gossip GDD §8). Add `-- --gossip` to run only the gossip tests.
+- **Gossip cost:** `... -- --profile-gossip --weeks 6 --seed 61` plays the same bot semester with gossip off and on. It reports wall
+  time, social transactions, state and journal size, time spent in gossip writes and reads, and one round's host-frame cost,
+  synchronous vs deferred.
 - **Whole semesters:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj -- --simulate --weeks 6 --players 4 --seed 7 [--reckless]`
   writes `Library/GameLoopHarness/report.md`. Add `--model <gguf> --llama-server <exe>` to use the real local model.
 - **One party, tick by tick:** `... -- --debug-party --heat 60 --pop 45`.
 - **Drunk speech calibration:** `... -- --drunk-speech "your line" [--samples 5] [--seed 1] [--cosmetic]` prints the line
   at every drunk level using the `drunk` section of the live config.
-- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 67 checks.
-- **Compile against the open editor's references:** `tools/ci/unity-compile-check.ps1`.
+- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 76 checks.
+- **Compile against the open editor's references:** `tools/ci/unity-compile-check.ps1`. From a git worktree, pass
+  `-RepoRoot <worktree> -UnityProjectDir D:\fratrow` to borrow the main checkout's `Library`.
 
 ## Tuning
 
@@ -121,4 +142,11 @@ Reloading mid-party respawns the guests. To start fresh, use **FratRow → Campa
   can witness you.
 - The fallback provider's replies come from the same small grounded phrase banks as the model's. They are functional, not
   literary. Human review of NPC judgment is still outstanding (see `Docs/SocialBrains.md`).
-- The social journal is never compacted, so long campaigns grow it (an existing v1 limitation).
+- The social journal is never compacted, so long campaigns grow it (an existing v1 limitation). Every transaction appends the
+  *whole* state. Measured in a 6-week bot semester (`--profile-gossip`): 746 MB with gossip off and 1.1 GB with gossip on (state 1.2 MB
+  vs 1.6 MB). Compaction (truncate the journal after a verified snapshot) is the top infrastructure follow-up. Gossip already
+  batches its writes (ADR-0003).
+- Gossip actions have no Unity UI yet (not even F1 panel buttons). They already work through `NetworkedCampaign.RequestAction`
+  (any action id goes to the core) and the inbox driver's `game` command. The
+  host should build the bridge with `new SocialWorldBridge(world, deferGossipWrites: true)` and call `WaitForGossipWrites()` before
+  saving or quitting. Otherwise each gossip round's journal write (tens of ms late in a semester) lands on the host frame.

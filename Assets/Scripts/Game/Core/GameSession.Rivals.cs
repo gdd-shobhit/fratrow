@@ -70,28 +70,37 @@ namespace FratRow.Game
             if (target.isPlayer) News("rival_sabotage", PlayerHouse.name + "'s house got trashed overnight." + by + " Clean it before Saturday.", target.id, isPublic: true);
             else target.sabotageScoreMod -= 3;
             var witnesses = NpcsAt(target.homeLocation);
+            string seen = null;
             if (attributed && witnesses.Count > 0)
-                social.Observe("vandalism", rival.name, target.name, rival.name + " brothers trashed " + target.name + "'s house.", target.homeLocation, witnesses);
+                seen = social.Observe("vandalism", rival.name, target.name, rival.name + " brothers trashed " + target.name + "'s house.", target.homeLocation, witnesses);
+            Seed("house_trashed", Config.StoryKind("house_trashed")?.severity ?? 40, witnesses, target.id, otherHouseId: attributed ? rival.id : "",
+                socialEventId: seen, location: target.homeLocation);
         }
 
         void RivalRumor(HouseState rival, HouseState target, GameRng rng)
         {
             var listeners = State.npcs.Where(n => string.IsNullOrEmpty(n.memberOf) && n.memberOf != rival.id).OrderBy(_ => rng.NextULong()).Take(2).ToList();
+            var claim = PickClaim("", "rival-claim-" + rival.id);
             foreach (var npc in listeners)
             {
-                if (target.isPlayer)
-                {
-                    AddRushBonus(npc, target.id, -Config.rivals.rumorRushLoss);
-                    social.Observe("rumor_about_house", rival.name, target.name,
-                        "A " + rival.name + " brother told you that " + target.name + " throws lame parties and is in trouble with the Dean.", "Quad", new[] { npc.npcId });
-                }
+                if (target.isPlayer) AddRushBonus(npc, target.id, -Config.rivals.rumorRushLoss);
                 else
                 {
                     var r = npc.rivalRegard.Find(x => x.houseId == target.id);
                     if (r == null) npc.rivalRegard.Add(new HouseValue { houseId = target.id, value = -5 }); else r.value = Clamp(r.value - 5, -100, 100);
                 }
             }
-            if (target.isPlayer && listeners.Count > 0) News("rival_sabotage", rival.name + " is spreading rumors about " + target.name + ".", target.id);
+            if (listeners.Count == 0) return;
+            // The smear is a real, traceable story: told by a named member when the rival has recruits, else "a Kappa brother".
+            string teller = rival.npcMembers.OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault();
+            string tellerName = teller == null ? "A " + rival.name + " brother" : (RosterNpc(teller)?.displayName ?? teller) + " from " + rival.name;
+            var ids = listeners.Select(n => n.npcId).ToList();
+            // Only smears about the players become NPC memory (as before); rival-vs-rival ones stay game-side (ADR-0003 §4).
+            string seen = target.isPlayer ? social.Observe("rumor_about_house", rival.name, target.name, tellerName + " told you that " + target.name + " " + claim.text + ".", "Quad", ids) : null;
+            Seed("smear", G.smearSeverity, ids, target.id, origin: "house:" + rival.id, fabricated: !ClaimTrue(claim, target), detail: claim.text,
+                socialEventId: seen, location: "Quad", heardFrom: teller ?? "house:" + rival.id,
+                beliefFor: id => HearsayBelief("smear", target.id, false, 0.8f, id, G.tieTogether));
+            if (target.isPlayer) News("rival_sabotage", rival.name + " is spreading rumors about " + target.name + ".", target.id);
         }
 
         void RivalPoach(HouseState rival, HouseState target, GameRng rng)

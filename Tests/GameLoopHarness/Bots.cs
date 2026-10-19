@@ -13,6 +13,8 @@ sealed class BotPolicy
     public bool TalkToPolice = true;
     public bool Sabotage = true;
     public bool Rush = true;
+    /// <summary>Catch up on gossip, deny bad stories about the house, trace and expose rival smears.</summary>
+    public bool Gossip = true;
     public int InvitesPerDay = 3;
     public int KegsPerWeek = 2;
     public static BotPolicy Responsible() => new BotPolicy();
@@ -27,7 +29,9 @@ sealed class BotCrew
     readonly GameRng rng;
     public readonly List<string> Log = new List<string>();
     public int Invites, RushTalks, Crimes, Busts, Bids, ActionsFailed;
+    public int GossipAsks, Denials, Traces, Exposes;
     readonly HashSet<string> invitedThisWeek = new HashSet<string>();
+    readonly HashSet<string> chasedToday = new HashSet<string>();
 
     public BotCrew(GameFixture fixture, BotPolicy policy, int seed)
     {
@@ -161,6 +165,44 @@ sealed class BotCrew
                 break;
         }
         await TalkAround(i, policy.InvitesPerDay);
+        Gossip(i);
+    }
+
+    /// <summary>Damage control by whoever is around: hear what people say, deny what's bad about us, chase smears to their source.</summary>
+    void Gossip(int i)
+    {
+        if (!policy.Gossip) return;
+        var here = S.NpcsAt(f.PlayerState(i).location);
+        var talker = here.OrderByDescending(S.Gossipiness).ThenBy(id => id, StringComparer.Ordinal).FirstOrDefault();
+        if (talker != null && Do(i, ActionIds.AskGossip, talker).ok) GossipAsks++;
+        var stories = S.Stories(activeOnly: false);
+        bool AboutUs(StoryView v) => v.valence < 0 && (v.houseId == S.Config.playerHouseId || S.Player(v.playerId) != null);
+        foreach (var npc in here)
+        {
+            var bad = S.WhatNpcHeard(npc).FirstOrDefault(h => h.heardFrom != "saw it" && AboutUs(stories.FirstOrDefault(v => v.id == h.storyId)));
+            if (bad.text == null) continue;
+            var view = stories.First(v => v.id == bad.storyId);
+            if (view.kind == "smear" && !view.exposed)
+            {
+                if (!chasedToday.Add(S.DayIndex + ":" + view.id)) continue;
+                // Follow the chain (at most three hops) and expose it if it ends at a rival house.
+                string next = npc;
+                for (int hop = 0; hop < 3 && next != null; hop++)
+                {
+                    var r = Do(i, ActionIds.TraceRumor, next, item: bad.storyId.ToString());
+                    if (!r.ok) break;
+                    Traces++;
+                    if (r.message.Contains("That's the source"))
+                    {
+                        if (Do(i, ActionIds.ExposeRumor, item: bad.storyId.ToString()).ok) Exposes++;
+                        break;
+                    }
+                    next = S.Roster.npcs.Select(n => n.id).FirstOrDefault(id => r.message.Contains("heard it from " + S.RosterNpc(id).displayName + "."));
+                    if (next != null && !S.Npc(next).contactUnlocked && !here.Contains(next)) next = null;
+                }
+            }
+            else if (Do(i, ActionIds.DenyRumor, npc, item: bad.storyId.ToString()).ok) Denials++;
+        }
     }
 
     async Task Evening(int i, int day)

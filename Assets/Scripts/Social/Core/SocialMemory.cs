@@ -1,9 +1,28 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace FratRow.Social
 {
+    /// <summary>
+    /// A ledger event as the model sees it: the original event fields only, in their original order. Gossip bookkeeping (subject, valence,
+    /// topic) stays out of the prompt so it never spends the context budget of every memory; it is rendered as prose where it matters.
+    /// </summary>
+    [Serializable] public sealed class MemoryEventView
+    {
+        public string eventId, kind, source, actorId, targetId, fraternityId, location, text, relatedEventId;
+        public int day;
+        public long utcTicks;
+        public List<string> witnesses = new List<string>();
+
+        public static MemoryEventView Of(SocialEvent e) => new MemoryEventView
+        {
+            eventId = e.eventId, kind = e.kind, source = e.source, actorId = e.actorId, targetId = e.targetId, fraternityId = e.fraternityId,
+            location = e.location, text = e.text, relatedEventId = e.relatedEventId, day = e.day, utcTicks = e.utcTicks, witnesses = e.witnesses
+        };
+    }
+
     public static class SocialMemory
     {
         public const int MaxPromptCharacters = 10500;
@@ -31,8 +50,10 @@ namespace FratRow.Social
             var observed = s.events.Find(e => e.eventId == turn.observedEventId);
             // The host-issued receipt is immutable across retries/reloads and independent of client request IDs.
             c.SamplingSeed = Convert.ToInt32(observed.eventId.Substring(0, 7), 16);
+            // Gossip about the person speaking (or their house) is what this NPC would bring up; rank it with promises.
             var memories = s.events.Where(e => e.witnesses.Contains(npc.npcId) && e.eventId != turn.observedEventId)
-                .OrderByDescending(e => active.Contains(e.eventId) ? 3 : e.kind == "promise_broken" || e.kind == "promise_fulfilled" ? 2 : 1)
+                .OrderByDescending(e => active.Contains(e.eventId) ? 3 : e.kind == "promise_broken" || e.kind == "promise_fulfilled" ||
+                    (e.kind == "gossip" && (e.subjectId == turn.playerId || e.subjectId == "players")) ? 2 : 1)
                 .ThenByDescending(e => e.utcTicks).Take(12).ToList();
             var text = new StringBuilder();
             c.GameSetting = includeGameSetting ? SocialGameSetting.Prompt : null;
@@ -64,7 +85,7 @@ namespace FratRow.Social
             int used = text.Length + c.SystemPrompt.Length;
             foreach (var e in memories)
             {
-                string encoded = codec.Encode(e);
+                string encoded = codec.Encode(MemoryEventView.Of(e));
                 if (used + encoded.Length + 10 > MaxPromptCharacters - 2200) continue;
                 used += encoded.Length + 10; selected.Add(e); c.EvidenceIds.Add(e.eventId);
                 if (ExternalCause(e)) c.GrievanceCandidateIds.Add(e.eventId);
@@ -72,7 +93,7 @@ namespace FratRow.Social
             // Choose important receipts before spending the budget, then present actual chronology.
             // Reversing a salience sort can put Ashley's reaction before the speech that caused it.
             memories = selected.OrderBy(e => e.utcTicks).ToList();
-            foreach (var e in memories) text.AppendLine("MEMORY " + codec.Encode(e));
+            foreach (var e in memories) text.AppendLine("MEMORY " + codec.Encode(MemoryEventView.Of(e)));
             foreach (var player in s.players.Where(p => p.playerId == turn.playerId || memories.Any(e => e.actorId == p.playerId || e.targetId == p.playerId ||
                 (e.source == "rumor" && SocialWorld.GossipOrigin(s, e)?.actorId == p.playerId)))
                 .OrderBy(p => p.playerId == turn.playerId ? 0 : 1).Take(4))
@@ -84,7 +105,7 @@ namespace FratRow.Social
             }
             c.EvidenceIds.Add(observed.eventId);
             c.GrievanceCandidateIds.Add(observed.eventId);
-            text.AppendLine("CURRENT_RECEIVED_SPEECH " + codec.Encode(observed));
+            text.AppendLine("CURRENT_RECEIVED_SPEECH " + codec.Encode(MemoryEventView.Of(observed)));
             if (condition != null) text.AppendLine("SPEAKER_CONDITION " + condition);
             if (repairError != null) text.AppendLine("VALIDATION_ERROR " + codec.Encode(repairError));
             text.AppendLine("Return a compact decision now. Short evidence list, max 2 effects, interpretation under 160 characters, reply under 300 characters.");
@@ -267,8 +288,10 @@ namespace FratRow.Social
             if (e.source == "rumor")
             {
                 var origin = SocialWorld.GossipOrigin(s, e);
+                // Gossip receipts also carry the version this NPC was told (possibly exaggerated) next to the original record.
+                string told = e.kind == "gossip" && origin != null ? "; what you were told=" + codec.Encode(e.text) : "";
                 return head + "RUMOR REPORTED by " + Who(s, e.actorId, codec) + ": " + (origin == null ? codec.Encode(e.text) :
-                    "alleged actor=" + Who(s, origin.actorId, codec) + "; reported content=" + codec.Encode(origin.text)) + "; you did NOT witness the original incident.";
+                    "alleged actor=" + Who(s, origin.actorId, codec) + "; reported content=" + codec.Encode(origin.text) + told) + "; you did NOT witness the original incident.";
             }
             return head + "WITNESSED WORLD EVENT kind=" + e.kind + "; actor=" + Who(s, e.actorId, codec) + "; target=" + Who(s, e.targetId, codec) + "; detail=" + codec.Encode(e.text);
         }

@@ -88,6 +88,8 @@ namespace FratRow.Game
         /// <summary>Phone contact unlocked for the players' house (text channel allowed).</summary>
         public bool contactUnlocked;
         public bool attendedPlayersParty;
+        /// <summary>Denials made to this NPC on <see cref="deniedDay"/> by anyone in the crew (cap: gossip.denyPerNpcPerDay).</summary>
+        public int deniedDay = -1, deniesToday;
     }
 
     [Serializable] public sealed class GuestState
@@ -170,6 +172,8 @@ namespace FratRow.Game
         public bool kegDryReported;
         public float score;
         public int peakGuests;
+        /// <summary>Escalated fights (someone hurt) and underage hospital trips tonight; gossip seeds read them at debrief.</summary>
+        public int injuries, hospitalized;
     }
 
     /// <summary>Abstract rival party result for the current week.</summary>
@@ -222,6 +226,8 @@ namespace FratRow.Game
         public int guests;
         public float fun;
         public bool suspended;
+        /// <summary>Popularity from campus word of mouth included in <see cref="popDelta"/> (design/gdd/campus-gossip.md §4.4).</summary>
+        public float wordOfMouth;
     }
 
     [Serializable] public sealed class WeekResult
@@ -262,6 +268,20 @@ namespace FratRow.Game
         public List<WeekResult> history = new List<WeekResult>();
         public string socialPartyId = "";
         public string semesterWinner = "";
+        /// <summary>Campus gossip (design/gdd/campus-gossip.md). Additive save fields; older saves load empty.</summary>
+        public List<GossipStory> stories = new List<GossipStory>();
+        public List<GossipKnowledge> gossip = new List<GossipKnowledge>();
+        public int storySeq;
+        /// <summary>Counter behind deterministic social-ledger ids for gossip records (replays after reload are idempotent).</summary>
+        public long ledgerSeq;
+        /// <summary>Weekday gossip rounds already run today.</summary>
+        public int gossipRound;
+        /// <summary>Stories seeded since the last debrief (the gossip week runs Sunday to Saturday).</summary>
+        public int storiesThisWeek;
+        /// <summary>DayIndex the current gossip week started (per-kind weekly caps count from here).</summary>
+        public int gossipWeekStart;
+        /// <summary>"playerId/requestId" of committed turns already turned into gossip (bounded): a replayed commit seeds nothing.</summary>
+        public List<string> gossipTurns = new List<string>();
 
         /// <summary>Restores empty collections after JsonUtility/System.Text.Json decoding.</summary>
         public void Normalize()
@@ -292,6 +312,11 @@ namespace FratRow.Game
             if (party.rivalStinkTicks == null) party.rivalStinkTicks = new List<int>();
             if (party.rivalStinkBy == null) party.rivalStinkBy = new List<string>();
             foreach (var w in history) { if (w.entries == null) w.entries = new List<WeekEntry>(); if (w.namedGuests == null) w.namedGuests = new List<string>(); }
+            if (stories == null) stories = new List<GossipStory>();
+            if (gossip == null) gossip = new List<GossipKnowledge>();
+            if (gossipTurns == null) gossipTurns = new List<string>();
+            foreach (var st in stories) if (st.tracedBy == null) st.tracedBy = new List<string>();
+            foreach (var k in gossip) if (k.tellers == null) k.tellers = new List<string>();
         }
     }
 }

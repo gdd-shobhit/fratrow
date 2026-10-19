@@ -30,6 +30,8 @@ namespace FratRow.Social
             if (state.sequence == 0) Transact(_ => { });
         }
         public CampaignState Read() { lock (stateSync) return Copy(state); }
+        // Transact mutates a copy and then swaps the reference, so a published state is immutable.
+        public CampaignState ReadShared() { lock (stateSync) return state; }
         CampaignState Copy(CampaignState value) => codec.Decode<CampaignState>(codec.Encode(value));
         string JournalPath => Path.Combine(directory, "social.journal");
         string SnapshotPath => Path.Combine(directory, "social.snapshot");

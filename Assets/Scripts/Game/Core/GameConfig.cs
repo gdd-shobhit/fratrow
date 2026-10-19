@@ -87,6 +87,9 @@ namespace FratRow.Game
         public int stashGainCount;
         public float rumorRegardLoss;
         public string newsText = "{actor} hit {rival}.";
+        /// <summary>Story kind seeded when witnesses see it (or police trace it), and how gossip phrases the act ({rival}).</summary>
+        public string gossipKind = "";
+        public string gossipPhrase = "";
     }
 
     [Serializable] public sealed class LocationDef
@@ -344,6 +347,10 @@ namespace FratRow.Game
         public ScoringTuning scoring = new ScoringTuning();
         public DestinationTuning destination = new DestinationTuning();
         public ActionTuning actions = new ActionTuning();
+        public GossipTuning gossip = new GossipTuning();
+        /// <summary>Story kinds by id; kinds missing from JSON keep their code defaults.</summary>
+        public List<StoryKindDef> storyKinds = new List<StoryKindDef>();
+        public List<SmearClaimDef> smearClaims = new List<SmearClaimDef>();
         public DrunkTuning drunk = new DrunkTuning();
 
         public static GameLoopConfig Parse(string json, IStateCodec codec)
@@ -369,6 +376,7 @@ namespace FratRow.Game
         public CrimeDef Crime(string id) => crimes.Find(c => c.id == id);
         public ThemeDef Theme(string id) => themes.Find(t => t.id == id);
         public LocationDef Location(string id) => locations.Find(l => l.id == id);
+        public StoryKindDef StoryKind(string id) => storyKinds.Find(k => k.id == id);
 
         /// <summary>Fills empty sections with defaults and nulls with empty values (JsonUtility/STJ differences).</summary>
         public void Normalize()
@@ -398,6 +406,22 @@ namespace FratRow.Game
             foreach (var t in themes) if (t.likedBy == null) t.likedBy = new List<string>();
             if (scoring.cupPoints == null || scoring.cupPoints.Length == 0) scoring.cupPoints = new ScoringTuning().cupPoints;
             if (scoring.rankPop == null || scoring.rankPop.Length == 0) scoring.rankPop = new ScoringTuning().rankPop;
+            if (gossip == null) gossip = new GossipTuning();
+            if (gossip.roundHours == null) gossip.roundHours = new GossipTuning().roundHours;
+            if (gossip.spiceMultiplier == null || gossip.spiceMultiplier.Length == 0) gossip.spiceMultiplier = new GossipTuning().spiceMultiplier;
+            if (storyKinds == null) storyKinds = new List<StoryKindDef>();
+            foreach (var kind in DefaultStoryKinds()) if (StoryKind(kind.id) == null) storyKinds.Add(kind);
+            foreach (var kind in storyKinds) if (kind.texts == null) kind.texts = new List<string>();
+            if (smearClaims == null || smearClaims.Count == 0) smearClaims = DefaultSmearClaims();
+            // Crimes from an older JSON get their gossip mapping from the code default with the same id.
+            var crimeDefaults = DefaultCrimes();
+            foreach (var crime in crimes)
+            {
+                var d = crimeDefaults.Find(x => x.id == crime.id);
+                if (d == null) continue;
+                if (string.IsNullOrEmpty(crime.gossipKind)) crime.gossipKind = d.gossipKind;
+                if (string.IsNullOrEmpty(crime.gossipPhrase)) crime.gossipPhrase = d.gossipPhrase;
+            }
         }
 
         public void Validate()
@@ -423,6 +447,34 @@ namespace FratRow.Game
             if (s.curve <= 0) throw new FormatException("drunk.speech.curve must be positive");
             foreach (float rate in new[] { s.startIntensity, s.lowercaseAt, s.typo, s.dropLetter, s.doubleLetter, s.swapLetters, s.slur, s.stretch, s.repeatWord, s.shout, s.interjection, s.tangent, s.trailOff, s.cosmeticScale })
                 if (rate < 0 || rate > 1) throw new FormatException("drunk.speech rates must be 0..1");
+            ValidateGossip();
+        }
+
+        void ValidateGossip()
+        {
+            var g = gossip;
+            bool Unit(float v) => v >= 0 && v <= 1;
+            if (g.seedThreshold < 0 || g.seedThreshold > 100 || g.capBypassSeverity < 0) throw new FormatException("gossip.seedThreshold must be 0..100");
+            if (g.maxActiveStories < 1 || g.maxNewStoriesPerWeek < 0 || g.brunchRounds < 0 || g.stifleAfter < 1 || g.memoryWeeks < 1 || g.hubCount < 1)
+                throw new FormatException("gossip caps/rounds must be positive");
+            for (int i = 0; i < g.roundHours.Length; i++)
+                if (g.roundHours[i] < weekdayStartHour || g.roundHours[i] >= weekdayEndHour || (i > 0 && g.roundHours[i] <= g.roundHours[i - 1]))
+                    throw new FormatException("gossip.roundHours must be ascending weekday hours");
+            if (!Unit(g.tellBase) || !Unit(g.levelingChance) || !Unit(g.sharpenChance) || !Unit(g.beliefThreshold) || !Unit(g.multiSourceBelief) ||
+                !Unit(g.spreadMinBelief) || !Unit(g.negativeTieMin) || !Unit(g.loyaltyDiscount) || !Unit(g.denyBackfireBelief) || !Unit(g.exposeBeliefFactor) ||
+                !Unit(g.heatRetentionBase + g.heatRetentionPerSeverity) || !Unit(g.viralShare))
+                throw new FormatException("gossip probabilities/beliefs must be 0..1");
+            if (g.maxSpice < 0 || g.spiceMultiplier.Length < g.maxSpice + 1) throw new FormatException("gossip.spiceMultiplier needs maxSpice + 1 entries");
+            if (g.opinionCap <= 0 || g.wordOfMouthCap < 0 || g.quoteChars < 10) throw new FormatException("gossip caps must be positive");
+            var ids = new HashSet<string>();
+            foreach (var k in storyKinds)
+            {
+                if (string.IsNullOrEmpty(k.id) || !ids.Add(k.id)) throw new FormatException("Invalid or duplicate story kind: " + k.id);
+                if (k.texts.Count == 0 || k.texts.Any(string.IsNullOrWhiteSpace)) throw new FormatException("Story kind needs texts: " + k.id);
+                if (k.valence != 1 && k.valence != -1) throw new FormatException("Story valence must be 1 or -1: " + k.id);
+            }
+            foreach (var c in crimes) if (!string.IsNullOrEmpty(c.gossipKind) && StoryKind(c.gossipKind) == null) throw new FormatException("Crime gossipKind unknown: " + c.id);
+            foreach (var c in smearClaims) if (string.IsNullOrWhiteSpace(c.id) || string.IsNullOrWhiteSpace(c.text)) throw new FormatException("Invalid smear claim");
         }
 
         static List<HouseDef> DefaultHouses() => new List<HouseDef>
@@ -477,17 +529,88 @@ namespace FratRow.Game
         static List<CrimeDef> DefaultCrimes() => new List<CrimeDef>
         {
             new CrimeDef { id = "prank", name = "Prank their house", severity = "full", baseDetect = 0.12f, requiresItem = "prank_kit", where = "rival_house", phase = "weekday",
-                actorPopGain = 2, rivalPopLoss = 4, rivalDeanLoss = 3, newsText = "{rival}'s lawn was trashed overnight." },
+                actorPopGain = 2, rivalPopLoss = 4, rivalDeanLoss = 3, newsText = "{rival}'s lawn was trashed overnight.",
+                gossipKind = "heist", gossipPhrase = "trashing {rival}'s lawn" },
             new CrimeDef { id = "steal_mascot", name = "Steal their mascot", severity = "full", baseDetect = 0.25f, where = "rival_house", phase = "weekday", minHour = 17, maxHour = 20,
-                actorPopGain = 4, rivalPopLoss = 3, newsText = "{rival}'s mascot has gone missing." },
+                actorPopGain = 4, rivalPopLoss = 3, newsText = "{rival}'s mascot has gone missing.",
+                gossipKind = "heist", gossipPhrase = "stealing {rival}'s mascot" },
             new CrimeDef { id = "stink_bomb", name = "Stink-bomb their party", severity = "full", baseDetect = 0.18f, requiresItem = "stink_bomb", where = "rival_house", phase = "party",
-                rivalMoodLoss = 20, newsText = "Someone stink-bombed {rival}'s party." },
+                rivalMoodLoss = 20, newsText = "Someone stink-bombed {rival}'s party.",
+                gossipKind = "dirty_move", gossipPhrase = "sneaking a stink bomb into {rival}'s party" },
             new CrimeDef { id = "steal_keg", name = "Steal their keg", severity = "full", baseDetect = 0.22f, where = "rival_house", phase = "party",
-                rivalMoodLoss = 8, stashGain = "keg", stashGainCount = 1, newsText = "{rival} ran dry after a keg vanished." },
+                rivalMoodLoss = 8, stashGain = "keg", stashGainCount = 1, newsText = "{rival} ran dry after a keg vanished.",
+                gossipKind = "dirty_move", gossipPhrase = "stealing a keg from {rival}" },
             new CrimeDef { id = "call_cops_on", name = "Call in a noise complaint", severity = "lite", baseDetect = 0.15f, where = "any", phase = "party",
-                rivalAttention = 25, newsText = "Police got a noise complaint about {rival}." },
+                rivalAttention = 25, newsText = "Police got a noise complaint about {rival}.",
+                gossipKind = "snitched", gossipPhrase = "calling the cops on {rival}" },
             new CrimeDef { id = "spread_rumor", name = "Spread a rumor", severity = "lite", baseDetect = 0.1f, where = "npc", phase = "weekday",
-                rumorRegardLoss = 10, newsText = "Rumors are going around about {rival}." }
+                rumorRegardLoss = 10, newsText = "Rumors are going around about {rival}.",
+                gossipKind = "smear_backfire", gossipPhrase = "spreading rumors about {rival}" }
+        };
+
+        // Stereotypical campus gossip, grounded only in events the simulation actually produces (design/gdd/campus-gossip.md §3.2).
+        static StoryKindDef Kind(string id, string topic, int valence, float severity, float house, float player, float other, params string[] texts) =>
+            new StoryKindDef { id = id, topic = topic, valence = valence, severity = severity, houseWeight = house, playerWeight = player, otherHouseWeight = other, texts = texts.ToList() };
+
+        static List<StoryKindDef> DefaultStoryKinds() => new List<StoryKindDef>
+        {
+            Kind("party_legendary", "party", 1, 50, 1, 0, 0, "{house}'s party Saturday was actually good.",
+                "{house} threw the party of the semester. People are still talking about it.", "{house}'s party was insane. People were dancing on the roof."),
+            Kind("party_flop", "party", -1, 45, 1, 0, 0, "{house}'s party was dead.",
+                "Nobody went to {house}'s party. It was five guys and a speaker.", "{house}'s party was so dead people left to go study."),
+            Kind("party_raided", "party", -1, 70, 1, 0, 0, "The cops shut down {house}'s party.",
+                "The cops raided {house} and wrote everyone up on the lawn.", "Like six cop cars hit {house}. People were jumping fences."),
+            Kind("raid_legend", "party", 1, 60, 1, 0, 0, "{house}'s party got raided, but it was going off before the cops came.",
+                "{house} got raided because it was too good. Legendary.", "{house} partied so hard the whole police department showed up. Iconic."),
+            Kind("party_fight", "conduct", -1, 50, 1, 0, 0, "There was a fight at {house}'s party and someone got hurt.",
+                "A huge fight broke out at {house}. Somebody left bleeding.", "{house}'s party turned into a full brawl. Ambulance and everything."),
+            Kind("party_hospital", "conduct", -1, 85, 1, 0, 0, "A freshman from {house}'s party went to the hospital.",
+                "{house} got a freshman so drunk they had to call an ambulance.", "Someone almost died at {house}. The Dean is losing it."),
+            Kind("celebrity_sighting", "status", 1, 50, 1, 0, 0, "{npc} was at {house}'s party.",
+                "{npc} was at {house} all night. {house} is officially a thing now.", "{npc} basically lives at {house} now."),
+            Kind("busted", "conduct", -1, 55, 0.6f, 1, 0, "{player} from {house} got busted {detail}.",
+                "{player} from {house} got caught {detail} and spent the night with campus police.", "{player} from {house} got arrested {detail}. Full handcuffs."),
+            Kind("heist", "conduct", 1, 45, 0.6f, 0.6f, -0.8f, "{player} from {house} was seen {detail}.",
+                "{house} pulled off a legendary move on {other}. {other} is fuming.", "{house} humiliated {other}. People are calling it the prank of the decade."),
+            Kind("dirty_move", "conduct", -1, 45, 0.8f, 0.8f, -0.4f, "{player} from {house} was seen {detail}.",
+                "{house} pulled a dirty move on {other}. Low, even for frat guys.", "{house} sabotaged {other} on purpose. People are saying they're desperate."),
+            Kind("snitched", "conduct", -1, 55, 1, 0.8f, 0, "{player} from {house} called the cops on {other}.",
+                "{house} snitched on {other}'s party. Snitches get stitches.", "{house} is basically working for the cops now."),
+            Kind("house_trashed", "conduct", -1, 40, 1, 0, 0.3f, "{house}'s house got trashed overnight.",
+                "{other} trashed {house}'s house. It's a disaster over there.", "{house}'s house got destroyed. Condemned-building destroyed."),
+            Kind("who_said", "said", -1, 50, 0.3f, 1, 0, "{player} from {house} went off on {npc}{quote}",
+                "{player} from {house} totally humiliated {npc}{quote}", "{player} from {house} made {npc} cry in front of everyone{quote}"),
+            Kind("who_charmed", "said", 1, 50, 0.4f, 1, 0, "{npc} is going to {house}'s party because {player} asked.",
+                "{player} from {house} totally won {npc} over.", "{npc} and {player} from {house} are a thing now, apparently."),
+            Kind("stood_up", "said", -1, 35, 0.3f, 1, 0, "{player} from {house} promised to meet {npc} at the door and never showed.",
+                "{player} from {house} stood {npc} up. Totally ghosted.", "{player} from {house} stood {npc} up in front of the whole party."),
+            Kind("smear", "smear", -1, 50, 1, 0, 0, "Apparently {house} {detail}.", "Everyone's saying {house} {detail}.", "{house} {detail}. Like, everyone knows."),
+            Kind("smear_exposed", "smear", -1, 65, 1, 0.8f, 0.5f, "{house} made up the rumor that {other} {detail}.",
+                "{house} got caught spreading lies about {other}. Embarrassing.", "{house} has been running a whole smear campaign against {other}. Pathetic."),
+            Kind("smear_backfire", "smear", -1, 55, 1, 1, 0, "{player} from {house} got caught trash-talking {other}.",
+                "{player} from {house} is going around lying about {other}.", "{house} is so desperate they're spreading fake rumors about {other}."),
+            Kind("dean_probation", "status", -1, 55, 1, 0, 0, "{house} is on probation with the Dean.",
+                "{house} is on probation. One more bad party and they're done.", "{house} is basically getting shut down by the Dean."),
+            Kind("dean_suspended", "status", -1, 75, 1, 0, 0, "{house} got suspended. No parties.",
+                "{house} got suspended by the Dean. They're finished.", "{house} is about to lose their charter."),
+            Kind("on_the_rise", "status", 1, 45, 1, 0, 0, "{house} is moving up. Everyone's going there now.",
+                "{house} is the it house right now.", "{house} is running Greek Row. Nobody else even matters."),
+            Kind("falling_off", "status", -1, 45, 1, 0, 0, "{house} is slipping.",
+                "{house} is so over. Nobody's going there anymore.", "{house} is dead. Social-death dead."),
+            Kind("pledged", "rush", 1, 40, 1, 0, 0, "{npc} pledged {house}.", "{npc} pledged {house}. Huge get.", "{house} got {npc}. Everyone wanted {npc}."),
+            Kind("pledge_snub", "rush", 1, 50, 1, 0, -0.6f, "{npc} picked {house} over {other}.",
+                "{npc} turned down {other} for {house}. Brutal.", "{npc} laughed at {other}'s bid and pledged {house}.")
+        };
+
+        static List<SmearClaimDef> DefaultSmearClaims() => new List<SmearClaimDef>
+        {
+            new SmearClaimDef { id = "watered", text = "waters down their beer" },
+            new SmearClaimDef { id = "paid_guests", text = "pays people to show up to their parties" },
+            new SmearClaimDef { id = "lame", text = "throws the lamest parties on Greek Row" },
+            new SmearClaimDef { id = "bedbugs", text = "has bed bugs in the basement" },
+            new SmearClaimDef { id = "dean", text = "is about to get shut down by the Dean", truth = "probation" },
+            new SmearClaimDef { id = "raided", text = "got raided and is lying about it", truth = "raided" },
+            new SmearClaimDef { id = "trashed", text = "lives in a trash heap", truth = "trashed" }
         };
 
         static List<LocationDef> DefaultLocations() => new List<LocationDef>

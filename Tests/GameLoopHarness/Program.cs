@@ -23,9 +23,10 @@ static class Program
         }
         if (args.Contains("--simulate")) return await Simulation.Run(args);
         if (args.Contains("--debug-party")) { DebugParty.Run(args); return 0; }
+        if (args.Contains("--profile-gossip")) { await GossipProfile.Run(args); return 0; }
         if (args.Contains("--drunk-speech")) { DrunkPreview.Run(args); return 0; }
-        await RunTests();
-        await DrunkTests.Run();
+        if (!args.Contains("--gossip")) { await RunTests(); await DrunkTests.Run(); }
+        await GossipTests.Run();
         Console.WriteLine(Passed + " passed, " + Failed + " failed");
         if (Failed > 0) Console.WriteLine("Failed: " + string.Join("; ", Failures));
         return Failed == 0 ? 0 : 1;

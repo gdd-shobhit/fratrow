@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using FratRow.Social;
 
 namespace FratRow.Game
@@ -10,6 +12,14 @@ namespace FratRow.Game
     {
         public string npcId, inviterId, state;
         public bool arrived;
+    }
+
+    /// <summary>What a committed conversation turn actually changed, after influence budgets. <c>known</c> is false when unavailable.</summary>
+    public struct TurnImpactView
+    {
+        public bool known, grievance;
+        public string speechEventId, text, channel, previousCommitment, commitment;
+        public int trust, regard;
     }
 
     /// <summary>
@@ -38,17 +48,52 @@ namespace FratRow.Game
         /// <summary>Public campus news every listed NPC learns (one memory each).</summary>
         void PublishNews(string text, IReadOnlyCollection<string> npcIds);
         void RegisterPlayer(string playerId, string displayName);
+        /// <summary>Impact of a committed turn (who-said-what seeding, design/gdd/campus-gossip.md §4.1).</summary>
+        TurnImpactView TurnImpact(string playerId, string requestId);
+        /// <summary>
+        /// Gossip ledger writes (story origin records, overheard lines, denials, then NPC-to-NPC receipts) in ONE social transaction.
+        /// Every item carries a core-assigned id, so the core never waits for this call; an implementation may defer it.
+        /// </summary>
+        void RecordGossip(IReadOnlyList<GossipObservation> observations, IReadOnlyList<GossipShare> shares);
     }
 
     /// <summary><see cref="ISocialBridge"/> over the persisted social world.</summary>
     public sealed class SocialWorldBridge : ISocialBridge
     {
         readonly SocialWorld world;
+        readonly bool deferGossipWrites;
+        readonly object writeLock = new object();
+        Task gossipWrites = Task.CompletedTask;
         CampaignState cached;
 
-        public SocialWorldBridge(SocialWorld world) { this.world = world ?? throw new ArgumentNullException(nameof(world)); }
+        /// <summary>
+        /// <paramref name="deferGossipWrites"/>: run gossip ledger writes on an ordered background queue so the host frame never waits on
+        /// the journal (a late-semester write costs tens of ms). Call <see cref="WaitForGossipWrites"/> before saving/quitting.
+        /// Example: <c>new GameSession(config, roster, state, new SocialWorldBridge(world, deferGossipWrites: true))</c>
+        /// </summary>
+        public SocialWorldBridge(SocialWorld world, bool deferGossipWrites = false)
+        {
+            this.world = world ?? throw new ArgumentNullException(nameof(world));
+            this.deferGossipWrites = deferGossipWrites;
+        }
 
-        CampaignState Snapshot => cached ?? (cached = world.Store.Read());
+        /// <summary>Last deferred gossip write failure since <see cref="WaitForGossipWrites"/> ("" if none). Never thrown on the host thread.</summary>
+        public string LastGossipWriteError { get { lock (writeLock) return lastWriteError; } }
+        string lastWriteError = "";
+
+        /// <summary>Blocks until every deferred gossip write is in the journal; throws (once) if any of them failed since the last call.</summary>
+        public void WaitForGossipWrites()
+        {
+            Task pending;
+            lock (writeLock) pending = gossipWrites;
+            pending.GetAwaiter().GetResult();
+            string error;
+            lock (writeLock) { error = lastWriteError; lastWriteError = ""; }
+            if (error != "") throw new InvalidOperationException("Deferred gossip write failed: " + error);
+        }
+
+        // Read-only view of the committed state; no copy (the bridge never mutates it).
+        CampaignState Snapshot => cached ?? (cached = world.Store.ReadShared());
         void Invalidate() => cached = null;
 
         public void BeginTick() => Invalidate();
@@ -97,7 +142,7 @@ namespace FratRow.Game
         {
             long before = Snapshot.sequence;
             world.ObserveEntrance(partyId, playersAtEntrance, now);
-            if (world.Store.Read().sequence != before) Invalidate();
+            if (world.Store.ReadShared().sequence != before) Invalidate();
         }
 
         public void MarkArrived(string npcId, string partyId) { world.MarkArrived(npcId, partyId); Invalidate(); }
@@ -144,6 +189,43 @@ namespace FratRow.Game
 
         public void RegisterPlayer(string playerId, string displayName) { /* Unity binds through credentials; harness registers via SocialWorld.Register. */ }
 
+        public TurnImpactView TurnImpact(string playerId, string requestId)
+        {
+            var s = Snapshot;
+            var turn = s.turns.Find(t => t.playerId == playerId && t.request?.requestId == requestId);
+            if (turn?.result?.status != "committed" || turn.impact == null) return default(TurnImpactView);
+            var speech = s.events.Find(e => e.eventId == turn.observedEventId);
+            return new TurnImpactView
+            {
+                known = true, speechEventId = turn.observedEventId, text = speech?.text ?? turn.request.text ?? "", channel = turn.request.channel ?? "",
+                previousCommitment = turn.impact.previousCommitment ?? "", commitment = turn.impact.commitment ?? "",
+                trust = turn.impact.trust, regard = turn.impact.regard, grievance = turn.impact.grievance
+            };
+        }
+
+        public void RecordGossip(IReadOnlyList<GossipObservation> observations, IReadOnlyList<GossipShare> shares)
+        {
+            // Copy: the core clears its queues after this call.
+            var seen = observations.ToList();
+            var told = shares.ToList();
+            if (seen.Count == 0 && told.Count == 0) return;
+            if (!deferGossipWrites)
+            {
+                world.RecordGossip(seen, told);
+                Invalidate();
+                return;
+            }
+            lock (writeLock)
+            {
+                // Ordered chain; a failed write is recorded, never thrown on the host thread, and does not stop later writes.
+                gossipWrites = gossipWrites.ContinueWith(_ =>
+                {
+                    try { world.RecordGossip(seen, told); }
+                    catch (Exception e) { lock (writeLock) lastWriteError = e.GetType().Name + ": " + e.Message; }
+                }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            }
+        }
+
         static string Trim(string s, int max = 64) => string.IsNullOrEmpty(s) ? "" : s.Length <= max ? s : s.Substring(0, max);
     }
 
@@ -153,6 +235,12 @@ namespace FratRow.Game
         public readonly List<string> Observed = new List<string>();
         public readonly Dictionary<string, int> Regard = new Dictionary<string, int>();
         public readonly List<CommitmentView> FakeCommitments = new List<CommitmentView>();
+        /// <summary>Impact returned for any committed turn (tests set it to simulate an insult or a charm).</summary>
+        public TurnImpactView FakeImpact;
+        public readonly List<GossipShare> Shared = new List<GossipShare>();
+        /// <summary>Number of RecordGossip calls (each would be one social transaction).</summary>
+        public int GossipWrites;
+        int ids;
         public void BeginTick() { }
         public void RegisterRoster(CampusRoster roster) { }
         public bool HasNpc(string npcId) => true;
@@ -171,8 +259,15 @@ namespace FratRow.Game
         public void SetStandings(HouseState players, IReadOnlyList<HouseState> ranked) { }
         public void SetAffiliation(string npcId, string affiliation) { }
         public string Observe(string kind, string actorId, string target, string text, string location, IReadOnlyCollection<string> witnesses)
-        { Observed.Add(kind + ":" + string.Join(",", witnesses)); return Guid.NewGuid().ToString("N"); }
+        { Observed.Add(kind + ":" + string.Join(",", witnesses)); return "null-event-" + (++ids); }
         public void PublishNews(string text, IReadOnlyCollection<string> npcIds) { Observed.Add("news:" + npcIds.Count); }
         public void RegisterPlayer(string playerId, string displayName) { }
+        public TurnImpactView TurnImpact(string playerId, string requestId) => FakeImpact;
+        public void RecordGossip(IReadOnlyList<GossipObservation> observations, IReadOnlyList<GossipShare> shares)
+        {
+            GossipWrites++;
+            foreach (var o in observations) Observed.Add(o.kind + ":" + string.Join(",", o.witnesses));
+            Shared.AddRange(shares);
+        }
     }
 }
