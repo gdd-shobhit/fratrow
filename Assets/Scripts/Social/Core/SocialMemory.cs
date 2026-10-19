@@ -165,7 +165,76 @@ namespace FratRow.Social
             if (condition != null) text.AppendLine("Speaker condition=" + condition);
             if (repairError != null) text.AppendLine("Repair=" + codec.Encode(repairError));
             c.DecisionFacts = text.ToString();
+            PersonaFacts(s, npc, turn, party, observed, c, codec);
             return c;
+        }
+        /// <summary>Plain-English situation and the direct chat history for persona replies. Same visibility as above:
+        /// only this NPC's own witnessed events, public standings and its own commitments.</summary>
+        static void PersonaFacts(CampaignState s, NpcState npc, TurnRecord turn, PartyRecord party, SocialEvent observed, ModelContext c, IStateCodec codec)
+        {
+            string Name(string id) => s.players.Find(p => p.playerId == id)?.displayName ?? (id == npc.npcId ? npc.npcId : id ?? "someone");
+            c.SpeakerName = Name(turn.playerId);
+            c.HouseName = s.standing?.known == true && !string.IsNullOrWhiteSpace(s.standing.name) ? s.standing.name : "their fraternity";
+            c.CurrentText = observed.text;
+            c.Channel = turn.request.channel;
+            c.ExistingCommitment = npc.commitments.Find(x => x.partyId == party?.partyId)?.state ?? "";
+            foreach (var e in s.events.Where(e => e.eventId != observed.eventId && e.witnesses.Contains(npc.npcId) &&
+                ((e.source == "speech" && e.actorId == turn.playerId && e.targetId == npc.npcId) ||
+                 (e.source == "inference" && e.kind == "social_decision" && e.actorId == npc.npcId && e.targetId == turn.playerId))).OrderBy(e => e.utcTicks))
+            {
+                string line = e.source == "speech" ? e.text : codec.Decode<SocialProposal>(e.text)?.reply;
+                if (!string.IsNullOrWhiteSpace(line)) c.Conversation.Add(new ChatLine { speaker = e.source == "speech" ? "player" : "npc", text = line });
+            }
+            string Feeling(int value) => value >= 30 ? "you really like and trust" : value >= 10 ? "you like" : value > -10 ? "no strong feelings yet about" :
+                value > -30 ? "you're wary of" : "you dislike";
+            int trust = npc.trust.Find(t => t.playerId == turn.playerId)?.value ?? 0;
+            var f = new StringBuilder();
+            f.AppendLine("- " + (c.PriorDirectContact ? "You've talked with " + c.SpeakerName + " before." : "You've never talked to " + c.SpeakerName + " before; you don't know them.") +
+                " " + c.SpeakerName + " is a brother in " + c.HouseName + ", a fraternity on campus.");
+            f.AppendLine("- " + (string.IsNullOrEmpty(npc.affiliation) ? "You're not in any fraternity." : npc.affiliation == "players" ? "You're a brother in " + c.HouseName + " too." :
+                "You're in " + npc.affiliation + ", a rival house."));
+            f.AppendLine("- Personally, " + Feeling(trust) + " " + c.SpeakerName + ". About " + c.HouseName + " as a house: " + Feeling(npc.fraternityRegard) + " it.");
+            // Host-observed, never claimed by the player (design/gdd/drunk-mechanic.md); typos are slurring, not hidden meaning.
+            if (c.SpeakerCondition == SpeakerConditions.Tipsy) f.AppendLine("- " + c.SpeakerName + " seems a little tipsy right now.");
+            else if (c.SpeakerCondition == SpeakerConditions.Drunk) f.AppendLine("- " + c.SpeakerName + " is visibly drunk right now and slurring their words. React to that the way you would.");
+            else if (c.SpeakerCondition == SpeakerConditions.Wasted) f.AppendLine("- " + c.SpeakerName + " is completely wasted right now: slurring, rambling, barely making sense. React to that the way you would.");
+            var house = s.standing; var own = npc.standing;
+            if (house?.known == true)
+            {
+                string rank = s.playersRank > 0 && s.rivals.Count > 0 ? "ranked #" + s.playersRank + " of " + (s.rivals.Count + 1) + " houses" : "a house";
+                f.Append("- " + c.HouseName + " is " + rank + (string.IsNullOrEmpty(house.grade) ? "" : " with a " + house.grade + " reputation grade") + ".");
+                var top = s.rivals.OrderBy(r => r.rank).FirstOrDefault();
+                if (top != null && s.playersRank != 1) f.Append(" The top house right now is " + top.name + ".");
+                if (own?.known == true)
+                    f.Append(" On campus you're " + (own.popularity > house.popularity + 5 ? "more popular than" : own.popularity < house.popularity - 5 ? "less popular than" : "about as popular as") + " " + c.HouseName + ".");
+                f.AppendLine();
+            }
+            var concern = own?.statusConcern ?? StatusConcern.Moderate;
+            f.AppendLine("- " + (concern == StatusConcern.High ? "Status and prestige matter a lot to you." : concern == StatusConcern.Low ? "You care more about people and vibe than prestige." :
+                "Status matters to you somewhat, alongside the people."));
+            if (party == null || (party.state != "planned" && party.state != "active")) f.AppendLine("- " + c.HouseName + " has no party planned right now.");
+            else
+            {
+                f.AppendLine("- " + c.HouseName + (party.state == "active" ? "'s party is happening right now." : " is throwing a party this Saturday night."));
+                f.AppendLine("- Your answer so far: " + (c.ExistingCommitment == "accepted" ? "you said you're coming." : c.ExistingCommitment == "declined" ? "you said you're not going." :
+                    c.ExistingCommitment == "deferred" ? "you said you'd think about it." : c.ExistingCommitment == "conditional" ? "you'll come only if the inviter meets you at the entrance in the first minute." :
+                    "you haven't given one."));
+                var guests = s.npcs.Where(n => n.npcId != npc.npcId && n.commitments.Any(x => x.partyId == party.partyId && x.state == "accepted"))
+                    .OrderByDescending(n => n.standing?.known == true ? n.standing.popularity : float.MinValue).Select(n => n.npcId).Take(4).ToList();
+                f.AppendLine("- " + (guests.Count == 0 ? "Nobody you know has said they're going yet." : "People who've said they're going: " + string.Join(", ", guests) + "."));
+            }
+            foreach (var m in c.GroundedMemories)
+            {
+                var receipt = s.events.Find(e => e.eventId == m.eventId);
+                var origin = SocialWorld.GossipOrigin(s, receipt) ?? receipt;
+                string quote = origin?.text == null ? "" : ": “" + new string(origin.text.Take(120).ToArray()) + "”";
+                string actor = m.actorId == turn.playerId ? c.SpeakerName + " (the person talking to you)" : m.actorName ?? "someone";
+                f.AppendLine("- You remember " + actor + (m.source == "speech" ? " saying something that upset you" : " doing something that upset you") + quote +
+                    (m.knowledge == "reported" ? " (you only heard this secondhand)." : ".") + (m.actorId != turn.playerId ? " That was " + actor + ", not " + c.SpeakerName + "." : ""));
+            }
+            foreach (var e in s.events.Where(e => e.source == "world" && e.witnesses.Contains(npc.npcId)).OrderByDescending(e => e.utcTicks).Take(3))
+                if (!string.IsNullOrWhiteSpace(e.text)) f.AppendLine("- Something you know about: " + new string(e.text.Take(160).ToArray()));
+            c.Situation = f.ToString();
         }
         static string Who(CampaignState s, string id, IStateCodec codec)
         {
