@@ -168,7 +168,6 @@ namespace Systems.Campus
             n.npcId = id;
             n.displayName = id;
             n.contactDisplayName = id;
-            n.yarnNodeName = id;
             n.guestClass = guestClass;
             n.rarity = rarity;
             n.unlockMinPopularity = minPop;
@@ -242,7 +241,6 @@ namespace Systems.Campus
             n.npcId = r.id;
             n.displayName = display;
             n.contactDisplayName = display;
-            n.yarnNodeName = r.id;
             n.guestClass = ParseGuestClass(r.guestClass);
             n.rarity = ParseRarity(r.rarity);
             n.unlockMinPopularity = r.unlockMinPopularity;

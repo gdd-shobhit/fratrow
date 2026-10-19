@@ -668,12 +668,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "dev.yarnspinner.unity": {
-      "version": "file:dev.yarnspinner.unity",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

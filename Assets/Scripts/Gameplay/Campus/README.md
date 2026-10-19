@@ -1,249 +1,91 @@
-# Campus NPCs & Dialogue
+# Campus NPCs and conversations
 
-How to add a named campus NPC with Yarn dialogue, and what the engine does at runtime.
+This README covers how campus NPCs are authored, where they show up on campus, and how players talk to them. The
+weekly loop itself is described in [`Docs/GameLoop.md`](../../../../Docs/GameLoop.md) and
+[`design/gdd/core-game-loop.md`](../../../../design/gdd/core-game-loop.md).
 
 ## What you get
 
-- **Weekday campus loop** in `Game` scene: roam, meet NPCs, unlock contacts on the phone
-- **Yarn Spinner** dialogue (UI Toolkit presenter)
-- **Server-authored schedules**: everyone sees the same NPC at the same location
-- **Shared frat unlocks / affinity / recruit** over the network
-- **Weekend**: Ready on phone → host Start Weekend → party (named invites can show up)
+- **Open campus.** NPCs move between campus locations on server-authored schedules, so every player sees the same NPC in the same place.
+  - On party night they stand at whichever house they chose to party at.
+  - At your own party they are spawned as guests instead.
+- **Conversations are decided by the NPC.** Press **E** on an NPC to open the talk panel (`NpcTalkPanel`). Every option goes to the host's social backend, and the NPC answers from their own persona, voice and memory. The panel offers:
+  - ask for their number;
+  - invite them to Saturday's party;
+  - pitch rush (PNMs only);
+  - type anything;
+  - leave.
+- **What the NPC decides sticks.** That covers RSVPs (yes, no, maybe, or "meet me at the door"), trust and regard, grievances, and rush interest.
+  - The local LLM makes these decisions when it's enabled.
+  - Otherwise the deterministic fallback provider does.
+- **Phone contacts.** The phone's Invite templates for named contacts go through the same backend.
 
----
+There is no scripted dialogue runtime. Yarn Spinner was removed because static lines contradicted what NPCs remember. If you
+later need authored beats such as a tutorial or a cutscene, add them as a separate system. Don't use them for NPC replies.
 
-## Engine setup (do this once)
+## Authoring NPCs
 
-### 1. Packages / compile
+| Tier | File | What it holds |
+|---|---|---|
+| Hand-written | `Assets/Resources/Campus/CampusRoster.json` | 32 NPCs, each with id, gender, archetype (`guestClass`), persona, voice, popularity (0–100), status concern, unlock gates, PNM / underage flags, GPA, rival-house leanings and a weekly schedule. |
+| Generated | `Assets/Resources/Campus/PersonalityArchetypes.json` | 16 personality types expanded into 32 more named NPCs. The expansion is deterministic, so the same people come back on every load. Templates use `{name}` `{they}` `{them}` `{their}` `{They}` `{Their}`. |
 
-Yarn Spinner lives at `Packages/dev.yarnspinner.unity` (patched for Unity 6.5 `EntityId` APIs). Tests are under `Tests~` so they are ignored.
+The rules are enforced by `CampusRoster.Validate()` and covered by `Tests/GameLoopHarness`:
 
-Open the project in Unity and wait for scripts to compile. If Burst complains about `YarnSpinnerTests`, reimport or clear `Library/Bee`.
+- Personas must be 900 characters or fewer and describe behaviour, not invented history.
+- `voice.tone` must be one of casual, assertive, bubbly, dry, reserved, playful or laid-back.
+- Each schedule entry has `day` 0 (Monday) to 6, start and end hours from 0 to 24, and a location from the list below.
+- PNMs (`isPnm`) are boys.
 
-### 2. Network bootstrap (automatic)
+`NamedNpcDatabase` builds `NamedNpcSO`s from the roster. `PhoneContactDatabase` adds a phone contact for every roster NPC.
+ScriptableObject assets under `Resources/NamedNPCs` still override the roster when present.
 
-When `NetworkedGameManager` wakes up (before spawn), it adds:
+**To add an NPC:**
+1. Add an entry to `CampusRoster.json`, or bump an archetype's `count`.
+2. Run `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj`. The first test validates the roster.
 
-| Component | Role |
-|-----------|------|
-| `NetworkedCampusCalendar` | Weekday / Party / Debrief + in-game clock |
-| `NetworkedContactRoster` | Shared unlocks, affinity, recruits |
-| `NetworkedWeekendReady` | Phone ready-up / host start |
-| `NetworkedPhoneInvites` | Pending party invites |
-| `CampusSystemsBootstrap` | Dialogue host + default locations |
-| `NetworkedCampusNpcDirector` | Schedules + local NPC visuals |
+## Campus locations
 
-You do **not** need to place these by hand if GameManager is in the networked Game session.
+NPC schedules, player locations, crimes and police patrols all use these `CampusLocation.locationId` values:
 
-### 3. Dialogue UI assets
+`PartyHouse`, `Shop`, `Quad`, `Gym`, `Library`, `Dorm`, `House_Kappa`, `House_Theta`, `House_Lambda`
 
-Must exist under Resources:
-
-```
-Assets/Resources/Dialogue/Dialogue.uxml
-Assets/Resources/Dialogue/Dialogue.uss
-Assets/Resources/Dialogue/CampusNPCs.txt   ← Yarn source (TextAsset)
-```
-
-`CampusDialogueService` loads every `TextAsset` in `Resources/Dialogue` whose text contains `title:`, compiles them at runtime, and runs nodes by name.
-
-### 4. Campus locations
-
-Default locations are created at runtime if none exist:
-
-| `locationId` | Meaning |
-|--------------|---------|
-| `PartyHouse` | House / party |
-| `Shop` | Shop |
-| `Quad` | Quad |
-| `Gym` | Gym |
-| `Library` | Library |
-| `Dorm` | Dorm |
-
-**Recommended:** place empty GameObjects in `Game.unity` with `CampusLocation` + a parent `CampusLocationRegistry`, and set matching `locationId`s to real transforms (shop, gym, etc.). Runtime fallbacks sit at placeholder positions near origin.
-
-### 5. Play mode checklist
-
-1. Host (or host + clients) into **Game**
-2. Session starts in **Weekday** (not party)
-3. Capsule / prefab NPCs appear at scheduled locations
-4. Interact (raycast / E) → dialogue UI
-5. Phone **T** → contacts / invites / **Ready for Weekend**
-6. Host **Start Weekend** when everyone is ready → party
-
----
-
-## Add a new NPC (authoring checklist)
-
-### Step A — Phone contact
-
-Contacts are seeded in `PhoneContactDatabase` (or as `ContactSO` assets under `Resources/Contacts`).
-
-The NPC’s `contactDisplayName` / `displayName` must match the contact `displayName` exactly (e.g. `"Nova"`).
-
-If you only use runtime seed, add a line in `SeedDefaultContacts()`:
-
-```csharp
-AddContact(MakeContact("Nova", GuestClass.Nerd, ContactGender.Girl, unlocked: false));
-```
-
-### Step B — Named NPC data
-
-**Option 1 (quick):** extend `NamedNpcDatabase.SeedDefaults()`.
-
-**Option 2 (preferred):** create an asset:
-
-`Create → Campus → Named NPC`  
-Save under `Assets/Resources/NamedNPCs/` so it loads automatically.
-
-Fill:
-
-| Field | Notes |
-|-------|--------|
-| `npcId` | Stable id, e.g. `Nova` (used in Yarn commands) |
-| `displayName` | Shown in world / logs |
-| `contactDisplayName` | Must match phone contact name |
-| `yarnNodeName` | Yarn `title:` to run (defaults to `npcId`) |
-| `guestClass` | Archetype DNA for party fillers / stats |
-| `rarity` | Common / Rare / Legendary |
-| `unlockMinPopularity` | Frat popularity gate |
-| `unlockMinGrade` | Best grade allowed as minimum (A best … F worst) |
-| `unlockChance` | 0–1 roll after gates pass |
-| `isRecruitable` | Allows `<<recruit>>` |
-| `recruitMinAffinity` | Affinity needed to recruit |
-| `schedule` | List of day/time → `locationId` |
-
-**Schedule entry**
-
-| Field | Notes |
-|-------|--------|
-| `dayOfWeek` | 0 = Mon … 6 = Sun |
-| `startHour` / `endHour` | In-game hours (0–24). Overnight: start > end is OK |
-| `locationId` | Must match a `CampusLocation.locationId` |
-
-Example: Nova at Library Mon–Fri mornings:
-
-```
-dayOfWeek 0–4, startHour 9, endHour 13, locationId = Library
-```
-
-### Step C — Yarn dialogue
-
-Edit `Assets/Resources/Dialogue/CampusNPCs.txt` (or add another `.txt` in that folder).
-
-Minimal pattern:
-
-```yarn
-title: Nova
----
-<<if $can_unlock == false>>
-Nova: Not interested. Build your house first.
-<<jump Nova_Done>>
-<<endif>>
-
-Nova: Oh, you're from the frat?
--> Can I get your number?
-    Nova: Fine. Don't spam me.
-    <<unlock_contact Nova>>
--> Just saying hi.
-    Nova: Cool.
-===
-
-title: Nova_Done
----
-===
-```
-
-**Rules**
-
-- Node `title:` must match `yarnNodeName` / `npcId`
-- Character lines: `Name: text`
-- Choices: `-> option text` then indented replies
-- Engine sets these before start:
-  - `$can_unlock` (bool) — popularity / grade gates
-  - `$npc_id` (string)
-  - `$affinity` (number)
-- Commands (registered in `CampusDialogueService`):
-  - `<<unlock_contact Nova>>` → server validates rarity roll + gates, shared unlock
-  - `<<recruit Nova>>` → server requires unlocked + recruitable + affinity
-
-Declare vars once at top of the file (already present):
-
-```yarn
-title: Declarations
----
-<<declare $can_unlock = false as bool>>
-<<declare $npc_id = "" as string>>
-<<declare $affinity = 0.0 as number>>
-===
-```
-
-### Step D — Visual (optional)
-
-`NetworkedCampusNpcDirector` defaults to a capsule visual. Assign a `visualPrefab` on the director (on GameManager at runtime) to use a custom mesh. Network components on that prefab are stripped; visuals are **local** and driven by replicated state.
-
----
+Place `CampusLocation` markers with these ids in `Game.unity`. Any id that is missing gets a fallback marker near the origin, and a
+warning is logged. Players count as being "at" a location within 14 m (`NetworkedCampaign.locationRadius`).
 
 ## Runtime flow
 
 ```text
-Player interacts NamedNpcVisual
+Player presses E on a NamedNpcVisual
         ↓
-CampusDialogueService.StartNamedNpcDialogue(npc, canUnlock)
-        ↓
-Yarn node runs (local UI)
-        ↓
-<<unlock_contact>> / <<recruit>>  →  ServerRpc on NetworkedContactRoster
-        ↓
-PhoneController.ApplySharedRoster  →  contacts appear on all players' phones
-        ↓
-Invite from Messages  →  NetworkedPhoneInvites
-        ↓
-Weekend start  →  SpawnGuests prefers named invite + affinity RSVP
+NpcTalkPanel (local UI) ──RequestAction / RequestTalk──▶ NetworkedCampaign (host)
+        ↓                                                    ↓ validates location / contact / phase (GameSession)
+        ↓                                                    ↓ submits as the player to the social service
+NPC reply + RSVP tag ◀──OnConversation─────────────── grounded decision committed (reply, trust/regard, RSVP)
+                                                             ↓
+                                    Saturday: accepted NPCs arrive at your party; declined ones never do
 ```
 
-**Networking split**
-
 | Local only | Server authoritative |
-|------------|----------------------|
-| Dialogue UI, phone browsing | Phase, clock, NPC positions/schedules |
-| Yarn playback | Unlock, recruit, affinity, invites, party spawn |
-
----
-
-## Weekend / party hooks
-
-- Phone Home: **Ready for Weekend** / host **Start Weekend**
-- `Interact_Start` world button does **not** start party during Weekday
-- On party end: invites cleared, day advances, `CampusPersistence` writes unlocks/affinity/day to `persistentDataPath/campus_save.json`
-
-Outreach bias uses `OutreachSettings` (Resources `Campus/OutreachSettings` or runtime defaults): popularity × grade × avg affinity × invites.
-
----
+|---|---|
+| Talk panel, phone browsing | Clock, schedules and NPC locations, contact unlocks, RSVPs, relationships, rush and bids, party spawning |
 
 ## Troubleshooting
 
 | Symptom | Fix |
-|---------|-----|
-| No dialogue UI | Ensure `Resources/Dialogue/Dialogue.uxml` + PanelSettings resolve; check Console for `[CampusDialogue]` |
-| Yarn compile errors | Check `title:` / `===` / declare block; look for `[RuntimeYarn]` logs |
-| NPC never appears | Schedule day/hour mismatch, or missing `locationId` on registry |
-| Unlock always rejects | Raise frat popularity / grade, or lower NPC `unlockMin*` / raise `unlockChance` |
-| Contact missing on phone | `contactDisplayName` ≠ contact `displayName` |
-| Burst / YarnSpinnerTests | Keep tests in `Tests~`; reimport package if needed |
-| Party starts from world button | Expected only outside Weekday; use phone Ready/Start |
-
----
+|---|---|
+| No talk panel | Check that `Resources/Dialogue/Dialogue.uxml` and a `PanelSettings` asset exist. Look in the Console for `[NpcTalkPanel]`. |
+| NPC never appears | They have no schedule slot at the current day and hour, or their location id is not placed. Check `NetworkedCampusNpcDirector`. |
+| "isn't interested in giving … their number yet" | The house's popularity or grade is below the NPC's `unlockMinPopularity` / `unlockMinGrade`. |
+| Contact missing on the phone | The roster `displayName` must match the contact name. Contacts are created from the roster automatically. |
 
 ## Key scripts
 
 | Path | Purpose |
-|------|---------|
-| `Assets/Scripts/UI/Dialogue/CampusDialogueService.cs` | Yarn runner + commands |
-| `Assets/Scripts/UI/Dialogue/UITKDialoguePresenter.cs` | Dialogue UI |
-| `Assets/Scripts/Gameplay/Campus/NamedNpcSO.cs` | NPC definition |
-| `Assets/Scripts/Gameplay/Campus/NamedNpcDatabase.cs` | Load / seed NPCs |
-| `Assets/Scripts/Networking/NetworkedCampusNpcDirector.cs` | Schedules + visuals |
-| `Assets/Scripts/Networking/NetworkedContactRoster.cs` | Unlock / affinity / recruit |
-| `Assets/Scripts/Networking/NetworkedWeekendReady.cs` | Ready / start weekend |
-| `Assets/Scripts/UI/Phone/PhoneView.cs` | Phone UI incl. weekend buttons |
+|---|---|
+| `Assets/Scripts/UI/Talk/NpcTalkPanel.cs` | In-person conversation UI (social backend) |
+| `Assets/Scripts/Networking/NetworkedCampaign.cs` | Host game loop adapter: actions, conversations, replication |
+| `Assets/Scripts/Networking/NetworkedSocialConversation.cs` | Social backend host: identity, memory, providers |
+| `Assets/Scripts/Networking/NetworkedCampusNpcDirector.cs` | NPC positions and visuals from the authoritative loop |
+| `Assets/Scripts/Gameplay/Campus/NamedNpcDatabase.cs` | Roster → `NamedNpcSO` |
+| `Assets/Scripts/Game/Core/CampusRoster.cs` | Roster schema, validation, archetype expansion |

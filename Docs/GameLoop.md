@@ -42,9 +42,9 @@ NPCs know the public standings of all four houses.
 Enable the local LLM with the existing editor menu **FratRow → Social Brains → Enable development experiment
 (CUDA fallback)**, or with `--social-brains --social-llama-server <exe>` on development players. Both providers go through the same
 grounded validation and commit path. Phone **Invite** templates for named contacts now become real invitations,
-and Yarn `<<recruit>>` now extends a Bid Day bid. NPCs without a hand-written Yarn node use the generic
-`CampusStudent` node in `Resources/Dialogue/CampusStudents.txt`. Its options cover asking for a number, `<<invite>>` and
-`<<rush>>` (PNMs only), and the NPC's real answer arrives through the social backend.
+and the old contact-roster recruit request now extends a Bid Day bid. Pressing **E** on an NPC opens the talk
+panel (`NpcTalkPanel`). It offers asking for a number, inviting them, a rush pitch (PNMs only), free text, and leaving, and every
+reply comes from the social backend. Yarn Spinner has been removed: no scripted lines can contradict what an NPC remembers.
 
 ## Scene checklist (one-time)
 

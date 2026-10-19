@@ -12,7 +12,6 @@ namespace Systems.Campus
         public string displayName = "Brad";
         public GuestClass guestClass = GuestClass.Jock;
         public string contactDisplayName;
-        public string yarnNodeName;
 
         public NamedNpcRarity rarity = NamedNpcRarity.Common;
         public float unlockMinPopularity;
@@ -32,7 +31,6 @@ namespace Systems.Campus
 
         public List<ScheduleEntry> schedule = new List<ScheduleEntry>();
 
-        public string YarnNode => string.IsNullOrWhiteSpace(yarnNodeName) ? npcId : yarnNodeName;
 
         public ContactSO ResolveContact()
         {

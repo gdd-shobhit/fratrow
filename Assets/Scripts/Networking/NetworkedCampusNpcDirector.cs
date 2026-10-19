@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Systems.Dialogue;
+using Systems.Talk;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -507,23 +507,14 @@ namespace Systems.Campus
             }
 
             var data = NamedNpcDatabase.GetById(_npcId);
-            if (data == null || CampusDialogueService.Instance == null || CampusDialogueService.Instance.IsRunning)
+            var panel = NpcTalkPanel.Ensure();
+            if (data == null || panel.IsOpen)
             {
                 return;
             }
 
-            float pop = 0f;
-            Grade grade = Grade.C;
-            if (NetworkedGameManager.Instance != null)
-            {
-                pop = NetworkedGameManager.Instance.TotalPopularity;
-                var frat = NetworkedGameManager.Instance.myFraternity.Value;
-                grade = frat.grade;
-                pop = Mathf.Max(pop, frat.popularity);
-            }
-
-            bool canUnlock = data.MeetsUnlockGates(pop, grade);
-            CampusDialogueService.Instance.StartNamedNpcDialogue(data, canUnlock);
+            // The conversation runs through the social backend; unlock gates are applied server-side (ask_number).
+            panel.Open(data);
         }
     }
 }

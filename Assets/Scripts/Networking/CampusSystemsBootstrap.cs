@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Systems.Dialogue;
+using Systems.Talk;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -27,36 +27,8 @@ namespace Systems.Campus
 
         static void EnsureLocations() => CampusLocationFallbacks.Ensure();
 
-        static void EnsureLocalDialogue()
-        {
-            if (CampusDialogueService.Instance != null)
-            {
-                return;
-            }
-
-            var go = new GameObject("CampusDialogueService");
-            DontDestroyOnLoad(go);
-            var doc = go.AddComponent<UIDocument>();
-
-            var panels = Resources.FindObjectsOfTypeAll<PanelSettings>();
-            if (panels != null && panels.Length > 0)
-            {
-                doc.panelSettings = panels[0];
-            }
-
-            var uxml = Resources.Load<VisualTreeAsset>("Dialogue/Dialogue");
-            if (uxml != null)
-            {
-                doc.visualTreeAsset = uxml;
-            }
-            else
-            {
-                Debug.LogWarning("[CampusBootstrap] Resources/Dialogue/Dialogue.uxml missing.");
-            }
-
-            go.AddComponent<UITKDialoguePresenter>();
-            go.AddComponent<CampusDialogueService>();
-        }
+        /// <summary>In-person NPC conversations use the social-backend talk panel (no scripted dialogue runtime).</summary>
+        static void EnsureLocalDialogue() => NpcTalkPanel.Ensure();
     }
 
     /// <summary>
