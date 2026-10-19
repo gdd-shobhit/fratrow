@@ -255,6 +255,7 @@ namespace FratRow.Game
             State.time += dt;
             State.phaseElapsed += dt;
             UpdatePatrols(dt);
+            SoberUp(dt);
             switch (State.phase)
             {
                 case Phase.Weekday:

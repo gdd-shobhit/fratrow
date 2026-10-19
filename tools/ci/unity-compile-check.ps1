@@ -182,11 +182,10 @@ $script:RepoRoot = [System.IO.Path]::GetFullPath($RepoRoot).TrimEnd('\')
 $script:AssetsDir = Join-Path $script:RepoRoot 'Assets'
 if (-not (Test-Path -LiteralPath $script:AssetsDir -PathType Container)) { Stop-Check "No Assets folder under '$($script:RepoRoot)'. Run from the repo root or pass -RepoRoot." }
 
-# The parameter is itself a script-scope variable: read it before $script:UnityProjectDir is reset, or the
-# worktree fallback is silently erased.
-$unityProjectDirArg = $UnityProjectDir
+# Script parameters live in script scope, so $script:UnityProjectDir IS the parameter: read it before resetting.
+$unityProjectDirParam = $UnityProjectDir
 $script:UnityProjectDir = ''
-if (-not [string]::IsNullOrEmpty($unityProjectDirArg)) { $script:UnityProjectDir = [System.IO.Path]::GetFullPath($unityProjectDirArg).TrimEnd('\') }
+if (-not [string]::IsNullOrEmpty($unityProjectDirParam)) { $script:UnityProjectDir = [System.IO.Path]::GetFullPath($unityProjectDirParam).TrimEnd('\') }
 $script:CsprojDirs = @($script:RepoRoot)
 if ($script:UnityProjectDir -ne '' -and ($script:UnityProjectDir -ne $script:RepoRoot) -and (Test-Path -LiteralPath $script:UnityProjectDir -PathType Container)) {
     $script:CsprojDirs += $script:UnityProjectDir

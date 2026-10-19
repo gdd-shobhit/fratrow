@@ -154,6 +154,10 @@ static class Program
             Assert(SpeechCues.IsInvite("we're partying Saturday, you in?") && SpeechCues.IsInvite("you're coming tonight right?") && SpeechCues.IsInvite("Party at our house!"),
                 "Real invitations were missed");
             Assert(SpeechCues.IsRush("ever thought about rushing?") && SpeechCues.IsInsult("you suck") && SpeechCues.IsApology("I'm sorry about that"), "Inflected cues were missed");
+            // DrunkSpeech.Stretch repeats a word's last letter 3-5 times, even on keyword-safe invite lines.
+            Assert(SpeechCues.IsInvite("partyyy at our houssse saturdayyy") && SpeechCues.IsInvite("comeee thru") && SpeechCues.IsApology("sorryyyy"),
+                "Drunk-stretched cues were missed");
+            Assert(SpeechCues.IsInsult("that's grosssss"), "Stretched double-letter words were missed");
             return Task.CompletedTask;
         });
         await Test("persona cleanup keeps one short in-character line", () =>
@@ -276,6 +280,53 @@ static class Program
             var t = new PersonaSocialTurn(seen);
             Assert(t.Repeats("bro, say less. who else is coming through? if it's packed, i'm here."), "Copied line passed as new");
             Assert(!t.Repeats("Boring? I deadlift on Tuesdays, that's elite behavior."), "New line flagged as a repeat");
+        });
+        await Test("a host-observed drunk speaker reaches every prompt and the grounded reply within budget", async () =>
+        {
+            using var f = new Fixture(); ModelContext seen = null;
+            f.Provider.Decide = c => {
+                seen = c;
+                foreach (string tone in new[] { "casual", "assertive", "bubbly", "dry", "reserved", "playful", "laid-back" })
+                foreach (string mood in new[] { "warm", "neutral", "dismissive", "playful", "annoyed", "wary" })
+                foreach (string decision in new[] { "respond", "accept", "decline", "defer", "counteroffer" })
+                {
+                    c.Voice.tone = tone; var p = Grounded(c, f.Codec, decision, mood);
+                    SocialConversationService.ValidateProposal(p, c);
+                    Assert(p.reply.Length <= 300 && (p.reply.Contains("wasted") || p.reply.Contains("hammered")), "Drunk aside missing or over budget: " + p.reply);
+                }
+                c.Voice.tone = "casual";
+                return Grounded(c, f.Codec);
+            };
+            var request = f.Request("heyyy ashley shaturday party at oursh *hic*"); request.speakerCondition = SpeakerConditions.Wasted;
+            var result = await f.Service.SubmitAsync(f.P1.playerId, request);
+            Assert(result.status == "committed" && (result.reply.Contains("wasted") || result.reply.Contains("hammered")), "Committed reply should remark on it: " + result.reply);
+            Assert(seen.SpeakerCondition == SpeakerConditions.Wasted && seen.Prompt.Contains("SPEAKER_CONDITION completely wasted") && seen.CompactPrompt.Contains("SPEAKER_CONDITION:") &&
+                   seen.FactPrompt.Contains("CURRENT_SPEAKER_CONDITION") && seen.DecisionFacts.Contains("Speaker condition="), "Condition missing from a prompt projection");
+            var reloaded = new JournalSocialStore(f.DirectoryPath, f.Codec, () => throw new Exception()).Read();
+            Assert(reloaded.turns.Single().request.speakerCondition == SpeakerConditions.Wasted, "Condition is journaled with the turn");
+        });
+        await Test("persona replies see a host-observed drunk speaker in plain English, and sober speakers get no remark", async () =>
+        {
+            using var f = new Fixture(); ModelContext seen = null;
+            f.Provider.Decide = c => { seen = c; return new PersonaSocialTurn(c).Build("respond", "unchanged", "unchanged", "", "", "Hey."); };
+            var drunk = f.Request("heyyy ashley shaturday party at oursh *hic*"); drunk.speakerCondition = SpeakerConditions.Wasted;
+            await f.Service.SubmitAsync(f.P1.playerId, drunk);
+            var turn = new PersonaSocialTurn(seen);
+            Assert(seen.Situation.Contains("completely wasted") && turn.VoiceSystem().Contains("completely wasted") && turn.StatePrompt("Hey.").Contains("speaker is wasted"),
+                "Persona voice or state pass did not see the drunk speaker");
+            await f.Service.SubmitAsync(f.P2.playerId, f.Request("hey ashley"));
+            Assert(!seen.Situation.Contains("drunk") && !seen.Situation.Contains("wasted") && !seen.Situation.Contains("tipsy"), "Sober speaker described as drunk");
+        });
+        await Test("an invented speaker condition is rejected and old journal requests replay as sober", async () =>
+        {
+            using var f = new Fixture();
+            f.Provider.Decide = c => Grounded(c, f.Codec);
+            var request = f.Request(); request.speakerCondition = "sober-and-charming";
+            await Throws<ArgumentException>(() => f.Service.SubmitAsync(f.P1.playerId, request));
+            var legacy = f.Codec.Decode<ConversationRequest>("{\"requestId\":\"r1\",\"npcId\":\"Ashley\",\"text\":\"Hi\",\"channel\":\"text\",\"partyId\":null}");
+            Assert(legacy.speakerCondition == SpeakerConditions.Sober, "A pre-drunk journal request must decode as sober");
+            var sober = await f.Service.SubmitAsync(f.P1.playerId, f.Request());
+            Assert(sober.status == "committed" && !sober.reply.Contains("wasted") && !sober.reply.Contains("had a few"), "No aside for a sober speaker: " + sober.reply);
         });
         await Test("grounded memory clauses preserve the original speaker for a second fraternity member", async () =>
         {

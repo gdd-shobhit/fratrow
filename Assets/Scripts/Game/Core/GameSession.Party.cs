@@ -25,7 +25,9 @@ namespace FratRow.Game
         {
             SetPhase(Phase.Party, 5);
             var h = PlayerHouse;
-            var p = State.party = new PartyState { socialPartyId = State.socialPartyId };
+            // Containers brothers opened earlier in the week (pre-game drinking) stay open for the party.
+            var opened = State.party.openServings;
+            var p = State.party = new PartyState { socialPartyId = State.socialPartyId, openServings = opened ?? new List<StashEntry>() };
             p.ticksTotal = Math.Max(1, (int)Math.Ceiling(Config.partySeconds / Config.partyTickSeconds));
             StartRivalParties();
             if (h.suspended || string.IsNullOrEmpty(p.socialPartyId))
@@ -315,10 +317,13 @@ namespace FratRow.Game
         bool HasAnyDrink(HouseState h) =>
             State.party.openServings.Any(s => s.count > 0) || Config.shop.Any(i => i.category == "drink" && StashCount(h, i.id) > 0);
 
-        /// <summary>Takes one serving, preferring alcohol when allowed; opens a new container from the stash when needed.</summary>
-        ShopItemDef TakeServing(HouseState h, bool allowAlcohol)
+        /// <summary>
+        /// Takes one serving, preferring alcohol when allowed; opens a new container from the stash when needed.
+        /// <paramref name="only"/> restricts it to one drink item (a brother asking for a specific drink).
+        /// </summary>
+        ShopItemDef TakeServing(HouseState h, bool allowAlcohol, ShopItemDef only = null)
         {
-            var drinks = Config.shop.Where(i => i.category == "drink" && i.servings > 0).ToList();
+            var drinks = Config.shop.Where(i => i.category == "drink" && i.servings > 0 && (only == null || i.id == only.id)).ToList();
             var order = drinks.Where(i => i.alcoholic && allowAlcohol).Concat(drinks.Where(i => !i.alcoholic)).ToList();
             foreach (var item in order)
             {

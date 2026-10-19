@@ -21,7 +21,14 @@ namespace FratRow.Social
         static readonly System.Collections.Generic.Dictionary<string[], System.Text.RegularExpressions.Regex> Patterns =
             new[] { Insults, Apologies, Invites, Rush, Compliments, Pressure }.ToDictionary(cues => cues, cues =>
                 new System.Text.RegularExpressions.Regex(@"\b(?:" + string.Join("|", cues.Select(System.Text.RegularExpressions.Regex.Escape)) + @")\b"));
-        static bool Any(string text, string[] cues) => Patterns[cues].IsMatch(text);
+        /// <summary>A letter repeated 3+ times, as DrunkSpeech stretches a word's last letter ("partyyy", "grosssss").</summary>
+        static readonly System.Text.RegularExpressions.Regex Stretched = new System.Text.RegularExpressions.Regex(@"(\p{L})\1{2,}");
+        static bool Any(string text, string[] cues)
+        {
+            var pattern = Patterns[cues];
+            // Try the stretched run collapsed to one letter ("party") and to two ("gross"); real words never triple a letter.
+            return pattern.IsMatch(text) || pattern.IsMatch(Stretched.Replace(text, "$1")) || pattern.IsMatch(Stretched.Replace(text, "$1$1"));
+        }
         public static bool IsInsult(string t) => Any(Norm(t), Insults);
         public static bool IsApology(string t) => Any(Norm(t), Apologies);
         public static bool IsInvite(string t) => Any(Norm(t), Invites);
@@ -84,6 +91,7 @@ namespace FratRow.Social
             if (insult) score -= 0.5;
             if (ownGrievance != null && !apology) score -= 0.25;
             if (commitment?.state == "deferred") score += 0.05;
+            score += DrunkBias(tone, c.SpeakerCondition);
 
             var allowedDecisions = GroundedSocialTurn.Decisions(c).ToList();
             var allowedTopics = GroundedSocialTurn.Topics(c).ToList();
@@ -144,6 +152,16 @@ namespace FratRow.Social
 
         static double ToneBias(string tone) =>
             tone == "bubbly" ? 0.08 : tone == "laid-back" ? 0.05 : tone == "playful" ? 0.03 : tone == "reserved" || tone == "dry" ? -0.05 : 0;
+
+        /// <summary>How this voice takes a drunk speaker: party animals roll with "drunk", reserved students are put off, nobody loves "wasted".</summary>
+        static double DrunkBias(string tone, string condition)
+        {
+            if (!SpeakerConditions.IsNoticeable(condition)) return 0;
+            bool wasted = condition == SpeakerConditions.Wasted;
+            if (tone == "bubbly" || tone == "playful" || tone == "laid-back") return wasted ? -0.04 : 0.03;
+            if (tone == "reserved" || tone == "dry") return wasted ? -0.18 : -0.08;
+            return wasted ? -0.1 : -0.03;
+        }
 
         static SocialProposal Build(ModelContext c, string decision, string attitude, string reason, string topic, int phrasing,
             string trust, string regard, string grievance, string resolve)

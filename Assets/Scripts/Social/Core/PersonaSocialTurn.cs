@@ -142,6 +142,8 @@ namespace FratRow.Social
             if (earlier.Count > 0) text.AppendLine("Speaker's earlier lines: " + string.Join(" / ", earlier.Select(l => l.text)));
             var last = context.Conversation.LastOrDefault(l => l.speaker == "npc");
             if (last != null) text.AppendLine("NPC's previous reply: " + last.text);
+            if (SpeakerConditions.IsNoticeable(context.SpeakerCondition))
+                text.AppendLine("The speaker is " + context.SpeakerCondition + "; typos and slurring are drunkenness, not hidden meaning.");
             text.AppendLine("Speaker's message " + ids.RenderIds(context.ObservedEventId) + ": " + context.CurrentText);
             text.AppendLine("NPC's reply: " + reply);
             return text.ToString();

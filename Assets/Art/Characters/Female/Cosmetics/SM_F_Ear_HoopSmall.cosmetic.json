@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "SM_F_Ear_HoopSmall",
+  "model": "SM_F_Ear_HoopSmall.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Ears",
+  "kind": "rigid",
+  "attachments": [
+    {
+      "node": "SM_F_Ear_HoopSmall_L",
+      "socket": "Socket_LeftEar"
+    },
+    {
+      "node": "SM_F_Ear_HoopSmall_R",
+      "socket": "Socket_RightEar"
+    }
+  ],
+  "materials": [
+    {
+      "name": "M_Metal_Gold",
+      "color": [
+        0.93,
+        0.74,
+        0.36
+      ],
+      "recolorable": false
+    }
+  ]
+}
