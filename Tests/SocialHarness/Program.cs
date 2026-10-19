@@ -146,6 +146,41 @@ static class Program
             using var f = new Fixture(); using var service = new SocialConversationService(f.World, f.Codec, f.Provider, f.Access, requireGroundedProposal: true);
             Assert((await service.SubmitAsync(f.P1.playerId, f.Request())).status == "pending" && f.Store.Read().npcs[0].trust.Count == 0, "Ungrounded proposal bypassed required grounding");
         });
+        await Test("a host-observed drunk speaker reaches every prompt and the grounded reply within budget", async () =>
+        {
+            using var f = new Fixture(); ModelContext seen = null;
+            f.Provider.Decide = c => {
+                seen = c;
+                foreach (string tone in new[] { "casual", "assertive", "bubbly", "dry", "reserved", "playful", "laid-back" })
+                foreach (string mood in new[] { "warm", "neutral", "dismissive", "playful", "annoyed", "wary" })
+                foreach (string decision in new[] { "respond", "accept", "decline", "defer", "counteroffer" })
+                {
+                    c.Voice.tone = tone; var p = Grounded(c, f.Codec, decision, mood);
+                    SocialConversationService.ValidateProposal(p, c);
+                    Assert(p.reply.Length <= 300 && (p.reply.Contains("wasted") || p.reply.Contains("hammered")), "Drunk aside missing or over budget: " + p.reply);
+                }
+                c.Voice.tone = "casual";
+                return Grounded(c, f.Codec);
+            };
+            var request = f.Request("heyyy ashley shaturday party at oursh *hic*"); request.speakerCondition = SpeakerConditions.Wasted;
+            var result = await f.Service.SubmitAsync(f.P1.playerId, request);
+            Assert(result.status == "committed" && (result.reply.Contains("wasted") || result.reply.Contains("hammered")), "Committed reply should remark on it: " + result.reply);
+            Assert(seen.SpeakerCondition == SpeakerConditions.Wasted && seen.Prompt.Contains("SPEAKER_CONDITION completely wasted") && seen.CompactPrompt.Contains("SPEAKER_CONDITION:") &&
+                   seen.FactPrompt.Contains("CURRENT_SPEAKER_CONDITION") && seen.DecisionFacts.Contains("Speaker condition="), "Condition missing from a prompt projection");
+            var reloaded = new JournalSocialStore(f.DirectoryPath, f.Codec, () => throw new Exception()).Read();
+            Assert(reloaded.turns.Single().request.speakerCondition == SpeakerConditions.Wasted, "Condition is journaled with the turn");
+        });
+        await Test("an invented speaker condition is rejected and old journal requests replay as sober", async () =>
+        {
+            using var f = new Fixture();
+            f.Provider.Decide = c => Grounded(c, f.Codec);
+            var request = f.Request(); request.speakerCondition = "sober-and-charming";
+            await Throws<ArgumentException>(() => f.Service.SubmitAsync(f.P1.playerId, request));
+            var legacy = f.Codec.Decode<ConversationRequest>("{\"requestId\":\"r1\",\"npcId\":\"Ashley\",\"text\":\"Hi\",\"channel\":\"text\",\"partyId\":null}");
+            Assert(legacy.speakerCondition == SpeakerConditions.Sober, "A pre-drunk journal request must decode as sober");
+            var sober = await f.Service.SubmitAsync(f.P1.playerId, f.Request());
+            Assert(sober.status == "committed" && !sober.reply.Contains("wasted") && !sober.reply.Contains("had a few"), "No aside for a sober speaker: " + sober.reply);
+        });
         await Test("grounded memory clauses preserve the original speaker for a second fraternity member", async () =>
         {
             using var f = new Fixture();

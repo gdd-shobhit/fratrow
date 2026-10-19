@@ -20,7 +20,7 @@ using UnityEngine.UIElements;
 /// While no campaign is running (host's campaign failed to start, or not spawned yet) the legacy elements fall back to
 /// <see cref="NetworkedGameManager"/> / <see cref="NetworkedParty"/>.
 /// </para>
-/// Example (push a value the core does not replicate yet): <c>FindAnyObjectByType&lt;GameplayUIManager&gt;().SetDrunkLevel(0.4f);</c>
+/// Example (override a replicated value from a debug tool): <c>FindAnyObjectByType&lt;GameplayUIManager&gt;().SetDrunkLevel(0.4f, 2);</c>
 /// </summary>
 public class GameplayUIManager : MonoBehaviour
 {
@@ -803,6 +803,7 @@ public class GameplayUIManager : MonoBehaviour
         _shownBrotherState = 1;
         _shownBrother = me;
         _localReady = me.Ready;
+        SetDrunkLevel(me.Drunk, me.DrunkTier);
 
         if (_brotherLine != null)
             _brotherLine.text = me.Name.ToString() + HudText.Sep + HudText.RoleName(me.Role.ToString()) + HudText.Sep + HudText.At +
@@ -1079,15 +1080,15 @@ public class GameplayUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Push the local player's intoxication (0..1). The campaign does not replicate a per-player drunk stat yet, so the
-    /// <c>DrunkLevel</c> label shows "-" until gameplay code calls this.
-    /// Example: <c>hud.SetDrunkLevel(0.35f);</c>
+    /// Show the local player's intoxication (0..1 of the drunk cap) and visible tier (0 sober .. 3 wasted). Fed from the
+    /// replicated <see cref="BrotherNetState"/> on every brother refresh (design/gdd/drunk-mechanic.md).
+    /// Example: <c>hud.SetDrunkLevel(0.35f, 2);</c>
     /// </summary>
-    public void SetDrunkLevel(float normalized)
+    public void SetDrunkLevel(float normalized, byte tier = 0)
     {
         if (_drunkLabel == null) return;
         int pct = Mathf.RoundToInt(Mathf.Clamp01(normalized) * 100f);
-        _drunkLabel.text = IntText(pct) + "%";
+        _drunkLabel.text = IntText(pct) + "%" + HudText.DrunkTier(tier);
     }
 
     // =====================================================================
@@ -1254,6 +1255,7 @@ public class GameplayUIManager : MonoBehaviour
         public const string Record = "Record ";
         public const string Studied = "Studied ";
         public const string StashEmpty = "Empty. Hit the Campus Store.";
+        public static string DrunkTier(byte tier) => tier == 1 ? " · tipsy" : tier == 2 ? " · drunk" : tier >= 3 ? " · WASTED" : string.Empty;
         public const string SuspendedTag = " (suspended)";
         public const string ProbationTag = " (probation)";
 

@@ -83,14 +83,17 @@ typing `LOCAL` or the host's IP into the Join field.
 - **Two local clients:** `Tests/SocialHarness/run-two-clients.ps1` and the inbox driver now accept campaign commands.
   `{"requestId":"1","action":"game","text":"buy","item":"keg","amount":2}` runs as that client. `game_dump` (host only)
   writes the whole campaign state.
-- **Headless tests:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj` runs 23 rule and integration
+- **Headless tests:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj` runs 38 rule and integration
   tests. They cover RSVP arrivals, conditional entrance promises, witnesses entering memory, raids and their
   mitigation over 30 seeds, insults creating grievances and withdrawn RSVPs, Bid Day, probation and suspension, roles, busts and detention, police parking, save/load
   determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover.
+  They also cover the drunk mechanic (`DrunkTests.cs`, `design/gdd/drunk-mechanic.md`).
 - **Whole semesters:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj -- --simulate --weeks 6 --players 4 --seed 7 [--reckless]`
   writes `Library/GameLoopHarness/report.md`. Add `--model <gguf> --llama-server <exe>` to use the real local model.
 - **One party, tick by tick:** `... -- --debug-party --heat 60 --pop 45`.
-- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 65 checks.
+- **Drunk speech calibration:** `... -- --drunk-speech "your line" [--samples 5] [--seed 1] [--cosmetic]` prints the line
+  at every drunk level using the `drunk` section of the live config.
+- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 67 checks.
 - **Compile against the open editor's references:** `tools/ci/unity-compile-check.ps1`.
 
 ## Tuning

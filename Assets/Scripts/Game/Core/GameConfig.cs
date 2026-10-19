@@ -252,6 +252,68 @@ namespace FratRow.Game
     }
 
     /// <summary>
+    /// Brother intoxication (design/gdd/drunk-mechanic.md). Same units as <see cref="GuestState.drunk"/>: a serving adds its
+    /// item <see cref="ShopItemDef.strength"/> (keg 0.10, liquor 0.25).
+    /// </summary>
+    [Serializable] public sealed class DrunkTuning
+    {
+        /// <summary>HUD shows "tipsy" from here; speech is untouched.</summary>
+        public float tipsyAt = 0.15f;
+        /// <summary>At or above this a brother is drunk: speech rewriting starts and NPCs notice.</summary>
+        public float threshold = 0.4f;
+        public float wastedAt = 1.0f;
+        /// <summary>Hard cap; drinking is refused here. Speech intensity reaches 1 here.</summary>
+        public float max = 1.5f;
+        /// <summary>Sobering per real second (one keg serving wears off in about a minute).</summary>
+        public float soberPerSecond = 0.0015f;
+        public float drinkCooldownSeconds = 5;
+        /// <summary>Party hype per alcoholic drink a brother has with the guests.</summary>
+        public float partyHype = 2;
+        /// <summary>Police talk success lost at <see cref="max"/> (scaled by drunk / max).</summary>
+        public float policeTalkPenalty = 0.3f;
+        /// <summary>Crime detection chance added at <see cref="max"/> (scaled by drunk / max).</summary>
+        public float crimeDetect = 0.1f;
+        public DrunkSpeechTuning speech = new DrunkSpeechTuning();
+    }
+
+    /// <summary>
+    /// How hard drunk speech is rewritten (see <see cref="DrunkSpeech"/>). Rates are chances at intensity 1, where
+    /// intensity = startIntensity + (1 − startIntensity) × ((drunk − threshold) / (max − threshold)) ^ curve.
+    /// Set a rate to 0 to disable that effect.
+    /// </summary>
+    [Serializable] public sealed class DrunkSpeechTuning
+    {
+        /// <summary>Intensity the moment a brother crosses the threshold, so becoming drunk is noticeable.</summary>
+        public float startIntensity = 0.1f;
+        /// <summary>&gt;1 keeps early drunkenness mild and ramps late; &lt;1 ramps early.</summary>
+        public float curve = 1f;
+        /// <summary>Per letter: neighbouring-key typo, dropped letter, doubled letter.</summary>
+        public float typo = 0.05f, dropLetter = 0.03f, doubleLetter = 0.04f;
+        /// <summary>Per word: swap two inner letters, slur (s→sh, -ing→-in'), stretch the last letter, say it twice, SHOUT it.</summary>
+        public float swapLetters = 0.08f, slur = 0.45f, stretch = 0.15f, repeatWord = 0.06f, shout = 0.05f;
+        /// <summary>Per gap between words: insert an interjection.</summary>
+        public float interjection = 0.08f;
+        /// <summary>Intensity at or above which the whole message comes out lowercase.</summary>
+        public float lowercaseAt = 0.25f;
+        /// <summary>Per message: append a drunk tangent; cut a long message short and trail off.</summary>
+        public float tangent = 0.35f, trailOff = 0.15f;
+        /// <summary>Invite/rush button lines only get keyword-safe effects, at this share of the intensity.</summary>
+        public float cosmeticScale = 0.7f;
+        public List<string> interjections = new List<string>();
+        public List<string> tangents = new List<string>();
+        public List<string> trailOffs = new List<string>();
+
+        public static List<string> DefaultInterjections() => new List<string> { "*hic*", "uhh", "bro", "dude", "like", "wait", "lol", "hahaha", "ok ok", "listen" };
+        public static List<string> DefaultTangents() => new List<string>
+        {
+            "i love you man", "no but seriously you're like my best friend", "is it hot in here or is it me", "where's my phone",
+            "i'm not even that drunk", "ok i need a slice of pizza", "we should get matching tattoos", "who wants to do a keg stand",
+            "you have really nice eyebrows", "i think i'm gonna text my ex"
+        };
+        public static List<string> DefaultTrailOffs() => new List<string> { "... wait what was i saying", "... nevermind", "... where was i", "... ok anyway" };
+    }
+
+    /// <summary>
     /// All game-loop tuning (design/gdd/core-game-loop.md §7). Loaded from
     /// <c>Assets/Resources/Campus/GameLoopConfig.json</c>; any missing section keeps its code default.
     /// Example: <c>var config = GameLoopConfig.Parse(json, codec);</c>
@@ -282,6 +344,7 @@ namespace FratRow.Game
         public ScoringTuning scoring = new ScoringTuning();
         public DestinationTuning destination = new DestinationTuning();
         public ActionTuning actions = new ActionTuning();
+        public DrunkTuning drunk = new DrunkTuning();
 
         public static GameLoopConfig Parse(string json, IStateCodec codec)
         {
@@ -319,6 +382,12 @@ namespace FratRow.Game
             if (scoring == null) scoring = new ScoringTuning();
             if (destination == null) destination = new DestinationTuning();
             if (actions == null) actions = new ActionTuning();
+            if (drunk == null) drunk = new DrunkTuning();
+            if (drunk.speech == null) drunk.speech = new DrunkSpeechTuning();
+            var speech = drunk.speech;
+            if (speech.interjections == null || speech.interjections.Count == 0) speech.interjections = DrunkSpeechTuning.DefaultInterjections();
+            if (speech.tangents == null || speech.tangents.Count == 0) speech.tangents = DrunkSpeechTuning.DefaultTangents();
+            if (speech.trailOffs == null || speech.trailOffs.Count == 0) speech.trailOffs = DrunkSpeechTuning.DefaultTrailOffs();
             if (houses == null || houses.Count == 0) houses = DefaultHouses();
             if (roles == null || roles.Count == 0) roles = DefaultRoles();
             if (shop == null || shop.Count == 0) shop = DefaultShop();
@@ -346,6 +415,14 @@ namespace FratRow.Game
             if (scoring.cupPoints.Length < houses.Count || scoring.rankPop.Length < houses.Count) throw new FormatException("cupPoints/rankPop need one entry per house");
             foreach (var i in shop) if (i.price < 0 || string.IsNullOrEmpty(i.id)) throw new FormatException("Invalid shop item");
             foreach (var c in crimes) if (!string.IsNullOrEmpty(c.requiresItem) && Item(c.requiresItem) == null) throw new FormatException("Crime requires unknown item: " + c.id);
+            var d = drunk;
+            if (!(d.tipsyAt >= 0 && d.tipsyAt <= d.threshold && d.threshold > 0 && d.threshold <= d.wastedAt && d.wastedAt <= d.max && d.threshold < d.max))
+                throw new FormatException("drunk: need 0 <= tipsyAt <= threshold <= wastedAt <= max and threshold < max");
+            if (d.soberPerSecond < 0 || d.drinkCooldownSeconds < 0) throw new FormatException("drunk: soberPerSecond and drinkCooldownSeconds must be >= 0");
+            var s = d.speech;
+            if (s.curve <= 0) throw new FormatException("drunk.speech.curve must be positive");
+            foreach (float rate in new[] { s.startIntensity, s.lowercaseAt, s.typo, s.dropLetter, s.doubleLetter, s.swapLetters, s.slur, s.stretch, s.repeatWord, s.shout, s.interjection, s.tangent, s.trailOff, s.cosmeticScale })
+                if (rate < 0 || rate > 1) throw new FormatException("drunk.speech rates must be 0..1");
         }
 
         static List<HouseDef> DefaultHouses() => new List<HouseDef>

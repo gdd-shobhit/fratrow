@@ -29,6 +29,18 @@ namespace FratRow.Social
         }
     }
 
+    /// <summary>
+    /// How a speaker visibly comes across, observed by the host (never claimed by a client). Sent with
+    /// <see cref="ConversationRequest.speakerCondition"/> so NPCs can react to a drunk brother.
+    /// </summary>
+    public static class SpeakerConditions
+    {
+        public const string Sober = "", Tipsy = "tipsy", Drunk = "drunk", Wasted = "wasted";
+        public static bool IsValid(string value) => string.IsNullOrEmpty(value) || value == Tipsy || value == Drunk || value == Wasted;
+        /// <summary>Drunk or wasted: speech is being slurred and people notice.</summary>
+        public static bool IsNoticeable(string value) => value == Drunk || value == Wasted;
+    }
+
     [Serializable] public sealed class CampaignState
     {
         public int schema = SocialRules.Schema;
@@ -141,6 +153,8 @@ namespace FratRow.Social
         public string text;
         public string channel = "text";
         public string partyId;
+        /// <summary>Host-observed <see cref="SpeakerConditions"/> value; empty when sober (and in older journals).</summary>
+        public string speakerCondition = "";
     }
     [Serializable] public sealed class ConversationResult
     {
@@ -207,6 +221,8 @@ namespace FratRow.Social
         public string PartyId;
         public string PartyState;
         public string ObservedEventId;
+        /// <summary>The speaker's <see cref="SpeakerConditions"/> value for this turn.</summary>
+        public string SpeakerCondition = "";
         public string Prompt;
         public string CompactPrompt;
         public string FactPrompt;
