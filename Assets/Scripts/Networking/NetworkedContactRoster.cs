@@ -181,7 +181,47 @@ namespace Systems.Campus
             }
 
             SetUnlocked(npcId, true, affinityDelta: 5f);
+            NetworkedCampaign.Instance?.NotifyContactUnlockedServer(npcId);
             return true;
+        }
+
+        /// <summary>Host: the campaign unlocked a contact (ask_number) — show it on every phone.</summary>
+        public void SetUnlockedServer(string npcId, bool unlocked)
+        {
+            if (!IsServer || string.IsNullOrEmpty(npcId))
+            {
+                return;
+            }
+
+            if (TryGet(npcId, out var state) && state.Unlocked == unlocked)
+            {
+                return;
+            }
+
+            SetUnlocked(npcId, unlocked, affinityDelta: 0f);
+        }
+
+        /// <summary>Host: Bid Day result from the campaign (the NPC joined the players' house).</summary>
+        public void SetRecruitedServer(string npcId, bool recruited)
+        {
+            if (!IsServer || string.IsNullOrEmpty(npcId))
+            {
+                return;
+            }
+
+            if (!TryGet(npcId, out var state))
+            {
+                state = new NetworkedContactState { NpcId = npcId, Unlocked = true };
+            }
+
+            if (state.Recruited == recruited)
+            {
+                return;
+            }
+
+            state.Recruited = recruited;
+            state.Unlocked = true;
+            WriteState(state);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -193,6 +233,14 @@ namespace Systems.Campus
             }
 
             string id = npcId.ToString();
+            var campaign = NetworkedCampaign.Instance;
+            if (campaign != null && campaign.Session != null)
+            {
+                // Recruiting is Bid Day: the dialogue command extends a bid that the PNM decides on Sunday.
+                campaign.RecruitFromDialogueServer(rpcParams.Receive.SenderClientId, id);
+                return;
+            }
+
             var npc = NamedNpcDatabase.GetById(id);
             if (npc == null || !npc.isRecruitable)
             {

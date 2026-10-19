@@ -40,9 +40,11 @@ public static class SocialBrainSetup
         try
         {
             if (manager.GetComponent<NetworkedSocialConversation>() == null) manager.AddComponent<NetworkedSocialConversation>();
+            if (manager.GetComponent<NetworkedCampaign>() == null) manager.AddComponent<NetworkedCampaign>();
             PrefabUtility.SaveAsPrefabAsset(manager, managerPath);
         }
         finally { PrefabUtility.UnloadPrefabContents(manager); }
+        RemoveDuplicatePhoneInvites();
         foreach (string path in AssetDatabase.FindAssets("t:GuestSO").Select(AssetDatabase.GUIDToAssetPath))
         {
             var data = AssetDatabase.LoadAssetAtPath<GuestSO>(path);
@@ -51,6 +53,57 @@ public static class SocialBrainSetup
                 throw new System.InvalidOperationException("Guest prefab requires baked network and guest components: " + path);
         }
         AssetDatabase.SaveAssets(); Debug.Log("[Social] Network component bake validated.");
+    }
+
+    /// <summary>
+    /// GameManager owns the one NetworkedPhoneInvites singleton; a second copy on PartyManager fights over Instance.
+    /// Removes any copy from PartyManager.prefab (no-op when already clean).
+    /// </summary>
+    static void RemoveDuplicatePhoneInvites()
+    {
+        const string partyPath = "Assets/Prefabs/PartyManager.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(partyPath) == null) return;
+        var party = PrefabUtility.LoadPrefabContents(partyPath);
+        try
+        {
+            var duplicates = party.GetComponentsInChildren<Systems.Phone.NetworkedPhoneInvites>(true);
+            if (duplicates.Length == 0) return;
+            foreach (var duplicate in duplicates) Object.DestroyImmediate(duplicate);
+            PrefabUtility.SaveAsPrefabAsset(party, partyPath);
+            Debug.Log("[Social] Removed " + duplicates.Length + " duplicate NetworkedPhoneInvites from " + partyPath + ".");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(party); }
+    }
+
+    /// <summary>
+    /// Deletes the local host's campaign save (social journal + game-loop state) so the next host session starts a fresh
+    /// campaign. Path: Application.persistentDataPath/SocialCampaigns/fratrow-main. Asks for confirmation; refuses in Play Mode.
+    /// </summary>
+    [MenuItem("FratRow/Campaign/Reset local campaign save")]
+    public static void ResetLocalCampaignSave()
+    {
+        string directory = Path.Combine(Application.persistentDataPath, "SocialCampaigns", "fratrow-main");
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            EditorUtility.DisplayDialog("Reset local campaign save", "Exit Play Mode first (the host keeps the save files open).", "OK");
+            return;
+        }
+        if (!Directory.Exists(directory))
+        {
+            EditorUtility.DisplayDialog("Reset local campaign save", "No local campaign save found at:\n" + directory, "OK");
+            return;
+        }
+        if (!EditorUtility.DisplayDialog("Reset local campaign save",
+            "Delete the local campaign save?\n\n" + directory + "\n\nThis cannot be undone.", "Delete", "Cancel")) return;
+        try
+        {
+            Directory.Delete(directory, true);
+            Debug.Log("[Campaign] Deleted local campaign save: " + directory);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[Campaign] Could not delete " + directory + ": " + e.Message);
+        }
     }
     public static void BuildDevelopmentPlayer()
     {

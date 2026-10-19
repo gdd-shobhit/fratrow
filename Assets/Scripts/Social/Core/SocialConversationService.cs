@@ -194,7 +194,7 @@ namespace FratRow.Social
             var npc = SocialWorld.Npc(s, request.npcId);
             var party = SocialWorld.Party(s, request.partyId);
             if (npc.revision != context.NpcRevision || (party?.revision ?? -1) != context.PartyRevision ||
-                (s.standing?.revision ?? 0) != context.StandingRevision)
+                SocialStanding.Revision(s) != context.StandingRevision)
                 throw new StaleSocialStateException();
             ValidateProposal(proposal, context);
             var commitment = npc.commitments.Find(c => c.partyId == request.partyId);

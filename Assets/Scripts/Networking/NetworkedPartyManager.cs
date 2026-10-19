@@ -87,11 +87,22 @@ public class NetworkedPartyManager : NetworkBehaviour
         }
     }
 
+    /// <summary>True when the Unity-free campaign loop drives guests, timing and rewards (design/gdd/core-game-loop.md).</summary>
+    static bool CampaignDriven => NetworkedCampaign.Instance != null && NetworkedCampaign.Instance.IsServer && NetworkedCampaign.Instance.Session != null;
+
+    readonly Dictionary<int, NetworkObject> _campaignGuests = new Dictionary<int, NetworkObject>();
+
     private void Update()
     {
         // Nothing non-server gets past this
         // Everything after this needs a client side RPC to server to get data.
         if (!IsServer)
+        {
+            return;
+        }
+
+        // The campaign spawns/despawns guests from its own simulation and ends the night itself.
+        if (CampaignDriven)
         {
             return;
         }
@@ -333,9 +344,93 @@ public class NetworkedPartyManager : NetworkBehaviour
         NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
     }
 
+    // ---------------- Campaign mode (host) ----------------
+
+    /// <summary>Host: the campaign's party night began. Opens the NetworkedParty with the core's capacity and timing.</summary>
+    public void BeginCampaignPartyServer(int capacity, float partySeconds, int weekNumber)
+    {
+        if (!IsServer || _networkedParty == null) return;
+        _networkedParty._guestLimit.Value = Mathf.Max(1, capacity);
+        _networkedParty._dayNumber.Value = weekNumber;
+        _networkedParty._popularity.Value = 0f;
+        _networkedParty._troubleMaker.Value = 0f;
+        _networkedParty._cashValue.Value = 0f;
+        _networkedParty._partyStartTime.Value = (float)NetworkManager.ServerTime.Time;
+        _networkedParty._partyEndTime.Value = (float)NetworkManager.ServerTime.Time + partySeconds;
+        _networkedParty._partyState.Value = PartyState.Active;
+        Debug.Log($"[NetworkedPartyManager] Campaign party started (capacity {capacity}).");
+    }
+
+    /// <summary>Host: spawn the networked body for a guest the campaign admitted.</summary>
+    public void SpawnCampaignGuest(int guestId, GuestClass archetype, string npcId, string partyId)
+    {
+        if (!IsServer || _networkedParty == null || _campaignGuests.ContainsKey(guestId)) return;
+        var guestDict = NetworkedGameManager.Instance != null ? NetworkedGameManager.Instance.guestClassesDict : null;
+        if (guestDict == null || guestDict.Count == 0) return;
+        int before = _networkedParty.currentGuests.Count;
+        bool spawned;
+        var named = string.IsNullOrEmpty(npcId) ? null : NamedNpcDatabase.GetById(npcId);
+        if (named != null)
+        {
+            float regard = 0f;
+            var social = NetworkedSocialConversation.Instance;
+            if (social != null && social.World != null)
+                regard = social.World.Store.Read().npcs.Find(n => n.npcId == npcId)?.fraternityRegard ?? 0;
+            spawned = SpawnNamedGuest(named, regard, partyId);
+        }
+        else
+        {
+            if (!guestDict.TryGetValue(archetype, out var so) || so == null) guestDict.TryGetValue(GuestClass.None, out so);
+            spawned = so != null && SpawnGuest(so, null, so.popularity, so.troubleMaker, so.cashvalue);
+        }
+        if (!spawned || _networkedParty.currentGuests.Count <= before) return;
+        var guest = _networkedParty.currentGuests[_networkedParty.currentGuests.Count - 1];
+        if (guest != null && guest.TryGetComponent<NetworkObject>(out var netObj)) _campaignGuests[guestId] = netObj;
+    }
+
+    /// <summary>Host: a guest left (bored, kicked out, ambulance, stink bomb...).</summary>
+    public void DespawnCampaignGuest(int guestId)
+    {
+        if (!IsServer || !_campaignGuests.TryGetValue(guestId, out var netObj)) return;
+        _campaignGuests.Remove(guestId);
+        if (netObj == null) return;
+        if (_networkedParty != null && netObj.TryGetComponent<NPCGuest>(out var guest)) _networkedParty.RemoveGuest(guest);
+        if (netObj.IsSpawned) netObj.Despawn(true);
+    }
+
+    /// <summary>Host: the night is over (time, or raid). Everyone goes home; rewards are settled by the campaign.</summary>
+    public void EndCampaignPartyServer()
+    {
+        if (!IsServer) return;
+        foreach (int id in _campaignGuests.Keys.ToArray()) DespawnCampaignGuest(id);
+        _campaignGuests.Clear();
+        if (_networkedParty != null)
+        {
+            _networkedParty.currentGuests.RemoveAll(g => g == null);
+            _networkedParty._partyState.Value = PartyState.Ended;
+        }
+        Debug.Log("[NetworkedPartyManager] Campaign party ended.");
+    }
+
+    /// <summary>Host: mirror live metrics into the existing NetworkedParty variables (existing UI bindings keep working).</summary>
+    public void MirrorCampaignPartyServer(bool active, float fun, float trouble, int cash, int capacity)
+    {
+        if (!IsServer || _networkedParty == null) return;
+        if (!Mathf.Approximately(_networkedParty._popularity.Value, Mathf.Round(fun))) _networkedParty._popularity.Value = Mathf.Round(fun);
+        if (!Mathf.Approximately(_networkedParty._troubleMaker.Value, Mathf.Round(trouble))) _networkedParty._troubleMaker.Value = Mathf.Round(trouble);
+        if (!Mathf.Approximately(_networkedParty._cashValue.Value, cash)) _networkedParty._cashValue.Value = cash;
+        if (active && capacity > 0 && _networkedParty._guestLimit.Value != capacity) _networkedParty._guestLimit.Value = capacity;
+    }
+
     public void StartPartyServer()
     {
         if (!IsServer) return;
+        if (CampaignDriven)
+        {
+            // Parties start from the weekly calendar (or an early Start Weekend), never ad hoc.
+            NetworkedCampaign.Instance.StartWeekendServer();
+            return;
+        }
 
         Debug.Log($"[NetworkedPartyManager] Server starting party");
         // If start party was called with default parameter
@@ -353,7 +448,7 @@ public class NetworkedPartyManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void EndPartyServerRPC()
     {
-        if (!IsServer) return;
+        if (!IsServer || CampaignDriven) return;
 
         Debug.Log("[NetworkedPartyManager] Server ending party.");
 

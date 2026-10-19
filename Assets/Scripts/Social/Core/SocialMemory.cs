@@ -18,7 +18,7 @@ namespace FratRow.Social
             var party = SocialWorld.Party(s, turn.request.partyId);
             var c = new ModelContext { NpcId = npc.npcId, PlayerId = turn.playerId, FraternityId = s.fraternityId,
                 Persona = npc.persona, Voice = SocialVoice.Copy(npc.voice), PersonaVersion = npc.personaVersion, NpcRevision = npc.revision,
-                StandingRevision = s.standing?.revision ?? 0,
+                StandingRevision = SocialStanding.Revision(s),
                 PartyId = party?.partyId, PartyState = party?.state, PartyRevision = party?.revision ?? -1,
                 ObservedEventId = turn.observedEventId, RepairError = repairError };
             bool ExternalCause(SocialEvent e)
@@ -93,7 +93,8 @@ namespace FratRow.Social
             text.Clear();
             text.AppendLine("SELF = " + codec.Encode(npc.npcId) + ". You are this NPC. PERSONA = " + codec.Encode(npc.persona));
             text.AppendLine("CURRENT_SPEAKER = " + Who(s, turn.playerId, codec) + ". Reply to this person. DAY = " + s.day);
-            text.AppendLine("PLAYERS' FRATERNITY = " + s.fraternityId + ". Your regard for THEIR fraternity = " + npc.fraternityRegard + ". This is separate from personal trust. It is not your own house; you are an invited visitor.");
+            text.AppendLine("PLAYERS' FRATERNITY = " + s.fraternityId + ". Your regard for THEIR fraternity = " + npc.fraternityRegard + ". This is separate from personal trust. " +
+                (npc.affiliation == "players" ? "You are a brother of this house." : "It is not your own house; you are an invited visitor."));
             text.Append(standing);
             foreach (var player in s.players.Where(p => c.KnownPlayerIds.Contains(p.playerId)))
                 text.AppendLine("PERSON " + Who(s, player.playerId, codec) + ": member of " + s.fraternityId + "; personal trust = " + (npc.trust.Find(t => t.playerId == player.playerId)?.value ?? 0));
@@ -114,7 +115,7 @@ namespace FratRow.Social
             text.Clear();
             text.AppendLine("NPC = " + codec.Encode(npc.npcId) + " (recipient of incoming speech; author of the proposed reply). CURRENT_SPEAKER = " + Who(s, turn.playerId, codec) + " (sender of current incoming speech; recipient of the proposed reply).");
             text.AppendLine("FRATERNITY_OF_PLAYERS = " + s.fraternityId + "; all listed players are members; they are different people. The party permits invited guests.");
-            text.AppendLine("NPC_AFFILIATION = guest, NOT a member of the players' fraternity.");
+            text.AppendLine("NPC_AFFILIATION = " + SocialStanding.Affiliation(npc, codec) + ".");
             text.AppendLine("NPC_PERSONA = " + codec.Encode(npc.persona));
             text.AppendLine("NPC_REGARD_FOR_FRATERNITY = " + npc.fraternityRegard);
             text.Append(standing);

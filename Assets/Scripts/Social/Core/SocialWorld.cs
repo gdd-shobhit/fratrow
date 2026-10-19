@@ -14,7 +14,9 @@ namespace FratRow.Social
         { campaignId = campaignId, fraternityId = Guid.NewGuid().ToString("N") };
         public static NpcState Npc(CampaignState s, string id) => s.npcs.Find(n => n.npcId == id);
         public static PartyRecord Party(CampaignState s, string id) => s.parties.Find(p => p.partyId == id);
-        public static string Id() => Guid.NewGuid().ToString("N");
+        /// <summary>Test hook only: replace with a seeded 32-hex generator for reproducible runs. Production uses random GUIDs.</summary>
+        public static Func<string> IdSource;
+        public static string Id() => IdSource?.Invoke() ?? Guid.NewGuid().ToString("N");
 
         public PlayerCredential Register(string displayName, PlayerCredential credential = null)
         {
@@ -80,6 +82,38 @@ namespace FratRow.Social
                 s.standing = new FraternityStanding { known = true, popularity = popularity, name = name, grade = grade, rating = rating,
                     revision = (s.standing?.revision ?? 0) + 1 };
             });
+        }
+        /// <summary>
+        /// Host-only: public standings of the other fraternities plus the players' rank. No write when unchanged.
+        /// Example: <c>world.SetRivalStandings(new[] { new RivalStanding { houseId = "kappa", name = "Kappa Sigma Psi", popularity = 60, rank = 1 } }, 4);</c>
+        /// </summary>
+        public void SetRivalStandings(IEnumerable<RivalStanding> rivals, int playersRank)
+        {
+            var next = (rivals ?? Enumerable.Empty<RivalStanding>()).Select(r => new RivalStanding { houseId = r.houseId, name = r.name ?? "",
+                popularity = r.popularity, grade = r.grade ?? "", rank = r.rank }).OrderBy(r => r.houseId, StringComparer.Ordinal).ToList();
+            foreach (var r in next)
+            {
+                SocialStanding.Validate(r.popularity);
+                if (string.IsNullOrWhiteSpace(r.houseId) || r.name.Length > 64 || r.rank < 0 || (r.grade != "" && !new[] { "A", "B", "C", "D", "E", "F" }.Contains(r.grade)))
+                    throw new ArgumentException("Invalid rival standing");
+            }
+            if (playersRank < 0) throw new ArgumentException("Invalid rank");
+            bool Same(CampaignState s)
+            {
+                var current = s.rivals ?? new List<RivalStanding>();
+                return s.playersRank == playersRank && current.Count == next.Count &&
+                    current.Zip(next, (a, b) => a.houseId == b.houseId && a.name == b.name && a.popularity == b.popularity && a.grade == b.grade && a.rank == b.rank).All(x => x);
+            }
+            if (Same(Store.Read())) return;
+            Store.Transact(s => { if (Same(s)) return; s.rivals = next; s.playersRank = playersRank; s.rivalsRevision++; });
+        }
+        /// <summary>Host-only: records that an NPC joined a house ("players", a rival display name, or "" for none).</summary>
+        public void SetNpcAffiliation(string id, string affiliation)
+        {
+            if (affiliation == null || affiliation.Length > 64) throw new ArgumentException("Invalid affiliation");
+            var existing = Npc(Store.Read(), id) ?? throw new ArgumentException("Unknown NPC");
+            if ((existing.affiliation ?? "") == affiliation) return;
+            Store.Transact(s => { var npc = Npc(s, id); npc.affiliation = affiliation; npc.revision++; });
         }
         public void SetNpcStanding(string id, float popularity, StatusConcern concern = StatusConcern.Moderate)
         {

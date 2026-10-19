@@ -45,6 +45,7 @@ ExportedObj/
 .consulo/
 *.csproj
 !Tests/SocialHarness/SocialHarness.csproj
+!Tests/GameLoopHarness/GameLoopHarness.csproj
 *.unityproj
 *.sln
 *.suo

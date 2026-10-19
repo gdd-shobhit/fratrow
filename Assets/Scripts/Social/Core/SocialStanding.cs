@@ -29,8 +29,17 @@ namespace FratRow.Social
             "Use only confirmed public guests when judging a party's social draw; an inviter's claims are not confirmed RSVPs. " +
             "Low popularity does not prove past bad parties or mistreatment. Familiarity follows actual contact; a supplied player display name does not mean you have met. " +
             "Popularity is a public game score, separate from your personal opinion of this fraternity. Never recite scores or backend terms in dialogue.";
+        public const string RivalGuidance = "Other fraternities are public campus context. You may compare houses, prefer one, or mention a rival by name, " +
+            "but do not invent events, parties or people for any house. You are not a member of any house unless your affiliation says so.";
         public static void Validate(float popularity)
         { if (float.IsNaN(popularity) || float.IsInfinity(popularity)) throw new ArgumentException("Invalid popularity"); }
+        /// <summary>Combined revision of the players' and rival standings; a change invalidates in-flight proposals.</summary>
+        public static long Revision(CampaignState s) => (s.standing?.revision ?? 0) + s.rivalsRevision;
+        /// <summary>One-line affiliation statement for the NPC (guest, players' brother, or rival member).</summary>
+        public static string Affiliation(NpcState npc, IStateCodec codec) =>
+            string.IsNullOrEmpty(npc.affiliation) ? "guest, NOT a member of the players' fraternity" :
+            npc.affiliation == "players" ? "a brother (member) of the players' fraternity; you joined it" :
+            "a member of " + codec.Encode(npc.affiliation) + ", a rival fraternity; NOT a member of the players' fraternity";
         static string Number(float value) => value.ToString("G", CultureInfo.InvariantCulture);
         public static string Render(CampaignState s, NpcState npc, TurnRecord turn, IStateCodec codec)
         {
@@ -38,6 +47,15 @@ namespace FratRow.Social
             var text = new StringBuilder("PUBLIC SOCIAL STANDING (not personal trust):\n");
             text.AppendLine(house?.known == true ? "FRATERNITY " + s.fraternityId + "; name=" + codec.Encode(house.name) +
                 "; popularity=" + Number(house.popularity) + (string.IsNullOrEmpty(house.grade) ? "" : "; grade=" + house.grade + "; rating=" + house.rating) : "FRATERNITY popularity unknown");
+            if (s.rivals != null && s.rivals.Count > 0)
+            {
+                if (s.playersRank > 0) text.AppendLine("PLAYERS' FRATERNITY campus rank=" + s.playersRank + " of " + (s.rivals.Count + 1));
+                foreach (var r in s.rivals.OrderBy(r => r.rank))
+                    text.AppendLine("OTHER FRATERNITY " + codec.Encode(r.name) + "; popularity=" + Number(r.popularity) +
+                        (string.IsNullOrEmpty(r.grade) ? "" : "; grade=" + r.grade) + "; rank=" + r.rank);
+                text.AppendLine(RivalGuidance);
+            }
+            if (!string.IsNullOrEmpty(npc.affiliation)) text.AppendLine("NPC AFFILIATION = " + Affiliation(npc, codec));
             text.AppendLine(own?.known == true ? "NPC " + npc.npcId + "; popularity=" + Number(own.popularity) : "NPC popularity unknown");
             if (house?.known == true && own?.known == true)
                 text.AppendLine("NPC popularity is " + (own.popularity > house.popularity ? "higher than" : own.popularity < house.popularity ? "lower than" : "equal to") + " the fraternity's popularity on the supplied game scale.");

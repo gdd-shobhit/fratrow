@@ -7,6 +7,25 @@ using UnityEngine;
 /// </summary>
 public class LobbyRPCs : NetworkBehaviour
 {
+    float _nextSpoofWarningTime;
+
+    /// <summary>
+    /// Server: the client a request really came from. Client-supplied ids are never trusted — on a mismatch (spoof attempt
+    /// or stale id) the passed id is ignored and the request applies to the actual sender. Warnings are rate-limited (1/s).
+    /// Example: <c>clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetReadyStatusRPC));</c>
+    /// </summary>
+    ulong AuthenticatedSender(ulong claimedClientId, RpcParams rpcParams, string rpcName)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (claimedClientId != sender && Time.unscaledTime >= _nextSpoofWarningTime)
+        {
+            _nextSpoofWarningTime = Time.unscaledTime + 1f;
+            Debug.LogWarning($"[LobbyRPCs] {rpcName}: client {sender} sent clientId {claimedClientId}; using the sender id.");
+        }
+
+        return sender;
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -19,8 +38,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// Called by client, executed on server, then synced to all clients.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SetPlayerNameRPC(ulong clientId, string playerName)
+    public void SetPlayerNameRPC(ulong clientId, string playerName, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetPlayerNameRPC));
         if (playerName == null) playerName = $"Player {clientId}";
         if (string.IsNullOrWhiteSpace(playerName)) playerName = $"Player {clientId}";
         playerName = playerName.Trim();
@@ -50,8 +70,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// Called by client, executed on server, then synced to all clients.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SetPlayerClassRPC(ulong clientId, PlayerClass playerClass)
+    public void SetPlayerClassRPC(ulong clientId, PlayerClass playerClass, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetPlayerClassRPC));
         Debug.Log($"[LobbyRPCs] Player {clientId} selected class: {playerClass}");
         
         // Update lobby manager
@@ -79,8 +100,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// Called by client, executed on server, then synced to all clients.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SetReadyStatusRPC(ulong clientId, bool isReady)
+    public void SetReadyStatusRPC(ulong clientId, bool isReady, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetReadyStatusRPC));
         Debug.Log($"[LobbyRPCs] Player {clientId} ready status: {isReady}");
         
         // Update lobby manager
@@ -147,8 +169,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// RPC to update a player's mesh selection.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SetMeshIndexRPC(ulong clientId, int meshIndex)
+    public void SetMeshIndexRPC(ulong clientId, int meshIndex, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetMeshIndexRPC));
         int clampedIndex = 0;
         if (LobbyManager.Instance != null)
         {
@@ -170,8 +193,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// RPC to update a player's material selection.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SetMaterialIndexRPC(ulong clientId, int materialIndex)
+    public void SetMaterialIndexRPC(ulong clientId, int materialIndex, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(SetMaterialIndexRPC));
         int clampedIndex = 0;
         if (LobbyManager.Instance != null)
         {
@@ -194,8 +218,9 @@ public class LobbyRPCs : NetworkBehaviour
     /// Client calls this when ready (e.g. after spawn) so server sends lobby state.
     /// </summary>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RequestLobbyStateRPC(ulong clientId)
+    public void RequestLobbyStateRPC(ulong clientId, RpcParams rpcParams = default)
     {
+        clientId = AuthenticatedSender(clientId, rpcParams, nameof(RequestLobbyStateRPC));
         var lm = LobbyManager.Instance;
         Debug.Log($"[LobbyRPCs] RequestLobbyStateRPC received on SERVER from clientId={clientId} LobbyManager.Instance={lm != null}");
         if (lm != null)

@@ -1,0 +1,9 @@
+{
+  "name": "FratRow.Game",
+  "rootNamespace": "FratRow.Game",
+  "references": [
+    "FratRow.Social"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

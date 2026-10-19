@@ -1,0 +1,103 @@
+# Backend game loop: runbook
+
+This document covers the semester → week → party-night loop, the rivals, roles, economy, crimes, police, rush and the
+conversational NPCs. The design is in [`design/gdd/core-game-loop.md`](../design/gdd/core-game-loop.md), and the architecture decision is
+[ADR-0001](architecture/adr-0001-unity-free-game-core.md). Everything below is host-authoritative and works headlessly.
+The HUD and the dev panel are bindings, not logic.
+
+## How a week plays
+
+| Phase | Real time (default) | What happens |
+|---|---|---|
+| **Weekday**, Mon–Fri, 08:00→20:00 | 2 min per day | NPCs follow their schedules around campus. Brothers talk to people, invite them, rush pledges, shop for supplies, work shifts, study, volunteer, meet the Dean, set the theme and cover, and prank or rumor rival houses. Every night the rivals may sabotage you, unless someone guards the house. When everyone is ready, the President can start the weekend early. |
+| **Party night**, Sat 21:00→03:00 | 8 min, ticking every 5 s | All four houses party. Guests arrive at yours: people who RSVP'd yes, walk-ins who chose your house, and filler archetypes. You run the night: serve drinks, card at the door, DJ, break up fights, help people who pass out, do beer runs, turn the music down. Noise, heat, incidents and underage drinking build police attention. At 40 a unit is dispatched; if attention is still 55 or more when it arrives, it raids. A smooth talk downgrades a raid to a warning, once per party. |
+| **Debrief**, Sunday | 1 min (the host can skip) | Parties are scored and ranked, and Greek Cup points awarded (10/6/3/1). Popularity, cash (dues, cover, sponsorship), heat cooldown and the Dean review are applied, with probation or suspension next week. Bid Day runs from week 2. Campus news goes into every NPC's memory. |
+| **SemesterEnd**, after 6 weeks | until the President continues | Fraternity of the Year is crowned. Starting the next semester resets cup points; members, cash and relationships carry over. |
+
+The four houses are your underdog **Alpha Beta Rho** (popularity 5) against Kappa Sigma Psi "The Yacht Club"
+(60, rich and prestigious), Theta Delta Chi "Animal House" (45, chaotic) and Lambda Nu Tau "The Brain Trust" (25, the Dean's favourite).
+
+Roles come from the lobby class:
+
+| Lobby class | Role | What it does |
+|---|---|---|
+| President | President | Meets the Dean, starts the weekend, bids, sets cover. |
+| SocialChair | Social Chair | Sets the theme; DJ hype ×1.5. |
+| Chad | Rush Chair | Rush pitches ×1.5; bids. |
+| RichGuy | Treasurer | 15 % shop discount; shift pay ×1.5; sets cover. |
+| — | Risk Manager | Claimable. Cards ×2, police talk bonus, heat cooldown. |
+
+## Conversational NPCs
+
+There are 64 people on campus. 32 are hand-written in `Resources/Campus/CampusRoster.json`. The other 32 are generated from 16
+personality types in `PersonalityArchetypes.json`, expanded deterministically so the same people return on every load.
+Every one of them has their own persona, voice, schedule, popularity, status concern and memory in the host's
+social backend.
+
+What players say decides RSVPs (accept, decline, defer, or "meet me at the door") and changes relationships. Grievances
+come from insults and from crimes the NPC witnessed. Rush interest follows the NPC's regard for your house, and
+NPCs know the public standings of all four houses.
+
+**Model.** By default the host uses the deterministic `HeuristicSocialModelProvider`, which works in every build.
+Enable the local LLM with the existing editor menu **FratRow → Social Brains → Enable development experiment
+(CUDA fallback)**, or with `--social-brains --social-llama-server <exe>` on development players. Both providers go through the same
+grounded validation and commit path. Phone **Invite** templates for named contacts now become real invitations,
+and Yarn `<<recruit>>` now extends a Bid Day bid. NPCs without a hand-written Yarn node use the generic
+`CampusStudent` node in `Resources/Dialogue/CampusStudents.txt`. Its options cover asking for a number, `<<invite>>` and
+`<<rush>>` (PNMs only), and the NPC's real answer arrives through the social backend.
+
+## Scene checklist (one-time)
+
+1. **GameManager.prefab** needs `NetworkedCampaign` alongside the existing campus and social components.
+   **FratRow → Social Brains → Bake and validate network components** adds it and removes the duplicate
+   `NetworkedPhoneInvites` from PartyManager.
+2. **Campus locations.** Place `CampusLocation` objects with ids `House_Kappa`, `House_Theta` and `House_Lambda` at the
+   rival houses in `Game.unity`, next to the existing `PartyHouse`, `Shop`, `Quad`, `Gym`, `Library` and `Dorm`. Any id that
+   is missing gets a fallback object near the origin, and a warning is logged. Players count as "at" a location within
+   14 m (`NetworkedCampaign.locationRadius`).
+3. **PartyManager → Guest Spawn Location** is the party entrance. "Meet me at the door" means standing within 4 m of it.
+4. The **HUD** (`GameplayUIManager` + `HUDVisualTree.uxml`) binds to `NetworkedCampaign` automatically.
+
+## Driving and testing it
+
+- **In play mode (development builds):** press **F1** for the campaign dev panel. It offers every action for the
+  current phase, plus NPC Talk, Invite, Rush, Ask number and Bid.
+- **Two local clients:** `Tests/SocialHarness/run-two-clients.ps1` and the inbox driver now accept campaign commands.
+  `{"requestId":"1","action":"game","text":"buy","item":"keg","amount":2}` runs as that client. `game_dump` (host only)
+  writes the whole campaign state.
+- **Headless tests:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj` runs 23 rule and integration
+  tests. They cover RSVP arrivals, conditional entrance promises, witnesses entering memory, raids and their
+  mitigation over 30 seeds, insults creating grievances and withdrawn RSVPs, Bid Day, probation and suspension, roles, busts and detention, police parking, save/load
+  determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover.
+- **Whole semesters:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj -- --simulate --weeks 6 --players 4 --seed 7 [--reckless]`
+  writes `Library/GameLoopHarness/report.md`. Add `--model <gguf> --llama-server <exe>` to use the real local model.
+- **One party, tick by tick:** `... -- --debug-party --heat 60 --pop 45`.
+- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 65 checks.
+- **Compile against the open editor's references:** `tools/ci/unity-compile-check.ps1`.
+
+## Tuning
+
+All numbers live in `Assets/Resources/Campus/GameLoopConfig.json`. Missing keys fall back to the code defaults in
+`GameConfig.cs`. To regenerate the file from the defaults, run `... -- --export-config`. Check every change with `--simulate`
+on a few seeds. With the shipped values, a well-played crew climbs from 4th to 2nd during semester 1, Kappa remains the
+semester boss, and reckless crews get raided, then put on probation, then suspended.
+
+## Saves
+
+Saves live in `Application.persistentDataPath/SocialCampaigns/fratrow-main/`:
+
+- `social.journal` and `social.snapshot`: NPC memory and relationships.
+- `game/game.json` and `game.json.bak`: the campaign. The file is checksummed and written atomically, and the host autosaves every 30 s and on every phase or day change.
+
+Reloading mid-party respawns the guests. To start fresh, use **FratRow → Campaign → Reset local campaign save**.
+
+## Known limits / not yet verified
+
+- The loop has not been played in Unity yet. The NGO adapters, replication, prefab bake and HUD compile against the
+  editor's references, but host plus two clients must still play one full week in the editor. NGO RPC code generation
+  (ILPP) is not exercised by the headless compile check.
+- Rival parties are abstract (scored, not walkable). Rival houses are sabotage targets and places where NPCs
+  can witness you.
+- The fallback provider's replies come from the same small grounded phrase banks as the model's. They are functional, not
+  literary. Human review of NPC judgment is still outstanding (see `Docs/SocialBrains.md`).
+- The social journal is never compacted, so long campaigns grow it (an existing v1 limitation).

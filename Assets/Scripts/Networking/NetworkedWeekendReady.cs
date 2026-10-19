@@ -98,6 +98,18 @@ namespace Systems.Campus
             }
 
             ulong clientId = rpcParams.Receive.SenderClientId;
+            SetReadyFromCampaignServer(clientId, ready);
+            MirrorReadyToCampaign(clientId, ready);
+        }
+
+        /// <summary>Host: set a client's ready bit (used by the phone RPC and the campaign "ready" action).</summary>
+        public void SetReadyFromCampaignServer(ulong clientId, bool ready)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
             ulong bit = 1UL << (int)(clientId & 63);
             if (ready)
             {
@@ -107,6 +119,15 @@ namespace Systems.Campus
             {
                 _readyMask.Value &= ~bit;
             }
+        }
+
+        static void MirrorReadyToCampaign(ulong clientId, bool ready)
+        {
+            var campaign = NetworkedCampaign.Instance;
+            if (campaign == null || campaign.Session == null) return;
+            string playerId = campaign.PlayerIdFor(clientId);
+            var player = playerId == null ? null : campaign.Session.Player(playerId);
+            if (player != null) player.ready = ready;
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -132,8 +153,18 @@ namespace Systems.Campus
             }
 
             _readyMask.Value = 0;
-            NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
-            NetworkedPartyManager.Instance?.StartPartyServer();
+            var campaign = NetworkedCampaign.Instance;
+            if (campaign != null && campaign.Session != null)
+            {
+                // The campaign runs the skipped weekdays' daily ticks, then party night.
+                campaign.StartWeekendServer();
+            }
+            else
+            {
+                NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
+                NetworkedPartyManager.Instance?.StartPartyServer();
+            }
+
             Debug.Log("[WeekendReady] Weekend started");
         }
 

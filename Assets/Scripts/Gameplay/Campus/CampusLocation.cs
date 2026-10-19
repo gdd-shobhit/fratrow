@@ -77,6 +77,22 @@ namespace Systems.Campus
             }
         }
 
+        /// <summary>Adds a location created at runtime (e.g. a fallback rival house) without rescanning the scene.</summary>
+        public void Register(CampusLocation location)
+        {
+            if (location == null || string.IsNullOrWhiteSpace(location.LocationId))
+            {
+                return;
+            }
+
+            if (!locations.Contains(location))
+            {
+                locations.Add(location);
+            }
+
+            _byId[location.LocationId] = location;
+        }
+
         public bool TryGet(string locationId, out CampusLocation location)
         {
             if (_byId.Count == 0)

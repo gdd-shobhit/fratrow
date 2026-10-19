@@ -1,14 +1,59 @@
+using System;
 using System.Collections.Generic;
+using FratRow.Game;
+using FratRow.Social;
 using UnityEngine;
 
 namespace Systems.Campus
 {
+    /// <summary>
+    /// Named campus NPCs. Precedence: <c>Resources/NamedNPCs</c> ScriptableObject assets, then the authored roster
+    /// (<c>Resources/Campus/CampusRoster.json</c> + expanded <c>PersonalityArchetypes.json</c>, via
+    /// <see cref="NetworkedCampaign.LoadRoster"/>), then the hardcoded legacy seeds when the roster cannot be loaded.
+    /// Example: <c>var brad = NamedNpcDatabase.GetById("Brad");</c>
+    /// </summary>
     public static class NamedNpcDatabase
     {
         public const string ResourcesPath = "NamedNPCs";
         static readonly List<NamedNpcSO> _npcs = new List<NamedNpcSO>();
         static readonly Dictionary<string, NamedNpcSO> _byId = new Dictionary<string, NamedNpcSO>();
         static bool _initialized;
+        static CampusRoster _roster;
+        static bool _rosterAttempted;
+
+        /// <summary>
+        /// The expanded campus roster (hand-written + archetype NPCs), parsed once and cached; null when it cannot be
+        /// loaded (one warning is logged). Shared with <see cref="Systems.Phone.PhoneContactDatabase"/> so the JSON is parsed once.
+        /// Example: <c>var roster = NamedNpcDatabase.Roster; if (roster != null) Debug.Log(roster.npcs.Count);</c>
+        /// </summary>
+        public static CampusRoster Roster
+        {
+            get
+            {
+                if (_rosterAttempted)
+                {
+                    return _roster;
+                }
+
+                _rosterAttempted = true;
+                try
+                {
+                    _roster = NetworkedCampaign.LoadRoster();
+                    if (_roster == null || _roster.npcs == null || _roster.npcs.Count == 0)
+                    {
+                        Debug.LogWarning("[NamedNpcDatabase] Campus roster is empty; using legacy seeds.");
+                        _roster = null;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[NamedNpcDatabase] Campus roster could not be loaded; using legacy seeds. " + e.Message);
+                    _roster = null;
+                }
+
+                return _roster;
+            }
+        }
 
         public static IReadOnlyList<NamedNpcSO> All
         {
@@ -48,6 +93,19 @@ namespace Systems.Campus
             {
                 SeedDefaults();
             }
+        }
+
+        /// <summary>
+        /// Maps a roster guest-class name ("None", "Nerd", "MeanGirl", "Jock"; case-insensitive) to <see cref="GuestClass"/>.
+        /// Unknown or empty values map to <see cref="GuestClass.None"/>.
+        /// Example: <c>NamedNpcDatabase.ParseGuestClass("MeanGirl") == GuestClass.MeanGirl</c>
+        /// </summary>
+        public static GuestClass ParseGuestClass(string value)
+        {
+            if (string.Equals(value, "Nerd", StringComparison.OrdinalIgnoreCase)) return GuestClass.Nerd;
+            if (string.Equals(value, "MeanGirl", StringComparison.OrdinalIgnoreCase)) return GuestClass.MeanGirl;
+            if (string.Equals(value, "Jock", StringComparison.OrdinalIgnoreCase)) return GuestClass.Jock;
+            return GuestClass.None;
         }
 
         public static NamedNpcSO GetById(string id)
@@ -128,6 +186,120 @@ namespace Systems.Campus
             new ScheduleEntry { dayOfWeek = day, startHour = start, endHour = end, locationId = loc };
 
         static void SeedDefaults()
+        {
+            if (SeedFromRoster())
+            {
+                return;
+            }
+
+            SeedLegacyDefaults();
+        }
+
+        /// <summary>Builds runtime NamedNpcSO instances from the authored roster. False (nothing added) when unavailable.</summary>
+        static bool SeedFromRoster()
+        {
+            var roster = Roster;
+            if (roster == null)
+            {
+                return false;
+            }
+
+            var built = new List<NamedNpcSO>(roster.npcs.Count);
+            try
+            {
+                foreach (var r in roster.npcs)
+                {
+                    if (r != null && !string.IsNullOrWhiteSpace(r.id))
+                    {
+                        built.Add(FromRoster(r));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[NamedNpcDatabase] Campus roster could not be mapped; using legacy seeds. " + e.Message);
+                foreach (var n in built)
+                {
+                    UnityEngine.Object.DestroyImmediate(n);
+                }
+
+                return false;
+            }
+
+            foreach (var n in built)
+            {
+                Add(n);
+            }
+
+            return _npcs.Count > 0;
+        }
+
+        static NamedNpcSO FromRoster(RosterNpc r)
+        {
+            string display = string.IsNullOrWhiteSpace(r.displayName) ? r.id : r.displayName;
+            var n = ScriptableObject.CreateInstance<NamedNpcSO>();
+            n.name = r.id;
+            n.npcId = r.id;
+            n.displayName = display;
+            n.contactDisplayName = display;
+            n.yarnNodeName = r.id;
+            n.guestClass = ParseGuestClass(r.guestClass);
+            n.rarity = ParseRarity(r.rarity);
+            n.unlockMinPopularity = r.unlockMinPopularity;
+            n.unlockMinGrade = ParseGrade(r.unlockMinGrade);
+            n.unlockChance = Mathf.Clamp01(r.unlockChance);
+            n.basePopularity = r.popularity;
+            n.baseTrouble = r.partyTrouble;
+            n.baseCash = r.partyCash;
+            n.isRecruitable = r.isPnm;
+            n.recruitMinAffinity = r.recruitMinAffinity;
+            n.socialStatusConcern = CampusRoster.Concern(r);
+            n.socialPersona = r.persona;
+            n.socialVoice = SocialVoice.Copy(r.voice);
+            n.schedule = new List<ScheduleEntry>(r.schedule != null ? r.schedule.Count : 0);
+            if (r.schedule != null)
+            {
+                foreach (var e in r.schedule)
+                {
+                    if (e != null)
+                    {
+                        n.schedule.Add(S(e.day, e.start, e.end, e.location));
+                    }
+                }
+            }
+
+            return n;
+        }
+
+        static NamedNpcRarity ParseRarity(string value)
+        {
+            if (string.Equals(value, "Rare", StringComparison.OrdinalIgnoreCase)) return NamedNpcRarity.Rare;
+            if (string.Equals(value, "Legendary", StringComparison.OrdinalIgnoreCase)) return NamedNpcRarity.Legendary;
+            return NamedNpcRarity.Common;
+        }
+
+        /// <summary>Letter grade A..F (worst fraternity grade allowed to unlock); anything else means no gate (F).</summary>
+        static Grade ParseGrade(string value)
+        {
+            string v = value?.Trim();
+            if (string.IsNullOrEmpty(v) || v.Length != 1)
+            {
+                return Grade.F;
+            }
+
+            switch (char.ToUpperInvariant(v[0]))
+            {
+                case 'A': return Grade.A;
+                case 'B': return Grade.B;
+                case 'C': return Grade.C;
+                case 'D': return Grade.D;
+                case 'E': return Grade.E;
+                default: return Grade.F;
+            }
+        }
+
+        /// <summary>Legacy hardcoded seeds, used only when the roster JSON is missing or invalid.</summary>
+        static void SeedLegacyDefaults()
         {
             // 15 named NPCs with Stardew-style schedules across weekdays.
             Add(Make("Brad", GuestClass.Jock, NamedNpcRarity.Common, 0, Grade.F, 1f, 15, 10, 5, false,

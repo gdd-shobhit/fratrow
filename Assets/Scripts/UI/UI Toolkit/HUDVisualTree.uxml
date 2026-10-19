@@ -1,6 +1,7 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/UI/UI%20Toolkit/HUD.uss?fileID=7433441132597879392&amp;guid=f7e6951f4b372b04c94db46206129a66&amp;type=3#HUD"/>
-    <ui:VisualElement name="HUD" style="flex-grow: 1; width: 20%; translate: 5% 4%; height: 90%;">
+    <!-- Left column: legacy stat sliders + party panel (party panel only visible while PartyActive). -->
+    <ui:VisualElement name="HUD" picking-mode="Ignore" style="flex-grow: 1; width: 20%; translate: 5% 4%; height: 90%;">
         <ui:Slider label="Slider" value="80" high-value="100" name="Popularity" fill="true" show-input-field="false" inverted="true" low-value="0" class="HUDSlider bar" style="background-image: none; background-color: rgba(0, 0, 0, 0); flex-direction: row-reverse; margin-bottom: 20px; margin-top: 20px;">
             <ui:Image name="Image_Pop" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/gem-1-512.png?fileID=2800000&amp;guid=e93aaa7f86f3d884ca8cefa5d8dfa6b2&amp;type=3#gem-1-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2 2;"/>
         </ui:Slider>
@@ -10,28 +11,79 @@
         <ui:Slider label="Slider" value="54.8" high-value="100" name="Cash" fill="true" inverted="true" class="HUDSlider bar" style="flex-direction: row-reverse; margin-bottom: 8px;">
             <ui:Image name="Image" source="project://database/Assets/Space_Exploration_GUI_Kit/Icons/coin-512.png?fileID=2800000&amp;guid=df65a0df46f6dc04687bb5db74c11068&amp;type=3#coin-512" scale-mode="ScaleToFit" style="width: 10%; height: 100%; translate: 70% 0%; margin-right: 4px; scale: 2 2;"/>
         </ui:Slider>
-        <ui:Label text="Cash: 0.00" name="CashValueText" class="hud-cash-value-text" style="margin-bottom: 0;">
-            <Bindings>
-                <ui:DataBinding property="text" data-source-path="_totalCashValue" data-source-type="NetworkedGameManager, Assembly-CSharp" binding-mode="ToTarget"/>
-            </Bindings>
-        </ui:Label>
+        <ui:Label text="Cash: $0" name="CashValueText" class="hud-cash-value-text" style="margin-bottom: 0;"/>
+        <ui:VisualElement name="PartyPanel" class="hud-panel hud-party" style="display: none;">
+            <ui:VisualElement class="hud-panel-header">
+                <ui:Label text="PARTY NIGHT" class="hud-eyebrow hud-eyebrow--party"/>
+                <ui:Label text="0/0 guests" name="PartyGuests" class="hud-party-guests"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-meter-row">
+                <ui:Label text="Fun" class="hud-meter-caption"/>
+                <ui:VisualElement class="hud-meter">
+                    <ui:VisualElement name="PartyFunFill" class="hud-meter__fill hud-meter__fill--good"/>
+                </ui:VisualElement>
+                <ui:Label text="0" name="PartyFunValue" class="hud-meter-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-meter-row">
+                <ui:Label text="Hype" class="hud-meter-caption"/>
+                <ui:VisualElement class="hud-meter">
+                    <ui:VisualElement name="PartyHypeFill" class="hud-meter__fill hud-meter__fill--hype"/>
+                </ui:VisualElement>
+                <ui:Label text="0" name="PartyHypeValue" class="hud-meter-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-meter-row">
+                <ui:Label text="Noise" class="hud-meter-caption"/>
+                <ui:VisualElement class="hud-meter">
+                    <ui:VisualElement name="PartyNoiseFill" class="hud-meter__fill hud-meter__fill--neutral"/>
+                </ui:VisualElement>
+                <ui:Label text="0" name="PartyNoiseValue" class="hud-meter-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-meter-row">
+                <ui:Label text="Trouble" class="hud-meter-caption"/>
+                <ui:VisualElement class="hud-meter">
+                    <ui:VisualElement name="PartyTroubleFill" class="hud-meter__fill hud-meter__fill--neutral"/>
+                </ui:VisualElement>
+                <ui:Label text="0" name="PartyTroubleValue" class="hud-meter-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-meter-row hud-meter-row--attention">
+                <ui:Label text="Police attention" class="hud-meter-caption"/>
+                <ui:VisualElement class="hud-meter hud-meter--tall">
+                    <ui:VisualElement name="PartyAttentionFill" class="hud-meter__fill hud-meter__fill--calm"/>
+                </ui:VisualElement>
+                <ui:Label text="0" name="PartyAttentionValue" class="hud-meter-value"/>
+            </ui:VisualElement>
+            <ui:Label text="calm" name="PartyAttentionState" class="hud-attention-state"/>
+            <ui:VisualElement name="PartyFacts" class="hud-chips">
+                <ui:Label text="Card check: OFF" name="PartyCardCheck" class="hud-chip"/>
+                <ui:Label text="Underage drinking: 0" name="PartyUnderage" class="hud-chip"/>
+                <ui:Label text="Theme: none" name="PartyTheme" class="hud-chip"/>
+                <ui:Label text="Cover: $0" name="PartyCover" class="hud-chip"/>
+                <ui:Label text="Door cash: $0" name="PartyCash" class="hud-chip hud-chip--cash"/>
+            </ui:VisualElement>
+            <ui:Label text="INCIDENTS (0)" name="PartyIncidentsHeader" class="hud-eyebrow hud-eyebrow--spaced"/>
+            <ui:VisualElement name="PartyIncidentList" class="hud-incident-list"/>
+            <ui:Label text="No open incidents" name="PartyIncidentsEmpty" class="hud-muted"/>
+        </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="GameplayInfo" style="flex-grow: 1; width: 498px; height: 357px; position: absolute; align-self: flex-end; left: 1422px; font-size: 28px;">
-        <ui:VisualElement name="DayInfo" style="flex-grow: 1; flex-direction: row;">
-            <ui:Label text="Day Number: " name="Day"/>
-            <ui:Label text="Day number" name="DayNumber" data-source-type="NetworkedParty, Assembly-CSharp" data-source-path="">
-                <Bindings>
-                    <ui:DataBinding property="text" data-source-path="DayNumberUI" data-source-type="NetworkedParty, Assembly-CSharp" binding-mode="ToTarget"/>
-                </Bindings>
-            </ui:Label>
-        </ui:VisualElement>
-        <ui:VisualElement name="GuestInfo" style="flex-grow: 1; flex-direction: row;">
-            <ui:Label text="Current Guests: " name=""/>
-            <ui:Label text="Label" name="CurrentGuests"/>
-        </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-            <ui:Label text="Current Time: " name="Day"/>
-            <ui:Label text="Label" name="Time"/>
+    <!-- Right column: quick stats (legacy names), house panel, Greek Cup standings. -->
+    <ui:VisualElement name="GameplayInfo" picking-mode="Ignore" class="hud-right-column">
+        <ui:VisualElement name="QuickStats" class="hud-panel hud-quickstats">
+            <ui:VisualElement name="DayInfo" class="hud-quickstat">
+                <ui:Label text="Day" name="Day" class="hud-quickstat-caption"/>
+                <ui:Label text="-" name="DayNumber" class="hud-quickstat-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="GuestInfo" class="hud-quickstat">
+                <ui:Label text="Guests" name="" class="hud-quickstat-caption"/>
+                <ui:Label text="-" name="CurrentGuests" class="hud-quickstat-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-quickstat">
+                <ui:Label text="Time" name="Day" class="hud-quickstat-caption"/>
+                <ui:Label text="-" name="Time" class="hud-quickstat-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-quickstat">
+                <ui:Label text="Drunk" name="Day" class="hud-quickstat-caption"/>
+                <ui:Label text="-" name="DrunkLevel" class="hud-quickstat-value"/>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="FratIdentity" class="frat-identity-panel">
             <ui:VisualElement class="frat-identity-header">
@@ -41,11 +93,101 @@
             <ui:VisualElement class="frat-identity-meta">
                 <ui:Label text="C" name="FratGrade" class="frat-grade-badge"/>
                 <ui:Label text="Rating 50" name="FratRating" class="frat-rating-label"/>
+                <ui:Label text="-" name="HouseRank" class="hud-house-rank"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="HouseStats" class="hud-house-stats">
+                <ui:VisualElement class="hud-stat-grid">
+                    <ui:VisualElement class="hud-stat">
+                        <ui:Label text="POPULARITY" class="hud-stat-caption"/>
+                        <ui:Label text="0" name="HousePopularity" class="hud-stat-value"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="hud-stat">
+                        <ui:Label text="CASH" class="hud-stat-caption"/>
+                        <ui:Label text="$0" name="HouseCash" class="hud-stat-value hud-stat-value--cash"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="hud-stat">
+                        <ui:Label text="CUP POINTS" class="hud-stat-caption"/>
+                        <ui:Label text="0" name="HouseCupPoints" class="hud-stat-value"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="hud-stat">
+                        <ui:Label text="GPA" class="hud-stat-caption"/>
+                        <ui:Label text="0.00" name="HouseGpa" class="hud-stat-value"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="hud-stat">
+                        <ui:Label text="MEMBERS" class="hud-stat-caption"/>
+                        <ui:Label text="0" name="HouseMembers" class="hud-stat-value"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="hud-meter-row">
+                    <ui:Label text="Heat" class="hud-meter-caption"/>
+                    <ui:VisualElement class="hud-meter">
+                        <ui:VisualElement name="HouseHeatFill" class="hud-meter__fill hud-meter__fill--heat"/>
+                    </ui:VisualElement>
+                    <ui:Label text="0" name="HouseHeatValue" class="hud-meter-value"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="hud-meter-row">
+                    <ui:Label text="Dean" class="hud-meter-caption"/>
+                    <ui:VisualElement class="hud-meter">
+                        <ui:VisualElement name="HouseDeanFill" class="hud-meter__fill hud-meter__fill--dean"/>
+                    </ui:VisualElement>
+                    <ui:Label text="0" name="HouseDeanValue" class="hud-meter-value"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="HouseFlags" class="hud-chips">
+                    <ui:Label text="PROBATION" name="FlagProbation" class="hud-chip hud-chip--warn" style="display: none;"/>
+                    <ui:Label text="SUSPENDED" name="FlagSuspended" class="hud-chip hud-chip--danger" style="display: none;"/>
+                    <ui:Label text="HOUSE TRASHED" name="FlagTrashed" class="hud-chip hud-chip--warn" style="display: none;"/>
+                    <ui:Label text="GUARDED" name="FlagGuarded" class="hud-chip hud-chip--good" style="display: none;"/>
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-            <ui:Label text="Drunk Level: " name="Day"/>
-            <ui:Label text="Drunk" name="DrunkLevel"/>
+        <ui:VisualElement name="Standings" class="hud-panel hud-standings">
+            <ui:Label text="GREEK CUP STANDINGS" class="hud-eyebrow"/>
+            <ui:VisualElement class="hud-standings-row hud-standings-row--header">
+                <ui:Label text="#" class="hud-standings-rank"/>
+                <ui:Label text="House" class="hud-standings-name"/>
+                <ui:Label text="Cup" class="hud-standings-cup"/>
+                <ui:Label text="Pop" class="hud-standings-pop"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="StandingsRows"/>
         </ui:VisualElement>
+    </ui:VisualElement>
+    <!-- Top centre: phase banner, time left in phase, ready count (weekdays), police alert. -->
+    <ui:VisualElement name="PhaseBanner" picking-mode="Ignore" class="hud-phase-banner hud-phase--weekday">
+        <ui:VisualElement name="PhaseMainRow" class="hud-phase-row">
+            <ui:Label text="Week 1/6" name="PhaseWeek" class="hud-phase-text"/>
+            <ui:Label text="·" class="hud-phase-sep"/>
+            <ui:Label text="Mon" name="PhaseDay" class="hud-phase-text"/>
+            <ui:Label text="08:00" name="PhaseClock" class="hud-phase-text hud-phase-clock"/>
+            <ui:Label text="·" class="hud-phase-sep"/>
+            <ui:Label text="Weekday" name="PhaseName" class="hud-phase-name"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="PhaseSubRow" class="hud-phase-row hud-phase-row--sub">
+            <ui:Label text="Day ends in" name="PhaseTimeCaption" class="hud-phase-caption"/>
+            <ui:Label text="0:00" name="PhaseTimeLeft" class="hud-phase-timeleft"/>
+            <ui:Label text="Ready 0/1" name="ReadyStatus" class="hud-ready"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="PoliceAlert" class="hud-police hud-police--0">
+            <ui:Label text="POLICE" class="hud-police-tag"/>
+            <ui:Label text="All quiet" name="PoliceAlertText" class="hud-police-text"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <!-- Last action result (toast) under the banner. -->
+    <ui:Label text="" name="ActionToast" class="hud-toast" style="display: none;"/>
+    <!-- Bottom left: news feed (newest first, older lines fade). -->
+    <ui:VisualElement name="NewsFeed" picking-mode="Ignore" class="hud-panel hud-news">
+        <ui:Label text="CAMPUS NEWS" class="hud-eyebrow"/>
+        <ui:VisualElement name="NewsItems" class="hud-news-items"/>
+    </ui:VisualElement>
+    <!-- Bottom right: local brother + house stash. -->
+    <ui:VisualElement name="PlayerStatus" picking-mode="Ignore" class="hud-panel hud-player-status">
+        <ui:Label text="YOU" class="hud-eyebrow"/>
+        <ui:Label text="Joining the house..." name="BrotherLine" class="hud-brother-line"/>
+        <ui:Label text="" name="BrotherRecord" class="hud-muted"/>
+        <ui:VisualElement name="BrotherDetainedRow" class="hud-detained-row" style="display: none;">
+            <ui:Label text="DETAINED" class="hud-detained-caption"/>
+            <ui:Label text="0:00" name="BrotherDetained" class="hud-detained-value"/>
+        </ui:VisualElement>
+        <ui:Label text="STASH" class="hud-eyebrow hud-eyebrow--spaced"/>
+        <ui:Label text="Empty" name="StashSummary" class="hud-stash"/>
     </ui:VisualElement>
 </ui:UXML>

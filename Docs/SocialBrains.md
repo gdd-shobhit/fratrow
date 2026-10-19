@@ -1,5 +1,28 @@
 # Backend NPC social experiment
 
+> **Update, 18 October 2026: campaign integration.** The social backend is now part of the core game loop
+> (see [`Docs/GameLoop.md`](GameLoop.md) and [`design/gdd/core-game-loop.md`](../design/gdd/core-game-loop.md)), and is no
+> longer an Ashley-only experiment.
+>
+> - **Every campus NPC** has their own persona, voice, standing and memory. That is 32 hand-written in
+>   `Resources/Campus/CampusRoster.json` plus 32 generated from `PersonalityArchetypes.json`.
+> - **The social world is always on.** The local model stays opt-in for development builds. Otherwise the deterministic
+>   `HeuristicSocialModelProvider` emits grounded acts through the same composer, validation and commit path.
+> - **Additive context:**
+>   - Public standings of the three rival houses and the players' rank are included.
+>     A change bumps the standing revision, so stale drafts get repaired.
+>   - NPC affiliation is included (guest, a players' brother after Bid Day, or a rival member).
+>   - Weekly campus news is recorded as one memory per NPC.
+>   - Crimes the NPC witnessed are recorded as world events, with the acting player as the actor.
+> - **The campaign drives the party lifecycle**, with one planned social party per week, and calls `ObserveEntrance`/`MarkArrived`.
+> - **Commitments decide attendance.** An NPC who accepted arrives early in the night. An NPC who declined never comes.
+>   Uncommitted NPCs pick a house by public appeal and their regard.
+> - **Testing:** the 65 integrity checks still pass. The new behaviour is covered by `Tests/GameLoopHarness`.
+>   A one-week simulation through Qwen 2B on the CUDA llama-server committed all 56 turns, at about 1.7 s per turn.
+> - **Unchanged limits:** social-judgment quality and Unity two-client play.
+>
+> The historical notes below are kept as written.
+
 This development feature gives Ashley one host-owned history across players and parties. It is disabled by default. The default provider now emits grounded social acts in one model call; host code composes and validates English dialogue before committing it. The historical free-form experiments below remain documented for comparison. The model judges social meaning and attendance; the host validates evidence, bounds effects, saves consequences, and executes the party commitment. A successful JSON completion is not evidence that the NPC's judgment is good.
 
 The existing phone renderer is not connected to free-text conversations. `NetworkedSocialConversation.SubmitLocalAsync` is the reusable input API for both the command driver and the future phone. `OnResult`, `RequestOwnHistory` and `OnHistory` provide committed results and the requesting player's own recent history. Other players' transcripts and private NPC memories are never broadcast.

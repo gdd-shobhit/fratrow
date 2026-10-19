@@ -3,6 +3,7 @@ title: Declarations
 <<declare $can_unlock = false as bool>>
 <<declare $npc_id = "" as string>>
 <<declare $affinity = 0.0 as number>>
+<<declare $is_pnm = false as bool>>
 ===
 
 title: Brad

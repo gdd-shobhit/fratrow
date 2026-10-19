@@ -70,6 +70,7 @@ public class NetworkedParty : NetworkBehaviour
     public void StartPartyServerRPC()
     {
         if (!IsServer || _partyState.Value == PartyState.Active) return;
+        if (CampaignDriven) { NetworkedCampaign.Instance.StartWeekendServer(); return; }
 
         NetworkedSocialConversation.Instance?.StartSocialPartyServer();
         Systems.Campus.NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
@@ -102,7 +103,7 @@ public class NetworkedParty : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void EndPartyServerRPC()
     {
-        if (!IsServer) return;
+        if (!IsServer || CampaignDriven) return;
 
         if (_partyState.Value == PartyState.Ended) return;
         NetworkedSocialConversation.Instance?.EndSocialPartyServer();
@@ -132,8 +133,12 @@ public class NetworkedParty : NetworkBehaviour
         DistributePartyEndRewards();
     }
 
+    /// <summary>When the campaign loop runs, it scores and settles parties itself (Sunday debrief).</summary>
+    static bool CampaignDriven => NetworkedCampaign.Instance != null && NetworkedCampaign.Instance.IsServer && NetworkedCampaign.Instance.Session != null;
+
     private void DistributePartyEndRewards()
     {
+        if (CampaignDriven) return;
         if (_partyState.Value != PartyState.Ended)
         {
             Debug.LogWarning($"Distributing rewards when party state was: {_partyState.Value}");

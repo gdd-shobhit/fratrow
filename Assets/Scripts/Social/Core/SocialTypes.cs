@@ -38,6 +38,11 @@ namespace FratRow.Social
         public int day;
         public bool legacyImported;
         public FraternityStanding standing;
+        /// <summary>Public standings of other (AI) fraternities. Additive save field; older campaigns load empty.</summary>
+        public List<RivalStanding> rivals = new List<RivalStanding>();
+        public long rivalsRevision;
+        /// <summary>The players' house's public campus rank (1 = top); 0 = unknown.</summary>
+        public int playersRank;
         public List<PlayerIdentity> players = new List<PlayerIdentity>();
         public List<NpcState> npcs = new List<NpcState>();
         public List<SocialEvent> events = new List<SocialEvent>();
@@ -65,11 +70,22 @@ namespace FratRow.Social
         public NpcVoiceProfile voice;
         public int voiceVersion;
         public NpcStanding standing;
+        /// <summary>"" = unaffiliated guest; "players" = brother of the players' house; otherwise a rival house display name.</summary>
+        public string affiliation = "";
         public long revision;
         public int fraternityRegard;
         public List<PersonalTrust> trust = new List<PersonalTrust>();
         public List<Grievance> grievances = new List<Grievance>();
         public List<Commitment> commitments = new List<Commitment>();
+    }
+    /// <summary>Public campus standing of another fraternity, rendered as context only (no relationship effects target it).</summary>
+    [Serializable] public sealed class RivalStanding
+    {
+        public string houseId;
+        public string name;
+        public float popularity;
+        public string grade = "";
+        public int rank;
     }
     [Serializable] public sealed class PersonalTrust { public string playerId; public int value; }
     [Serializable] public sealed class KnownPerson { public string playerId; public string displayName; }

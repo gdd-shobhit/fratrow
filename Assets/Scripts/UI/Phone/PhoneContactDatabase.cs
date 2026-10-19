@@ -61,6 +61,8 @@ namespace Systems.Phone
                 SeedDefaultContacts();
             }
 
+            EnsureRosterContacts();
+
             var loadedTemplates = Resources.LoadAll<MessageTemplateSO>(TemplatesResourcesPath);
             if (loadedTemplates != null && loadedTemplates.Length > 0)
             {
@@ -164,6 +166,63 @@ namespace Systems.Phone
             AddContact(MakeContact("Avery", GuestClass.MeanGirl, ContactGender.Both, unlocked: false));
             AddContact(MakeContact("Quinn", GuestClass.None, ContactGender.Both, unlocked: false));
             AddContact(MakeContact("Drew", GuestClass.Jock, ContactGender.Both, unlocked: false));
+        }
+
+        /// <summary>
+        /// Gives every campus roster NPC (Resources/Campus, see <see cref="Systems.Campus.NamedNpcDatabase.Roster"/>) a phone
+        /// contact, matched by display name (case-insensitive). Existing contacts — authored assets or legacy seeds — are
+        /// left untouched; only missing ones are created.
+        /// </summary>
+        static void EnsureRosterContacts()
+        {
+            var roster = Systems.Campus.NamedNpcDatabase.Roster;
+            if (roster == null || roster.npcs == null)
+            {
+                return;
+            }
+
+            foreach (var npc in roster.npcs)
+            {
+                if (npc == null)
+                {
+                    continue;
+                }
+
+                string name = string.IsNullOrWhiteSpace(npc.displayName) ? npc.id : npc.displayName;
+                if (string.IsNullOrWhiteSpace(name) || FindByDisplayName(name) != null)
+                {
+                    continue;
+                }
+
+                var contact = MakeContact(
+                    name,
+                    Systems.Campus.NamedNpcDatabase.ParseGuestClass(npc.guestClass),
+                    RosterGender(npc.gender),
+                    npc.startsUnlocked);
+                contact.bio = npc.summary;
+                AddContact(contact);
+            }
+        }
+
+        static ContactGender RosterGender(string gender)
+        {
+            if (string.Equals(gender, "girl", System.StringComparison.OrdinalIgnoreCase)) return ContactGender.Girl;
+            if (string.Equals(gender, "boy", System.StringComparison.OrdinalIgnoreCase)) return ContactGender.Guy;
+            return ContactGender.Both;
+        }
+
+        /// <summary>Lookup without triggering initialization (safe to call while seeding).</summary>
+        static ContactSO FindByDisplayName(string displayName)
+        {
+            foreach (var c in _contacts)
+            {
+                if (c != null && string.Equals(c.displayName, displayName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return c;
+                }
+            }
+
+            return null;
         }
 
         static void SeedDefaultTemplates()

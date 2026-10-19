@@ -21,6 +21,11 @@ public sealed class SocialDevelopmentDriver : MonoBehaviour
         public string text;
         public string channel = "text";
         public string partyId;
+        // Campaign commands: {"requestId":"1","action":"game","text":"buy","item":"keg","amount":2}
+        public string target = "";
+        public string item = "";
+        public int amount;
+        public string rival = "";
     }
     string lastCommand;
     bool running, loaded;
@@ -81,7 +86,15 @@ public sealed class SocialDevelopmentDriver : MonoBehaviour
                     text = command.text, channel = command.channel, partyId = command.partyId });
                 Write(JsonUtility.ToJson(result));
             }
+            else if (command.action == "cancel") social.CancelQueuedLocal(command.text);
+            else if (command.action == "game") Write(await RunCampaignAction(command));
             else if (!social.IsServer) throw new InvalidOperationException("World test commands require the host");
+            else if (command.action == "game_dump")
+            {
+                var campaign = NetworkedCampaign.Instance;
+                if (campaign == null || campaign.Session == null) throw new InvalidOperationException("Campaign not running");
+                Write(JsonUtility.ToJson(campaign.Session.State, true));
+            }
             else if (command.action == "start_party")
             { NetworkedPartyManager.Instance.StartPartyServer(); Write("{\"status\":\"party_started\"}"); }
             else if (command.action == "end_party")
@@ -95,12 +108,56 @@ public sealed class SocialDevelopmentDriver : MonoBehaviour
                     managedAndNativeAllocatedBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong(),
                     hostWorkingSetBytes = System.Diagnostics.Process.GetCurrentProcess().WorkingSet64, hostPrivateBytes = System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 }));
             }
-            else if (command.action == "cancel") social.CancelQueuedLocal(command.text);
             else throw new ArgumentException("Unknown development command");
         }
         catch (Exception e) { Write(JsonUtility.ToJson(new ConversationResult { status = "driver_error", error = e.Message })); Debug.LogException(e); }
         finally { running = false; }
     }
+    [Serializable] sealed class CampaignCommandResult
+    {
+        public string status, code, message, npcId, reply, decision, commitment;
+    }
+
+    /// <summary>Sends one campaign action as this client and waits (≤ 30 s) for its result and, for talk-type actions, the NPC reply.</summary>
+    static async Task<string> RunCampaignAction(Command command)
+    {
+        var campaign = NetworkedCampaign.Instance;
+        if (campaign == null) throw new InvalidOperationException("Campaign not spawned");
+        var resultSource = new TaskCompletionSource<ActionResultNet>();
+        var replySource = new TaskCompletionSource<(string, ConversationResult)>();
+        void OnResult(ActionResultNet r) => resultSource.TrySetResult(r);
+        void OnReply(string npc, ConversationResult r) => replySource.TrySetResult((npc, r));
+        campaign.OnActionResult += OnResult;
+        campaign.OnConversation += OnReply;
+        try
+        {
+            string action = command.text;
+            if (action == FratRow.Game.ActionIds.Talk) campaign.RequestTalk(command.target, command.item);
+            else campaign.RequestAction(action, command.target, command.item, command.amount, command.rival);
+            var first = await Task.WhenAny(resultSource.Task, Task.Delay(30000));
+            if (first != resultSource.Task) throw new TimeoutException("No campaign response");
+            var result = resultSource.Task.Result;
+            var output = new CampaignCommandResult { status = result.Ok ? "ok" : "failed", code = result.Code.ToString(), message = result.Message.ToString() };
+            bool talks = action == FratRow.Game.ActionIds.Talk || action == FratRow.Game.ActionIds.Invite || action == FratRow.Game.ActionIds.RushTalk;
+            if (talks && result.Ok)
+            {
+                var replied = await Task.WhenAny(replySource.Task, Task.Delay(120000));
+                if (replied == replySource.Task)
+                {
+                    var (npc, reply) = replySource.Task.Result;
+                    output.npcId = npc; output.reply = reply.reply; output.decision = reply.decision; output.commitment = reply.commitment;
+                    output.status = reply.status;
+                }
+            }
+            return JsonUtility.ToJson(output);
+        }
+        finally
+        {
+            campaign.OnActionResult -= OnResult;
+            campaign.OnConversation -= OnReply;
+        }
+    }
+
     static void Write(string json)
     {
         string outbox = NetworkedSocialConversation.Option("--social-outbox");

@@ -7,7 +7,8 @@ namespace Systems.Campus
     {
         Weekday = 0,
         Party = 1,
-        Debrief = 2
+        Debrief = 2,
+        SemesterEnd = 3
     }
 
     public enum NamedNpcRarity : byte

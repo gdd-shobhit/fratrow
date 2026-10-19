@@ -66,14 +66,14 @@ namespace FratRow.Social
             SocialConversationService.ValidateProposal(p, context);
             return p;
         }
-        static IEnumerable<string> Decisions(ModelContext c)
+        internal static IEnumerable<string> Decisions(ModelContext c)
         {
             yield return "respond";
             if (c.AttendanceFulfilled || c.PartyId == null || (c.PartyState != "planned" && c.PartyState != "active")) yield break;
             yield return "decline"; yield return "defer";
             if (c.CanReserveAttendance) { yield return "accept"; if (c.PartyState == "planned") yield return "counteroffer"; }
         }
-        static IEnumerable<string> Topics(ModelContext c)
+        internal static IEnumerable<string> Topics(ModelContext c)
         {
             yield return "none";
             if (!c.PriorDirectContact) yield return "identity";

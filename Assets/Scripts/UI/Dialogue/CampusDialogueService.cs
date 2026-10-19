@@ -92,6 +92,8 @@ namespace Systems.Dialogue
             dialogueRunner.DialoguePresenters = new DialoguePresenterBase[] { presenter };
             dialogueRunner.AddCommandHandler<string>("unlock_contact", OnUnlockContact);
             dialogueRunner.AddCommandHandler<string>("recruit", OnRecruit);
+            dialogueRunner.AddCommandHandler<string>("invite", OnInvite);
+            dialogueRunner.AddCommandHandler<string>("rush", OnRush);
             dialogueRunner.onDialogueComplete?.AddListener(HandleDialogueComplete);
         }
 
@@ -117,9 +119,17 @@ namespace Systems.Dialogue
             storage.SetValue("$can_unlock", canUnlock);
             storage.SetValue("$npc_id", npc.npcId);
             storage.SetValue("$affinity", GetAffinity(npc));
+            storage.SetValue("$is_pnm", npc.isRecruitable);
 
-            dialogueRunner.StartDialogue(npc.YarnNode);
+            // Generated campus NPCs have no hand-written node; use the generic student intro instead of failing.
+            string node = npc.YarnNode;
+            var names = dialogueRunner.YarnProject != null ? dialogueRunner.YarnProject.NodeNames : null;
+            if (names == null || Array.IndexOf(names, node) < 0) node = GenericNode;
+            dialogueRunner.StartDialogue(node);
         }
+
+        /// <summary>Yarn node used for NPCs without their own node (Resources/Dialogue/CampusStudents.txt).</summary>
+        public const string GenericNode = "CampusStudent";
 
         float GetAffinity(NamedNpcSO npc)
         {
@@ -148,6 +158,20 @@ namespace Systems.Dialogue
         {
             var id = string.IsNullOrEmpty(npcId) ? _activeNpc?.npcId : npcId;
             NetworkedContactRoster.Instance?.RequestRecruit(id);
+        }
+
+        /// <summary>&lt;&lt;invite Name&gt;&gt;: an in-person invitation through the social backend (the NPC decides the RSVP).</summary>
+        void OnInvite(string npcId)
+        {
+            var id = string.IsNullOrEmpty(npcId) ? _activeNpc?.npcId : npcId;
+            NetworkedCampaign.Instance?.RequestAction(FratRow.Game.ActionIds.Invite, id);
+        }
+
+        /// <summary>&lt;&lt;rush Name&gt;&gt;: an in-person rush pitch (raises rush interest unless the PNM declines).</summary>
+        void OnRush(string npcId)
+        {
+            var id = string.IsNullOrEmpty(npcId) ? _activeNpc?.npcId : npcId;
+            NetworkedCampaign.Instance?.RequestAction(FratRow.Game.ActionIds.RushTalk, id);
         }
 
         void HandleDialogueComplete()

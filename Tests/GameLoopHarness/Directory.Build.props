@@ -1,0 +1,4 @@
+<Project><PropertyGroup>
+  <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../Library/GameLoopHarness/obj/</BaseIntermediateOutputPath>
+  <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+</PropertyGroup></Project>
