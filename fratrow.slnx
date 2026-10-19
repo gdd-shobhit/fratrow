@@ -1,9 +1,8 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="YarnSpinner.Unity.csproj" />
   <Project Path="FratRow.Social.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="YarnSpinner.Unity.Editor.csproj" />
+  <Project Path="FratRow.Game.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Config.Editor.Tests.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Config.Runtime.csproj" />
 </Solution>

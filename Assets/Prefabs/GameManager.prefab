@@ -59,6 +59,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -90,6 +91,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7befe4896a7275946aef594574baa18c, type: 2}
   - {fileID: 11400000, guid: 6904fc3c461ba5c4a8aeda60f650bae2, type: 2}
   myFraternity:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
     m_InternalValue:
       fratName: 
       rating: 0
@@ -98,10 +102,19 @@ MonoBehaviour:
       popularity: 0
       cashValue: 0
   _totalPopularity:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
   _totalCashValue:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
   _totalTroubleMaking:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
   fraternityLocal:
     fratName: 
@@ -193,6 +206,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   pollSeconds: 2
   visualPrefab: {fileID: 0}
+  crowdRadiusMin: 1.5
+  crowdRadiusMax: 3
 --- !u!114 &900000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,8 +218,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 563e087d6f794a3f80c643296a19632d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkedSocialConversation
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &4718293056172839405
 MonoBehaviour:
   m_ObjectHideFlags: 0
