@@ -1,4 +1,4 @@
-﻿"""White chunky ankle boots (characters1, blonde)."""
+"""White chunky ankle boots (characters1, blonde)."""
 from . import _footwear
 
 NAME = "SKM_F_Shoes_AnkleBoots"

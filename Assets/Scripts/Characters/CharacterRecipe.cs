@@ -47,8 +47,8 @@ namespace FratRow.Characters
         /// <summary>Name shown to designers and players.</summary>
         public string displayName;
 
-        /// <summary>Whole-body scale (1 = the base body's 1.66 m).</summary>
-        [Range(0.9f, 1.1f)]
+        /// <summary>Whole-body scale (1 = the base body's 1.66 m); the pipeline range is 0.95–1.05.</summary>
+        [Range(0.95f, 1.05f)]
         public float height = 1f;
 
         /// <summary>Skin colour; multiplies the face texture.</summary>

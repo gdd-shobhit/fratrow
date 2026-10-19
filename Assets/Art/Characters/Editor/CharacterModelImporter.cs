@@ -212,7 +212,13 @@ namespace FratRow.Art.Characters.Editor
                 item = ScriptableObject.CreateInstance<CosmeticItem>();
 
             item.id = data.id;
-            item.slot = Enum.TryParse(data.slot, out CosmeticSlot slot) ? slot : CosmeticSlot.Top;
+            if (!Enum.TryParse(data.slot, out CosmeticSlot slot))
+            {
+                Debug.LogError($"[CosmeticSidecar] {jsonPath}: unknown slot '{data.slot}' " +
+                               $"(expected one of {string.Join(", ", Enum.GetNames(typeof(CosmeticSlot)))})");
+                return null;
+            }
+            item.slot = slot;
             item.kind = string.Equals(data.kind, "rigid", StringComparison.OrdinalIgnoreCase) ? CosmeticKind.Rigid : CosmeticKind.Skinned;
             item.model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{data.model}");
             item.bodyVertexCount = data.body?.vertexCount ?? 0;

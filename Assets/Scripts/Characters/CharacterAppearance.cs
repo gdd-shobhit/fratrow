@@ -32,7 +32,7 @@ namespace FratRow.Characters
         [SerializeField] SkinnedMeshRenderer eyes;
         [SerializeField] Material skinMaterial;
         [SerializeField] Color skinColor = new Color(0.87f, 0.68f, 0.56f);
-        [SerializeField, Range(0.9f, 1.1f)] float height = 1f;
+        [SerializeField, Range(0.95f, 1.05f)] float height = 1f;
         [SerializeField] Texture2D faceTexture;
         [SerializeField] Texture2D eyeTexture;
         [SerializeField] List<BodySlider> sliders = new List<BodySlider>();

@@ -40,7 +40,7 @@ FACE_DEFAULTS = {
     "eyeshadow": "#C99A8C", "eyeshadowAlpha": 0.0,
     "lips": "#D9777F", "lipAlpha": 0.85,
     "blush": "#F0A0A0", "blushAlpha": 0.0,
-    "freckles": 0.0,
+    "freckles": 0.0, "freckleColor": "#B0674A",
 }
 
 
@@ -291,7 +291,7 @@ def _features(pos, normal, spec, marks, skin_lin):
         for (dx, dz), rad in zip(dots, radii):
             d = np.hypot(x[near] - dx, z[near] - dz)
             a[near] = np.maximum(a[near], _stroke(d, rad, 0.0004))
-        layer(spec["freckles_color"], a * 0.55 * spec["freckles"] * front)
+        layer(spec["freckleColor"], a * 0.55 * spec["freckles"] * front)
 
     # Eyeshadow, lashes, brows.
     shadow, lashes, brows = np.zeros(len(pos)), np.zeros(len(pos)), np.zeros(len(pos))
@@ -351,7 +351,6 @@ def paint_face(recipe, size=FACE_SIZE):
     """(texture, preview) as sRGB float arrays (size, size, 3): the Unity texture
     (features / skin colour) and what it looks like on the recipe's skin."""
     spec = dict(FACE_DEFAULTS, **recipe.get("face", {}))
-    spec.setdefault("freckles_color", "#B0674A")
     skin_lin = _to_linear(hex_to_srgb(recipe["skin"]))
     pos, normal, face_set, hit = texel_map(size)
     paint = hit & ~np.isin(face_set, HIDDEN_FACE_SETS)

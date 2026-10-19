@@ -31,6 +31,7 @@ import bpy
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
+from mathutils.kdtree import KDTree
 
 from . import config as C
 from .bind import _attach, limit_and_normalize
@@ -374,6 +375,7 @@ def material_srgb(mat):
 
 MAX_SKIN_DISTANCE = 0.15  # no vertex of a body-grown item should be farther than this
 SLIDER_MIN_GAP = 0.004    # at full slider, keep fabric at least this far off the shaped skin
+SLIDER_REACH = 0.10       # ...tested only within this of skin the slider moves
 
 
 def assign_materials(obj, pick):
@@ -476,14 +478,23 @@ def bind_to_body(obj):
         # Where a slider swells skin that is not straight under a vertex (e.g. the
         # bust under fabric bridging the cleavage), following the nearest skin is
         # not enough: test against the shaped body and push sunken vertices out.
+        # Only near skin the key moves: elsewhere the shaped body equals the rest
+        # body, but its BVH can break ties between equidistant polygons differently
+        # and report another normal (a sneaker sole vertex jumped on thigh keys).
+        moved = [i for i, d in enumerate(deltas) if d.length > 1e-4]
+        near_moved = KDTree(len(moved))
+        for j, i in enumerate(moved):
+            near_moved.insert(surface.co[i], j)
+        near_moved.balance()
         shaped = [c + d for c, d in zip(surface.co, deltas)]
         shaped_bvh = BVHTree.FromPolygons(shaped, surface.polys)
         for v, (verts, bary) in zip(mesh.vertices, samples):
             p = v.co + sum((deltas[bv] * b for bv, b in zip(verts, bary)), Vector())
-            loc, normal, _, _ = shaped_bvh.find_nearest(p)
-            keep = min(rest_offset[v.index], SLIDER_MIN_GAP)
-            if (p - loc).dot(normal) < keep:
-                p = loc + normal * keep
+            if moved and near_moved.find(v.co)[2] < SLIDER_REACH:
+                loc, normal, _, _ = shaped_bvh.find_nearest(p)
+                keep = min(rest_offset[v.index], SLIDER_MIN_GAP)
+                if (p - loc).dot(normal) < keep:
+                    p = loc + normal * keep
             key.data[v.index].co = p
     for mod in [m for m in obj.modifiers if m.type == "ARMATURE"]:
         obj.modifiers.remove(mod)

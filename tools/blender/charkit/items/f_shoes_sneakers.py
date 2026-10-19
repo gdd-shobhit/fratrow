@@ -1,4 +1,4 @@
-﻿"""White low-top sneakers (characters1, redhead)."""
+"""White low-top sneakers (characters1, redhead)."""
 from . import _footwear
 
 NAME = "SKM_F_Shoes_Sneakers"

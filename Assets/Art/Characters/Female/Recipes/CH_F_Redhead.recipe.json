@@ -27,7 +27,7 @@
     "eyeshadow": "#F2A383", "eyeshadowAlpha": 0.25,
     "lips": "#E0535F",
     "blush": "#F59A92", "blushAlpha": 0.35,
-    "freckles": 0.8, "freckles_color": "#C0704C"
+    "freckles": 0.8, "freckleColor": "#C0704C"
   },
   "iris": "#C9677A"
 }

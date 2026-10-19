@@ -12,7 +12,7 @@ its own status; otherwise -quit ends the run). --tests runs the Test Runner and
 summarises the NUnit results. Batch mode keeps graphics on so editor checks can
 render (no -nographics). Logs go to <project>/Logs/batch-*.log unless --log is
 given. Exit code: the editor's, or 3 when compile errors were logged, 4 when
-tests failed.
+tests failed, 5 when no tests ran (never a pass), 124 on timeout.
 """
 import argparse
 import os
@@ -80,6 +80,9 @@ def summarise_tests(path):
         if case.get("result") == "Failed":
             message = case.find("failure/message")
             print(f"  FAILED {case.get('fullname')}: {(message.text or '').strip()[:400] if message is not None else ''}")
+    if int(root.get("total") or 0) == 0:
+        print("  no tests ran: not a pass (test assembly missing, filtered out, or not compiled)")
+        return -1
     return int(root.get("failed") or 0)
 
 
@@ -124,8 +127,10 @@ def main():
     failed = summarise_tests(results) if results else 0
     if code == 0 and compile_errors:
         code = 3
-    if code == 0 and failed:
+    if code == 0 and failed > 0:
         code = 4
+    if code == 0 and failed < 0:
+        code = 5
     sys.exit(code)
 
 
