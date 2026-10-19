@@ -46,11 +46,10 @@ namespace FratRow.Social
             ids = new SocialInferenceFormat(context);
             string Quote(string v) => "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
             string Options(IEnumerable<string> values) => string.Join(" | ", values.Distinct().Select(v => Quote(Quote(v))));
-            string current = ids.RenderIds(context.ObservedEventId);
             var fields = new[] { "decision", "trust", "regard", "grievance", "resolve" };
             StateGrammar = "root ::= \"{\" " + string.Join(" \",\" ", fields.Select(f => Quote(Quote(f)) + " \":\" " + (f == "trust" || f == "regard" ? "magnitude" : f))) + " \"}\"\n" +
-                "decision ::= " + Options(GroundedSocialTurn.Decisions(context)) + "\nmagnitude ::= " + Options(Magnitudes) +
-                "\ngrievance ::= " + Options(new[] { "", current }) + "\nresolve ::= " + Options(context.GrievanceIds.Where(g => GrievanceBySpeaker(g)).Select(ids.RenderIds).Concat(new[] { "" })) + "\n";
+                "decision ::= " + Options(AllowedDecisions) + "\nmagnitude ::= " + Options(Magnitudes) +
+                "\ngrievance ::= " + Options(AllowedGrievances) + "\nresolve ::= " + Options(AllowedResolves) + "\n";
             StateSystem = "You keep score for a college party game. Read one exchange and label what the NPC's reply actually did. Return JSON only.\n" +
                 "decision: accept = the reply clearly agrees to come to the party; decline = it clearly refuses; defer = maybe, undecided or asking questions before answering an invite; " +
                 "counteroffer = it will come ONLY if the speaker meets them at the entrance at the start; respond = anything else, including all small talk and replies that don't answer an invite. " +
@@ -62,6 +61,12 @@ namespace FratRow.Social
         }
 
         bool GrievanceBySpeaker(string eventId) => context.GroundedMemories.Any(m => m.eventId == eventId && m.actorId == context.PlayerId);
+
+        /// <summary>Label values the state pass may return, for runtimes that constrain output with a schema instead of a grammar.</summary>
+        public IReadOnlyList<string> AllowedDecisions => GroundedSocialTurn.Decisions(context).ToList();
+        public IReadOnlyList<string> AllowedMagnitudes => Magnitudes;
+        public IReadOnlyList<string> AllowedGrievances => new[] { "", ids.RenderIds(context.ObservedEventId) };
+        public IReadOnlyList<string> AllowedResolves => context.GrievanceIds.Where(GrievanceBySpeaker).Select(ids.RenderIds).Concat(new[] { "" }).ToList();
 
         /// <summary>Character card for the voice pass. <paramref name="retry"/> adds a no-repeat reminder.</summary>
         public string VoiceSystem(bool retry = false)

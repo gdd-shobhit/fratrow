@@ -12,7 +12,7 @@ sealed class Metrics
 {
     public int conversations, turns, committed, failed;
     public double meanReplyChars, withinNpcDistinctRatio, crossNpcDuplicateRate, meanPairwiseTrigramJaccard, distinct2;
-    public double latencyP50Ms, latencyP95Ms, wallSeconds, claudeCostUsd;
+    public double latencyP50Ms, latencyP95Ms, wallSeconds, claudeCostUsd, npcClaudeCostUsd;
     public int claudeCalls, rsvpOverrides, judged, notJudged, rsvpConsistent, testerErrors;
     public bool judgeEnabled;
     public Dictionary<string, int> decisions = new Dictionary<string, int>();
@@ -208,7 +208,8 @@ static class Report
             rows.Add(("Judge overall", F(m.judgeMeans["overall"], "0.0")));
             rows.Add(("RSVP words consistent with decision", m.rsvpConsistent + " / " + m.judged));
         }
-        if (m.claudeCalls > 0) rows.Add(("Claude calls / cost", m.claudeCalls + " / $" + F(m.claudeCostUsd, "0.000")));
+        if (m.claudeCalls > 0) rows.Add(("Claude tester/judge calls / cost", m.claudeCalls + " / $" + F(m.claudeCostUsd, "0.000")));
+        if (m.npcClaudeCostUsd > 0) rows.Add(("Claude NPC (persona-claude) cost", "$" + F(m.npcClaudeCostUsd, "0.000")));
         rows.Add(("Wall time", F(m.wallSeconds, "0") + " s"));
         if (!markdown) return string.Join("\n", rows.Select(r => r.Item1.PadRight(70) + " " + r.Item2));
         return "| Metric | Value |\n|---|---|\n" + string.Join("\n", rows.Select(r => "| " + r.Item1 + " | " + r.Item2 + " |"));

@@ -63,6 +63,7 @@ static class Program
 
         var logs = results.ToList();
         var metrics = Metrics.Compute(logs, o.Judge, backend.RsvpOverrides - overridesBefore, claude?.CostUsd ?? 0, claude?.Calls ?? 0, watch.Elapsed.TotalSeconds);
+        metrics.npcClaudeCostUsd = backend.NpcCostUsd;
         Report.Write(o, backend, logs, metrics);
         Console.WriteLine();
         Console.WriteLine(Report.Summary(metrics));
@@ -141,8 +142,11 @@ static class Program
 
     public const string Usage = @"NpcPlaytest — an LLM game tester talks to FratRow NPCs through the real social backend.
 
-  --provider heuristic|grounded|persona   social provider (default heuristic = what the game uses without --social-brains)
+  --provider heuristic|grounded|persona|persona-claude
+                                          social provider (default heuristic = what the game uses without --social-brains);
+                                          persona-claude = persona prompts voiced by --npc-model (reference ceiling)
   --model <gguf> --llama-server <exe>     required for grounded/persona (absolute paths; --gpu 99)
+  --npc-model <id>                        Claude model for persona-claude (default claude-haiku-4-5)
   --npcs A,B | --sample N | --all         who to talk to (default --sample 10, deterministic spread over tones/genders)
   --tester haiku|scripted                 haiku = adaptive Claude tester (default); scripted = same 5 lines to every NPC
   --tester-model <id>                     default claude-haiku-4-5 (also used by the judge)
@@ -158,7 +162,7 @@ static class Program
 
 sealed class Options
 {
-    public string Provider = "heuristic", Model, LlamaServer, Tester = "haiku", TesterModel = "claude-haiku-4-5", Transport = "cli", ClaudePath, Out;
+    public string Provider = "heuristic", Model, LlamaServer, Tester = "haiku", TesterModel = "claude-haiku-4-5", NpcModel = "claude-haiku-4-5", Transport = "cli", ClaudePath, Out;
     public int Gpu = 99, Sample = 10, Turns = Program.MaxTurns, Parallel = 3, Seed = 7;
     public bool All, Judge = true, DumpNpcs;
     public List<string> Npcs;
@@ -170,21 +174,22 @@ sealed class Options
         var o = new Options
         {
             Provider = Arg("--provider") ?? "heuristic", Model = Arg("--model"), LlamaServer = Arg("--llama-server"),
-            Tester = Arg("--tester") ?? "haiku", TesterModel = Arg("--tester-model") ?? "claude-haiku-4-5",
+            Tester = Arg("--tester") ?? "haiku", TesterModel = Arg("--tester-model") ?? "claude-haiku-4-5", NpcModel = Arg("--npc-model") ?? "claude-haiku-4-5",
             Transport = Arg("--tester-transport") ?? "cli", ClaudePath = Arg("--claude"), Out = Arg("--out"),
             Gpu = Int("--gpu", 99), Sample = Int("--sample", 10), Turns = Math.Min(Program.MaxTurns, Math.Max(1, Int("--turns", Program.MaxTurns))),
             Parallel = Math.Max(1, Int("--parallel", 3)), Seed = Int("--seed", 7),
             All = args.Contains("--all"), Judge = !args.Contains("--no-judge"), DumpNpcs = args.Contains("--dump-npcs"),
             Npcs = Arg("--npcs")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
         };
-        if (o.Provider != "heuristic" && o.Provider != "grounded" && o.Provider != "persona") throw new ArgumentException("--provider must be heuristic, grounded or persona");
+        if (o.Provider != "heuristic" && o.Provider != "grounded" && o.Provider != "persona" && o.Provider != "persona-claude")
+            throw new ArgumentException("--provider must be heuristic, grounded, persona or persona-claude");
         if (o.Tester != "haiku" && o.Tester != "scripted") throw new ArgumentException("--tester must be haiku or scripted");
         if (o.Transport != "cli" && o.Transport != "api") throw new ArgumentException("--tester-transport must be cli or api");
-        if (o.Provider != "heuristic" && !o.DumpNpcs && (o.Model == null || o.LlamaServer == null))
+        if ((o.Provider == "grounded" || o.Provider == "persona") && !o.DumpNpcs && (o.Model == null || o.LlamaServer == null))
             throw new ArgumentException("--provider " + o.Provider + " needs --model <gguf> and --llama-server <exe>");
         if (o.Out == null)
         {
-            string model = o.Provider == "heuristic" || o.Model == null ? "" : "-" + ModelShort(o.Model);
+            string model = o.Provider == "persona-claude" ? "-" + o.NpcModel : o.Provider == "heuristic" || o.Model == null ? "" : "-" + ModelShort(o.Model);
             o.Out = Path.Combine(RepoPaths.Root, "Library", "NpcPlaytest", DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + o.Provider + model + (o.Tester == "scripted" ? "-scripted" : ""));
         }
         return o;
@@ -244,6 +249,11 @@ sealed class Backend : IDisposable
                 Provider = new HeuristicSocialModelProvider(Store.Read, o.Seed);
                 ProviderName = "heuristic (no model; game default without --social-brains)";
                 break;
+            case "persona-claude":
+                Provider = new ClaudePersonaProvider(new ClaudeClient(o.NpcModel, o.Transport, o.ClaudePath), Codec);
+                ProviderName = "persona prompts voiced by " + o.NpcModel + " (reference ceiling, not shippable as-is)";
+                grounded = false;
+                break;
             default:
                 string hash = SocialModelCatalog.HashFor(Path.GetFileName(o.Model));
                 var llama = new LlamaServerModelProvider(Codec, o.LlamaServer, o.Model, hash, o.Gpu);
@@ -256,7 +266,9 @@ sealed class Backend : IDisposable
     }
 
     public string HouseName => Session.PlayerHouse.name;
-    public int RsvpOverrides => (Provider as LlamaServerModelProvider)?.RsvpOverrides ?? 0;
+    public int RsvpOverrides => (Provider as LlamaServerModelProvider)?.RsvpOverrides ?? (Provider as ClaudePersonaProvider)?.RsvpOverrides ?? 0;
+    /// <summary>Claude spend by the NPC itself (persona-claude only), separate from tester/judge spend.</summary>
+    public double NpcCostUsd => (Provider as ClaudePersonaProvider)?.CostUsd ?? 0;
 
     public async Task<TurnLog> SayAsync(string npcId, string text, int turn)
     {

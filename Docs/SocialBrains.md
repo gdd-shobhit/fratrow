@@ -1,5 +1,21 @@
 # Backend NPC social experiment
 
+> **Update, 18 October 2026 (evening): persona replies and NPC playtests.** NPCs gave near-identical answers
+> because no model wrote the words: without a model the keyword heuristic picks canned phrases (judged 2.3/5, 75% of
+> replies duplicated verbatim across NPCs), and with a model the grounded composer still assembled template lines.
+> See [`Reports/NpcDialogueDiagnosis-2026-10-18.md`](Reports/NpcDialogueDiagnosis-2026-10-18.md).
+>
+> - **Persona replies (default reply mode when a model is enabled):** `PersonaSocialTurn` lets the model speak in
+>   character first (character card, plain-English situation, real chat history), then a constrained pass labels
+>   the reply's RSVP/trust/regard/grievance; explicit yes/no/maybe wording overrides the label, and host validation is
+>   unchanged. Switch with `--social-reply-mode persona|grounded` or *FratRow → Social Brains → Reply mode*. Grounded
+>   replies remain available and are still required by the service in grounded mode.
+> - **Playtests:** `Tests/NpcPlaytest` (skill `/npc-playtest`) runs the backend headlessly while a Claude Haiku 4.5
+>   tester (≤5 messages) or a fixed script talks to NPCs; a Haiku judge scores each conversation against the hidden persona.
+> - The heuristic's speech cues now match whole words ("what are you into" is no longer an invitation).
+>
+> The notes below are kept as written.
+
 > **Update, 18 October 2026: campaign integration.** The social backend is now part of the core game loop
 > (see [`Docs/GameLoop.md`](GameLoop.md) and [`design/gdd/core-game-loop.md`](../design/gdd/core-game-loop.md)), and is no
 > longer an Ashley-only experiment.

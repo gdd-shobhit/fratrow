@@ -52,9 +52,9 @@ sealed class ClaudeClient
     public Task<string> TextAsync(string system, string prompt, CancellationToken cancel = default) => WithRetry(() => Once(system, prompt, null, "low", cancel));
 
     /// <summary>Structured completion validated against a JSON schema; returns the JSON object.</summary>
-    public async Task<JsonObject> JsonAsync(string system, string prompt, string schema, CancellationToken cancel = default)
+    public async Task<JsonObject> JsonAsync(string system, string prompt, string schema, CancellationToken cancel = default, string effort = null)
     {
-        string text = await WithRetry(() => Once(system, prompt, schema, null, cancel));
+        string text = await WithRetry(() => Once(system, prompt, schema, effort, cancel));
         int start = text.IndexOf('{'), end = text.LastIndexOf('}');
         if (start < 0 || end <= start) throw new InvalidDataException("No JSON object in judge output: " + Trim(text));
         return JsonNode.Parse(text.Substring(start, end - start + 1))!.AsObject();

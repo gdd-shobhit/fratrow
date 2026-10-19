@@ -1,7 +1,7 @@
 ---
 name: npc-playtest
 description: "Playtest NPC conversations headlessly: a Claude Haiku game tester (or a fixed script) talks to campus NPCs through the real social backend, a Haiku judge scores each conversation against the hidden persona, and model-free metrics show whether NPCs all sound the same. Use after any change to the social backend, prompts, personas or model."
-argument-hint: "[heuristic | grounded | persona] [--sample N | --npcs A,B | --all] [--tester haiku|scripted]"
+argument-hint: "[heuristic | grounded | persona | persona-claude] [--sample N | --npcs A,B | --all] [--tester haiku|scripted]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash
 ---
@@ -31,7 +31,8 @@ Use it:
 |---|---|---|
 | `heuristic` | Keyword rules plus canned phrases. **What the game runs without `--social-brains`.** | nothing |
 | `grounded` | The local model picks enum acts; the host composes the reply from tone banks. | `--model`, `--llama-server` |
-| `persona` | Grounded acts pick the state, then the model voices the reply in character (free speech). | `--model`, `--llama-server` |
+| `persona` | The model speaks in character first (free speech), then a constrained pass labels the reply's RSVP/trust/grievance. **What the game runs with a model enabled (default reply mode).** | `--model`, `--llama-server` |
+| `persona-claude` | Reference ceiling, not a game provider: the same persona prompts voiced and labeled by a Claude model (`--npc-model`, default `claude-haiku-4-5`). Compare its quality, not its latency (CLI start-up is included). | the `claude` CLI; costs per turn |
 
 Models and the CUDA server live in the **main checkout's** `Library/` (gitignored, so absent in
 worktrees). Use absolute paths:
@@ -89,6 +90,10 @@ tester latency), `--seed N` (default 7; same seed gives the same NPC sample and 
   Scripted runs with `--no-judge` are free.
 
 ### Outputs
+
+The tool writes only to its run directory under the gitignored `Library/NpcPlaytest/`. Copying a
+report or transcript anywhere tracked (`Docs/Reports/`, `production/qa/`) is a separate write: ask
+"May I write `<path>`?" first, and quote the run directory it came from.
 
 `Library/NpcPlaytest/<stamp>-<provider>[-<model>][-scripted]/` (gitignored):
 
