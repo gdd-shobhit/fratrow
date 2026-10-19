@@ -29,7 +29,7 @@ namespace FratRow.Social
         public bool UseRequestSeed { get; set; } = true;
         /// <summary>Persona turns whose RSVP label was corrected to match the reply's explicit wording.</summary>
         public int RsvpOverrides { get; private set; }
-        /// <summary>Persona replies regenerated because they copied an earlier line.</summary>
+        /// <summary>Persona replies regenerated because they copied an earlier line or broke character (see <see cref="PersonaSocialTurn.MetaTalk"/>).</summary>
         public int VoiceRetries { get; private set; }
         readonly SemaphoreSlim worker = new SemaphoreSlim(1, 1);
         readonly HttpClient http = new HttpClient(new HttpClientHandler { UseProxy = false });
@@ -161,7 +161,7 @@ namespace FratRow.Social
                         try
                         {
                             string cleaned = PersonaSocialTurn.Clean(LastRawReply, persona.NpcName, persona.SpeakerName);
-                            if (attempt == 0 && persona.Repeats(cleaned)) { VoiceRetries++; problem = "Reply repeated an earlier line"; continue; }
+                            if (attempt == 0 && (persona.Repeats(cleaned) || PersonaSocialTurn.MetaTalk(cleaned))) { VoiceRetries++; problem = "Reply repeated an earlier line or broke character"; continue; }
                             reply = cleaned;
                         }
                         catch (ArgumentException e) { problem = e.Message; }

@@ -89,7 +89,7 @@ namespace FratRow.Social
                                 try
                                 {
                                     string cleaned = PersonaSocialTurn.Clean(LastRawReply, persona.NpcName, persona.SpeakerName);
-                                    if (attempt == 0 && persona.Repeats(cleaned)) { VoiceRetries++; problem = "Reply repeated an earlier line"; continue; }
+                                    if (attempt == 0 && (persona.Repeats(cleaned) || PersonaSocialTurn.MetaTalk(cleaned))) { VoiceRetries++; problem = "Reply repeated an earlier line or broke character"; continue; }
                                     reply = cleaned;
                                 }
                                 catch (ArgumentException e) { problem = e.Message; }

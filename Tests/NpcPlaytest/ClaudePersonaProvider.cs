@@ -28,7 +28,7 @@ sealed class ClaudePersonaProvider : ISocialModelProvider
         {
             string raw = await claude.TextAsync(persona.VoiceSystem(retry: attempt > 0), persona.FlattenedPrompt(), cancellation);
             string cleaned = PersonaSocialTurn.Clean(raw, persona.NpcName, persona.SpeakerName);
-            if (attempt == 0 && persona.Repeats(cleaned)) continue;
+            if (attempt == 0 && (persona.Repeats(cleaned) || PersonaSocialTurn.MetaTalk(cleaned))) continue;
             reply = cleaned;
         }
         if (reply == null) throw new ArgumentException("Voiced reply unusable");
