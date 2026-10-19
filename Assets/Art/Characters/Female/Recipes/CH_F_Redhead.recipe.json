@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "CH_F_Redhead",
+  "displayName": "Redhead",
+  "baseModel": "SK_Female_Base",
+  "height": 1.04,
+  "skin": "#FBDCC9",
+  "sliders": [
+    { "name": "Waist_Narrow", "value": 0.5 },
+    { "name": "Hips_Wide", "value": 0.2 },
+    { "name": "Thighs_Thin", "value": 0.25 },
+    { "name": "Arms_Thin", "value": 0.35 },
+    { "name": "Shoulders_Narrow", "value": 0.2 },
+    { "name": "Bust_Small", "value": 0.15 }
+  ],
+  "faceTexture": "T_F_Face_Redhead",
+  "eyeTexture": "T_F_Eyes_Redhead",
+  "items": [
+    { "id": "SKM_F_Hair_HighPonytail", "colors": ["#F2722B", "#D9262E"] },
+    { "id": "SKM_F_Top_CamiCrop", "colors": ["#E2343A"] },
+    { "id": "SKM_F_Bottom_TrackPants", "colors": ["#DC3236", "#FAFAFA"] },
+    { "id": "SKM_F_Shoes_Sneakers", "colors": ["#F7F7F5", "#E3E3E6"] }
+  ],
+  "face": {
+    "brows": "#B4572F", "browThickness": 0.85, "browArch": 1.0,
+    "lashes": "#3B2220", "wing": 0.2,
+    "eyeshadow": "#F2A383", "eyeshadowAlpha": 0.25,
+    "lips": "#E0535F",
+    "blush": "#F59A92", "blushAlpha": 0.35,
+    "freckles": 0.8, "freckles_color": "#C0704C"
+  },
+  "iris": "#C9677A"
+}

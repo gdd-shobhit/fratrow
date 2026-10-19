@@ -1,6 +1,7 @@
 """Build the master female body from the Human Base Meshes source.
 
-Steps: import -> regions -> proportions -> decimate -> height -> eyes -> cleanup.
+Steps: import -> regions -> proportions -> decimate -> height -> eyes -> cleanup
+-> UV atlas -> vertex ids.
 Each step is a function so it can be re-run on its own while tuning
 config.py. Run inside Blender (see tools/blender/charkit/README.md):
 
@@ -250,6 +251,24 @@ def cleanup(body):
     mesh.shade_smooth()
 
 
+def pack_uv_tiles(body):
+    """Move the source's UDIM tiles into one 0-1 atlas (config.UV_ATLAS). Idempotent."""
+    mesh = body.data
+    if mesh.get("uv_atlas"):
+        return
+    layer = mesh.uv_layers["UVMap"].data
+    for poly in mesh.polygons:
+        loops = list(poly.loop_indices)
+        tile = int(sum(layer[i].uv.x for i in loops) / len(loops))
+        if tile not in C.UV_ATLAS:
+            raise ValueError(f"face {poly.index} is in UV tile {tile}, which config.UV_ATLAS does not place")
+        u0, v0, scale = C.UV_ATLAS[tile]
+        for i in loops:
+            u, v = layer[i].uv
+            layer[i].uv = (u0 + (u - tile) * scale, v0 + v * scale)
+    mesh["uv_atlas"] = 1
+
+
 def add_vertex_ids(body):
     """Second UV channel holding each loop's vertex index (u) — the body vertex id.
 
@@ -276,6 +295,7 @@ def run(hbm_blend=None):
     scale = scale_to_height(body, source_eyes)
     eyes = build_eyes(source_eyes)
     cleanup(body)
+    pack_uv_tiles(body)
     add_vertex_ids(body)
     print(f"[body_prepare] body {tris} tris {budgets}, eyes {_tris(eyes.data)} tris, height scale {scale:.4f}")
     print(f"[body_prepare] source faces per region: {regions}")

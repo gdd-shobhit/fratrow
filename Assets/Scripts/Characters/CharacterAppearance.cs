@@ -6,25 +6,37 @@ namespace FratRow.Characters
     /// <summary>
     /// Dresses a modular character (design/art/character-pipeline.md): spawns each
     /// CosmeticItem onto this character's skeleton, syncs body sliders onto the body
-    /// and every worn item, hides skin covered by worn items, and tints skin and items.
+    /// and every worn item, hides skin covered by worn items, tints skin and items,
+    /// applies the face and eye textures, and scales the character to its height.
     ///
     /// Skinned items are re-bound to the character's bones by name (every charkit
     /// export shares the SK_Human skeleton). Rigid items are parented to their Socket_*
     /// bones at the placement they were authored with on the rest-pose body. The body
     /// mesh is replaced by a copy without covered triangles, merged into one submesh
     /// so skin is a single draw call; copies are cached per item combination.
+    ///
+    /// The look comes from a CharacterRecipe (loaded on Start when assigned) or from
+    /// the fields set directly; Apply always uses the current fields. Height is this
+    /// transform's uniform scale, so place the character with a parent if gameplay
+    /// needs to scale it too.
     /// </summary>
     [DisallowMultipleComponent]
     public class CharacterAppearance : MonoBehaviour
     {
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
         static readonly Dictionary<Mesh, Dictionary<string, Mesh>> TrimmedBodies = new Dictionary<Mesh, Dictionary<string, Mesh>>();
 
+        [SerializeField] CharacterRecipe recipe;
         [SerializeField] SkinnedMeshRenderer body;
+        [SerializeField] SkinnedMeshRenderer eyes;
         [SerializeField] Material skinMaterial;
         [SerializeField] Color skinColor = new Color(0.87f, 0.68f, 0.56f);
+        [SerializeField, Range(0.9f, 1.1f)] float height = 1f;
+        [SerializeField] Texture2D faceTexture;
+        [SerializeField] Texture2D eyeTexture;
         [SerializeField] List<BodySlider> sliders = new List<BodySlider>();
-        [SerializeField] List<CosmeticItem> items = new List<CosmeticItem>();
+        [SerializeField] List<WornItem> items = new List<WornItem>();
         [SerializeField] bool applyOnStart = true;
 
         [SerializeField, HideInInspector] Mesh sourceBodyMesh;
@@ -32,10 +44,20 @@ namespace FratRow.Characters
         readonly List<GameObject> spawned = new List<GameObject>();
 
         /// <summary>The body renderer (SKM_F_Body), found by name if not assigned.</summary>
-        public SkinnedMeshRenderer Body => body ? body : (body = FindBody());
+        public SkinnedMeshRenderer Body => body ? body : (body = FindRenderer("_Body"));
 
-        /// <summary>Items to wear on the next Apply.</summary>
-        public List<CosmeticItem> Items => items;
+        /// <summary>The eyes renderer (SKM_F_Eyes), found by name if not assigned.</summary>
+        public SkinnedMeshRenderer Eyes => eyes ? eyes : (eyes = FindRenderer("_Eyes"));
+
+        /// <summary>Recipe loaded on Start (before Apply); null to set the look field by field.</summary>
+        public CharacterRecipe Recipe
+        {
+            get => recipe;
+            set => recipe = value;
+        }
+
+        /// <summary>Items to wear on the next Apply; later items win slot conflicts.</summary>
+        public List<WornItem> Items => items;
 
         /// <summary>Body slider values to use on the next Apply.</summary>
         public List<BodySlider> Sliders => sliders;
@@ -47,6 +69,27 @@ namespace FratRow.Characters
             set => skinColor = value;
         }
 
+        /// <summary>Whole-body scale applied to this transform (1 = the base body's height).</summary>
+        public float Height
+        {
+            get => height;
+            set => height = value;
+        }
+
+        /// <summary>Face makeup texture (body UVs, multiplied by the skin colour); null for plain skin.</summary>
+        public Texture2D FaceTexture
+        {
+            get => faceTexture;
+            set => faceTexture = value;
+        }
+
+        /// <summary>Iris texture for the eyes; null keeps the eye material's own.</summary>
+        public Texture2D EyeTexture
+        {
+            get => eyeTexture;
+            set => eyeTexture = value;
+        }
+
         /// <summary>Material used for the merged body (falls back to the body's first material).</summary>
         public Material SkinMaterial
         {
@@ -56,9 +99,27 @@ namespace FratRow.Characters
 
         void Start()
         {
+            if (recipe != null)
+                Load(recipe);
             if (applyOnStart)
                 Apply();
         }
+
+        /// <summary>Copies a recipe's look into this character's fields (call Apply to show it).</summary>
+        public void Load(CharacterRecipe source)
+        {
+            if (source == null)
+                return;
+            skinColor = source.skinColor;
+            height = source.height;
+            faceTexture = source.faceTexture;
+            eyeTexture = source.eyeTexture;
+            sliders = new List<BodySlider>(source.sliders);
+            items = new List<WornItem>(source.items);
+        }
+
+        /// <summary>Adds an item (replacing anything in its slots on the next Apply).</summary>
+        public void Wear(CosmeticItem item, params Color[] colors) => items.Add(new WornItem(item, colors));
 
         /// <summary>Removes previously applied items and dresses the character from the current settings.</summary>
         [ContextMenu("Apply")]
@@ -80,13 +141,12 @@ namespace FratRow.Characters
             Dictionary<string, Transform> bones = IndexBones();
             int idCount = CountBodyIds(sourceBodyMesh);
             var masks = new List<bool[]>();
-            foreach (CosmeticItem item in items)
+            foreach (WornItem worn in Worn())
             {
-                if (item == null || item.model == null)
-                    continue;
+                CosmeticItem item = worn.item;
                 if (item.kind == CosmeticKind.Skinned)
                 {
-                    SpawnSkinned(item, bones);
+                    SpawnSkinned(worn, bones);
                     if (item.bodyVertexCount == idCount)
                         masks.Add(item.HiddenMask());
                     else
@@ -95,14 +155,34 @@ namespace FratRow.Characters
                 }
                 else
                 {
-                    SpawnRigid(item, bones, bodyRenderer);
+                    SpawnRigid(worn, bones, bodyRenderer);
                 }
             }
 
             bodyRenderer.sharedMesh = TrimmedBody(sourceBodyMesh, BodyMask.Union(masks, idCount));
             bodyRenderer.sharedMaterials = new[] { skinMaterial ? skinMaterial : sourceBodyMaterials[0] };
-            Tint(bodyRenderer, 0, skinColor);
+            SetLook(bodyRenderer, 0, skinColor, faceTexture);
             ApplySliders(bodyRenderer);
+            SkinnedMeshRenderer eyesRenderer = Eyes;
+            if (eyesRenderer != null)
+            {
+                for (int m = 0; m < eyesRenderer.sharedMaterials.Length; m++)
+                    SetLook(eyesRenderer, m, Color.white, eyeTexture);
+                ApplySliders(eyesRenderer);
+            }
+            transform.localScale = Vector3.one * height;
+        }
+
+        /// <summary>The items that survive slot resolution, in wearing order (missing items skipped).</summary>
+        public List<WornItem> Worn()
+        {
+            var valid = items.FindAll(w => w.item != null && w.item.model != null);
+            bool[] keep = CosmeticSlots.Resolve(valid.ConvertAll(w => w.item.slot));
+            var worn = new List<WornItem>(valid.Count);
+            for (int i = 0; i < valid.Count; i++)
+                if (keep[i])
+                    worn.Add(valid[i]);
+            return worn;
         }
 
         /// <summary>Removes spawned items and restores the untrimmed body.</summary>
@@ -118,12 +198,14 @@ namespace FratRow.Characters
                 body.sharedMaterials = sourceBodyMaterials;
                 body.SetPropertyBlock(null);
             }
+            if (eyes != null)
+                eyes.SetPropertyBlock(null);
         }
 
-        SkinnedMeshRenderer FindBody()
+        SkinnedMeshRenderer FindRenderer(string nameSuffix)
         {
             foreach (SkinnedMeshRenderer smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (smr.name.Contains("_Body"))
+                if (smr.name.Contains(nameSuffix))
                     return smr;
             return null;
         }
@@ -137,8 +219,9 @@ namespace FratRow.Characters
             return bones;
         }
 
-        void SpawnSkinned(CosmeticItem item, Dictionary<string, Transform> bones)
+        void SpawnSkinned(WornItem worn, Dictionary<string, Transform> bones)
         {
+            CosmeticItem item = worn.item;
             GameObject instance = Instantiate(item.model, transform);
             SkinnedMeshRenderer[] renderers = instance.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             if (renderers.Length == 0)
@@ -159,16 +242,17 @@ namespace FratRow.Characters
                     smr.rootBone = root;
                 smr.transform.SetParent(transform, false);
                 smr.name = item.id;
-                for (int m = 0; m < smr.sharedMaterials.Length && m < item.materials.Length; m++)
-                    Tint(smr, m, item.materials[m].color);
+                for (int m = 0; m < smr.sharedMaterials.Length; m++)
+                    SetLook(smr, m, worn.ColorAt(m), null);
                 ApplySliders(smr);
                 spawned.Add(smr.gameObject);
             }
             DestroySafe(instance); // the item's own skeleton copy
         }
 
-        void SpawnRigid(CosmeticItem item, Dictionary<string, Transform> bones, SkinnedMeshRenderer bodyRenderer)
+        void SpawnRigid(WornItem worn, Dictionary<string, Transform> bones, SkinnedMeshRenderer bodyRenderer)
         {
+            CosmeticItem item = worn.item;
             GameObject instance = Instantiate(item.model, transform); // same scene as the character
             foreach (CosmeticAttachment attachment in item.attachments)
             {
@@ -187,8 +271,8 @@ namespace FratRow.Characters
                 node.localScale = local.lossyScale;
                 node.name = $"{item.id}:{attachment.socket}";
                 Renderer renderer = node.GetComponent<Renderer>();
-                for (int m = 0; renderer != null && m < renderer.sharedMaterials.Length && m < item.materials.Length; m++)
-                    Tint(renderer, m, item.materials[m].color);
+                for (int m = 0; renderer != null && m < renderer.sharedMaterials.Length; m++)
+                    SetLook(renderer, m, worn.ColorAt(m), null);
                 spawned.Add(node.gameObject);
             }
             DestroySafe(instance);
@@ -241,11 +325,13 @@ namespace FratRow.Characters
             }
         }
 
-        static void Tint(Renderer renderer, int materialIndex, Color color)
+        static void SetLook(Renderer renderer, int materialIndex, Color color, Texture texture)
         {
             var block = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(block, materialIndex);
             block.SetColor(BaseColor, color);
+            if (texture != null)
+                block.SetTexture(BaseMap, texture);
             renderer.SetPropertyBlock(block, materialIndex);
         }
 

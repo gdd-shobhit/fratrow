@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "SKM_F_Shoes_ChunkyBoots",
+  "model": "SKM_F_Shoes_ChunkyBoots.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Shoes",
+  "kind": "skinned",
+  "hiddenBodyVertices": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/w8AwPr/BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPD/////37d//v////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOD/AQBY/f8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/P////++/+f/v9//Pw==",
+  "hiddenBodyVertexCount": 255,
+  "materials": [
+    {
+      "name": "M_F_Shoes_ChunkyBoots_Upper",
+      "color": [
+        0.11,
+        0.11,
+        0.12
+      ],
+      "recolorable": true
+    },
+    {
+      "name": "M_F_Shoes_ChunkyBoots_Sole",
+      "color": [
+        0.16,
+        0.16,
+        0.17
+      ],
+      "recolorable": true
+    }
+  ]
+}

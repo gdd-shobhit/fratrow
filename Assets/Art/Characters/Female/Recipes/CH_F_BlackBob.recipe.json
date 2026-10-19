@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "CH_F_BlackBob",
+  "displayName": "Black Bob",
+  "baseModel": "SK_Female_Base",
+  "height": 1.0,
+  "skin": "#C99375",
+  "sliders": [
+    { "name": "Bust_Large", "value": 0.7 },
+    { "name": "Hips_Wide", "value": 0.9 },
+    { "name": "Butt_Large", "value": 0.9 },
+    { "name": "Thighs_Thick", "value": 0.8 },
+    { "name": "Waist_Narrow", "value": 0.5 },
+    { "name": "Calves_Thick", "value": 0.4 },
+    { "name": "Arms_Thick", "value": 0.3 },
+    { "name": "Belly_Soft", "value": 0.2 }
+  ],
+  "faceTexture": "T_F_Face_BlackBob",
+  "eyeTexture": "T_F_Eyes_BlackBob",
+  "items": [
+    { "id": "SKM_F_Hair_Bob", "colors": ["#1C1C22"] },
+    { "id": "SKM_F_Top_TurtleneckCrop", "colors": ["#24493B"] },
+    { "id": "SKM_F_Bottom_CargoPants", "colors": ["#222225"] },
+    { "id": "SKM_F_Legwear_FishnetBand", "colors": ["#141416"] },
+    { "id": "SKM_F_Shoes_ChunkyBoots", "colors": ["#1C1C1F", "#2A2A2D"] }
+  ],
+  "face": {
+    "brows": "#2A1E1C", "browThickness": 1.25, "browArch": 0.8,
+    "lashes": "#1A1212", "wing": 1.0,
+    "eyeshadow": "#7A4E44", "eyeshadowAlpha": 0.3,
+    "lips": "#B05A63",
+    "blush": "#D98A84", "blushAlpha": 0.25,
+    "freckles": 0.0
+  },
+  "iris": "#5BA35F"
+}

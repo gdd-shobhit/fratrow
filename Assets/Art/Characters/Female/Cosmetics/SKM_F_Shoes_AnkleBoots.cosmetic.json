@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "SKM_F_Shoes_AnkleBoots",
+  "model": "SKM_F_Shoes_AnkleBoots.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Shoes",
+  "kind": "skinned",
+  "hiddenBodyVertices": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAnAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+3/PwI//AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPD/9/v//7d/vv+9/v8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgHwAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGD/9xT44/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/P9///+//6f3v9//Pw==",
+  "hiddenBodyVertexCount": 274,
+  "materials": [
+    {
+      "name": "M_F_Shoes_AnkleBoots_Upper",
+      "color": [
+        0.96,
+        0.96,
+        0.95
+      ],
+      "recolorable": true
+    },
+    {
+      "name": "M_F_Shoes_AnkleBoots_Sole",
+      "color": [
+        0.84,
+        0.84,
+        0.85
+      ],
+      "recolorable": true
+    }
+  ]
+}

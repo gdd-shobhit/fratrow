@@ -101,10 +101,17 @@ def remove_item(name):
             bpy.data.meshes.remove(data)
 
 
-def body_bmesh(regions):
-    """A bmesh of the rest body restricted to `regions`, without skin data."""
+def body_bmesh(regions, exclude_face_sets=()):
+    """A bmesh of the rest body restricted to `regions`, without skin data.
+
+    `exclude_face_sets` drops source face sets inside those regions (e.g. ears
+    or eyelids when growing a hair cap from the head).
+    """
     body = bpy.data.objects[C.BODY]
     surface = BodySurface(body)
+    face_sets = [0] * len(body.data.polygons)
+    body.data.attributes[C.FACE_SET_ATTR].data.foreach_get("value", face_sets)
+    excluded = set(exclude_face_sets)
     bm = bmesh.new()
     source = bm.verts.layers.int.new(SOURCE_LAYER)  # body vertex index + 1; 0 = made by a cut
     vmap = {}
@@ -114,7 +121,7 @@ def body_bmesh(regions):
     uv_src = body.data.uv_layers.get("UVMap")
     uv = bm.loops.layers.uv.new("UVMap")
     for poly, region in zip(body.data.polygons, surface.regions):
-        if region not in regions:
+        if region not in regions or face_sets[poly.index] in excluded:
             continue
         face = bm.faces.new([vmap[v] for v in poly.vertices])
         for loop, li in zip(face.loops, poly.loop_indices):
@@ -201,11 +208,75 @@ def relax(bm, surface, offset, iterations, factor=0.5, pinned=None):
     bm.normal_update()
 
 
+def shrink(bm, surface, offset, iterations, pull=0.35, factor=0.5, smooth_iterations=12):
+    """Balloon-shrink a closed shell onto the body: pull each vertex toward the
+    skin (stopping `offset` off it) and smooth, so the result hugs convex areas
+    and bridges hollows (between toes, between legs) like stretched fabric.
+    A final smoothing pass without pulling rounds out dents left in hollows."""
+    neighbours = {v: [e.other_vert(v) for e in v.link_edges] for v in bm.verts}
+
+    def smooth_step():
+        new = {}
+        for v, nbrs in neighbours.items():
+            if nbrs:
+                avg = sum((n.co for n in nbrs), Vector()) / len(nbrs)
+                new[v] = surface.push_out(v.co.lerp(avg, factor), offset)
+        for v, co in new.items():
+            v.co = co
+
+    for _ in range(iterations):
+        for v in bm.verts:
+            _, _, loc, normal, _ = surface.nearest(v.co)
+            target = loc + normal * offset
+            if (v.co - loc).dot(normal) > offset:
+                v.co = v.co.lerp(target, pull)
+        smooth_step()
+    for _ in range(smooth_iterations):
+        smooth_step()
+    bm.normal_update()
+
+
+def cover_points(bm, points, gap, iterations=5):
+    """Push a closed, outward-facing shell out wherever a body point is outside it
+    or closer than `gap` — no skin can poke through between the shell's vertices,
+    which matters when the shell is coarser than the skin (toe tips in a boot)."""
+    for _ in range(iterations):
+        bm.normal_update()
+        bm.faces.ensure_lookup_table()
+        bvh = BVHTree.FromBMesh(bm)
+        moves, counts = defaultdict(Vector), defaultdict(int)
+        for p in points:
+            loc, normal, index, _ = bvh.find_nearest(p)
+            if loc is None:
+                continue
+            s = (p - loc).dot(normal)
+            if s > -gap:
+                for v in bm.faces[index].verts:
+                    moves[v] += normal * (s + gap)
+                    counts[v] += 1
+        if not moves:
+            break
+        for v, m in moves.items():
+            v.co += m / counts[v]
+    bm.normal_update()
+
+
+def add_edge_loop(bm, z):
+    """Cut a horizontal edge loop at height z without deleting anything (clean colour lines)."""
+    geom = list(bm.verts) + list(bm.edges) + list(bm.faces)
+    bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, z), plane_no=(0, 0, 1))
+
+
 def to_object(bm, name, material):
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
-    mesh.materials.append(material)
+    if isinstance(material, (list, tuple)):
+        for mat in material:
+            mesh.materials.append(mat)
+        material = None
+    else:
+        mesh.materials.append(material)
     mesh.shade_smooth()
     obj = bpy.data.objects.new(name, mesh)
     obj["charkit_item"] = name
@@ -233,12 +304,17 @@ def decimate(obj, target_tris):
     return sum(len(p.vertices) - 2 for p in baked.polygons)
 
 
-def solidify(obj, thickness):
-    """Give the shell thickness inward (rim included) and bake it into the mesh."""
+def solidify(obj, thickness, rim_only=False):
+    """Give the shell thickness inward (rim included) and bake it into the mesh.
+
+    rim_only adds just the band around open edges (no inner layer): half the
+    triangles, for items whose inside is never seen (shoes).
+    """
     mod = obj.modifiers.new("_solidify", "SOLIDIFY")
     mod.thickness = thickness
     mod.offset = -1.0
     mod.use_rim = True
+    mod.use_rim_only = rim_only
     # Even offset divides by the corner angle and threw a vertex 50 m out on a
     # degenerate face; clamping keeps the inner layer from overshooting.
     mod.use_even_offset = False
@@ -269,22 +345,92 @@ def ensure_clearance(obj, min_gap):
     return moved
 
 
+def srgb_to_linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
 def material(name, color, roughness=0.6, metallic=0.0):
+    """`color` is sRGB, like Unity's Color and the sidecar colours; Blender takes
+    linear values, so it is converted here and kept as the "srgb" property."""
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     if mat.node_tree is None:
         mat.use_nodes = True
+    linear = tuple(srgb_to_linear(c) for c in color)
     bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
-    bsdf.inputs["Base Color"].default_value = (*color, 1.0)
+    bsdf.inputs["Base Color"].default_value = (*linear, 1.0)
     bsdf.inputs["Roughness"].default_value = roughness
     bsdf.inputs["Metallic"].default_value = metallic
-    mat.diffuse_color = (*color, 1.0)
+    mat.diffuse_color = (*linear, 1.0)
+    mat["srgb"] = list(color)
     return mat
+
+
+def material_srgb(mat):
+    """The sRGB colour a material was made with (see material())."""
+    return tuple(mat["srgb"]) if "srgb" in mat else tuple(mat.diffuse_color[:3])
 
 
 # --- Skinning, sliders, mask --------------------------------------------------
 
 MAX_SKIN_DISTANCE = 0.15  # no vertex of a body-grown item should be farther than this
 SLIDER_MIN_GAP = 0.004    # at full slider, keep fabric at least this far off the shaped skin
+
+
+def assign_materials(obj, pick):
+    """Set each face's material slot to pick(face_centre, face_normal) (an int)."""
+    for poly in obj.data.polygons:
+        poly.material_index = pick(poly.center.copy(), poly.normal.copy())
+
+
+def set_weights(obj, weights_at):
+    """Replace bone weights with weights_at(co) -> {bone: weight}, then limit and normalise.
+
+    For items whose motion should not simply copy the skin under them: hair
+    riding the head, a skirt only half-following the legs.
+    """
+    obj.vertex_groups.clear()
+    groups = {}
+    for v in obj.data.vertices:
+        for bone, w in weights_at(v.co).items():
+            if w > 1e-4:
+                group = groups.get(bone) or obj.vertex_groups.new(name=bone)
+                groups[bone] = group
+                group.add([v.index], w, "REPLACE")
+    limit_and_normalize(obj)
+
+
+def skin_weights_at(surface, co):
+    """The body's bone weights at the skin nearest to co (barycentric blend)."""
+    verts, bary, *_ = surface.nearest(co)
+    mixed = defaultdict(float)
+    for bv, b in zip(verts, bary):
+        for name, w in surface.weights[bv].items():
+            mixed[name] += b * w
+    return dict(mixed)
+
+
+def finish(obj, out_dir, slot, materials, weights_at=None, mask=True, reach=0.025, sidecar=None):
+    """Bind (weights + body sliders), optionally override weights, mask, export.
+
+    `materials` is [(name, colour, recolorable)] in slot order. Returns the FBX path.
+    """
+    bind_to_body(obj)
+    if weights_at is not None:
+        set_weights(obj, weights_at)
+    body = bpy.data.objects[C.BODY]
+    hidden = skin_mask(obj, reach=reach) if mask else []
+    tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    data = {
+        "slot": slot,
+        "kind": "skinned",
+        "hiddenBodyVertices": encode_mask(hidden, len(body.data.vertices)),
+        "hiddenBodyVertexCount": len(hidden),
+        "materials": [{"name": n, "color": list(c), "recolorable": r} for n, c, r in materials],
+        **(sidecar or {}),
+    }
+    path = export(obj.name, [obj], out_dir, data)
+    print(f"[{obj.name}] {tris} tris, hides {len(hidden)} body vertices -> {path}")
+    return path
 
 
 def bind_to_body(obj):
@@ -316,7 +462,13 @@ def bind_to_body(obj):
                 group.add([v.index], w, "REPLACE")
     limit_and_normalize(obj)
     obj.shape_key_add(name="Basis", from_mix=False)
-    rest_gap = [surface.nearest(v.co)[4] for v in mesh.vertices]
+    # Signed offset from the rest skin: a vertex that already tests "inside" at rest
+    # (thin features, sharp edges) must not be pushed out by every key, only by
+    # skin that actually swells toward it.
+    rest_offset = []
+    for v in mesh.vertices:
+        _, _, loc, normal, _ = surface.nearest(v.co)
+        rest_offset.append((v.co - loc).dot(normal))
     for name in C.SHAPE_KEYS:
         deltas = surface.key_deltas[name]
         key = obj.shape_key_add(name=name, from_mix=False)
@@ -329,7 +481,7 @@ def bind_to_body(obj):
         for v, (verts, bary) in zip(mesh.vertices, samples):
             p = v.co + sum((deltas[bv] * b for bv, b in zip(verts, bary)), Vector())
             loc, normal, _, _ = shaped_bvh.find_nearest(p)
-            keep = min(rest_gap[v.index], SLIDER_MIN_GAP)
+            keep = min(rest_offset[v.index], SLIDER_MIN_GAP)
             if (p - loc).dot(normal) < keep:
                 p = loc + normal * keep
             key.data[v.index].co = p

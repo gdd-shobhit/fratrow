@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "SKM_F_Shoes_Sneakers",
+  "model": "SKM_F_Shoes_Sneakers.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Shoes",
+  "kind": "skinned",
+  "hiddenBodyVertices": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPD/nvv///d//ssBAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/H9n/3++/+f/MgAAPA==",
+  "hiddenBodyVertexCount": 138,
+  "materials": [
+    {
+      "name": "M_F_Shoes_Sneakers_Upper",
+      "color": [
+        0.95,
+        0.95,
+        0.94
+      ],
+      "recolorable": true
+    },
+    {
+      "name": "M_F_Shoes_Sneakers_Sole",
+      "color": [
+        0.72,
+        0.72,
+        0.75
+      ],
+      "recolorable": true
+    }
+  ]
+}

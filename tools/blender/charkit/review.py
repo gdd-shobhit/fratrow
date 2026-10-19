@@ -196,10 +196,12 @@ VIEWS = {
 }
 
 
-def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=None, focus=None):
+def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=None, focus=None,
+           color_type="MATERIAL"):
     """Workbench render of the character from each view to <out_dir>/<name>_<view>.png.
 
-    focus=(centre, extent) frames a close-up instead of the whole character.
+    focus=(centre, extent) frames a close-up instead of the whole character;
+    color_type="TEXTURE" shows image textures (face and eyes).
     """
     scene = bpy.context.scene
     objects = objects or [o for o in bpy.data.collections[C.COLLECTION].all_objects if o.type == "MESH"]
@@ -232,7 +234,7 @@ def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=No
             pass
         shading = scene.display.shading
         shading.light = "STUDIO"
-        shading.color_type = "MATERIAL"
+        shading.color_type = color_type
         shading.show_cavity = True
         scene.render.resolution_x = scene.render.resolution_y = size
         scene.render.film_transparent = False
