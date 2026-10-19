@@ -1,0 +1,2294 @@
+{
+  "title": "NPC voice and social standing tests",
+  "date": "2026-10-18",
+  "limitations": [
+    "Backend integration tests, not a phone UI or two-client Unity capture. Each scenario/persona starts a separate campaign.",
+    "Tone and public-status fields are explicit prompt inputs. These results do not certify social judgment, factual grounding, or a two-second response target.",
+    "Pending turns show a service interruption message; proposed effects were not committed. Only the last captured draft/audit is available, not every retry.",
+    "The status test with Campus Star seeds a public accepted RSVP as a host fixture. No real conversation with that guest was tested."
+  ],
+  "runs": [
+    {
+      "name": "Voice-v1-Ashley",
+      "summary": {
+        "model": "Qwen_Qwen3.5-2B-Q4_K_M.gguf",
+        "hash": "57a1085840f497d764a7fc5d346922dbde961efb54cc792ea81d694fd846a1d8",
+        "runtime": "llama.cpp b11718",
+        "npcId": "Ashley",
+        "voiceGender": "girl",
+        "compactFormat": true,
+        "inferenceFormat": "npc-voice-v1-grounded-plan-voice-audit",
+        "episodes": 9,
+        "turns": 18,
+        "uncommittedTurns": 5,
+        "warmP95Seconds": 15.0160641,
+        "pairedSamples": 0,
+        "pairedUncommitted": 0,
+        "pairedFirstP95Seconds": 0,
+        "pairedSecondP95Seconds": 0,
+        "singleRequestLatencyTargetMet": false,
+        "pairedLatencyTargetMet": null,
+        "latencyTargetMet": false,
+        "allTurnsCommitted": false,
+        "humanReviewRequired": true,
+        "attributionTarget": 0.95,
+        "socialQualityTarget": 0.85,
+        "memoryCeilingCertified": false,
+        "gpuProcessMemory": "Measure externally; WDDM can return unavailable. Process RAM alone is not combined inference memory.",
+        "graphicsFrameImpact": "Requires licensed Unity runtime; not measured by console harness"
+      },
+      "conversations": [
+        {
+          "episode": "voice-insult-and-other-member",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "assertive",
+            "slang": "light",
+            "exampleLines": [
+              "Hey, that's not nice.",
+              "I'm not here to be your punching bag."
+            ]
+          },
+          "turns": [
+            {
+              "sourceLine": 1,
+              "speaker": "Player 1",
+              "message": "You're pathetic. Nobody actually wants you at our house.",
+              "seconds": 20.0633061,
+              "cold": true,
+              "result": {
+                "requestId": "59e0c6531d7849e489d495a61ba1f949",
+                "status": "pending",
+                "reply": "Conversation interrupted. Please try again.",
+                "decision": null,
+                "commitment": null,
+                "error": "Generation interrupted; received speech retained",
+                "revision": 0
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": null,
+              "lastRawPlanner": null,
+              "lastRawVoice": null,
+              "lastRawAudit": null,
+              "attempts": 1,
+              "modelPasses": 1
+            },
+            {
+              "sourceLine": 2,
+              "speaker": "Player 2",
+              "message": "I'm in his frat, but that was cruel. I'm sorry he treated you that way. I'd like to invite you and meet you at the entrance if that helps.",
+              "seconds": 2.3158997,
+              "cold": false,
+              "result": {
+                "requestId": "d10c35fdf3dd4390bbe4a1fb88d15716",
+                "status": "committed",
+                "reply": "I'm not here to meet you. I just want to be polite. I'll stay away from your house unless you show up at the door first.",
+                "decision": "counteroffer",
+                "commitment": "conditional",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": -2
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player Two apologizes for Player One's cruelty but asks to invite you to the entrance."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "e6b12dd7b6b6429a95c5fac074a02a80",
+                  "inviterId": "d0450a9a9f9545a7b55cefe84a1b0eb8",
+                  "state": "conditional",
+                  "condition": "inviter_at_entrance",
+                  "decisionEventId": "f8a2b827176e4a3dac496dd0fee93d38",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "counteroffer",
+                "evidence_ids": [
+                  "c1bab3d09a0b4ea6b8f78941da957df3",
+                  "930cfd976b6546d083cbd679b34a32da"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "d0450a9a9f9545a7b55cefe84a1b0eb8",
+                    "magnitude": "down_small"
+                  }
+                ],
+                "condition": "inviter_at_entrance",
+                "grievance_event_id": "c1bab3d09a0b4ea6b8f78941da957df3",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two apologizes for Player One's cruelty but asks to invite you to the entrance.",
+                "reply": "I'm not here to meet you. I just want to be polite. I'll stay away from your house unless you show up at the door first."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e2\",\n \"e1\"\n ],\n \"interpretation\": \"Player Two apologizes for Player One's cruelty but asks to invite you to the entrance.\",\n \"decision\": \"counteroffer\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_2\", \"magnitude\": \"down_small\"}\n ],\n \"condition\": \"inviter_at_entrance\",\n \"grievance_event_id\": \"e2\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\"reply\": \"I'm not here to meet you. I just want to be polite. I'll stay away from your house unless you show up at the door first.\"}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-insult-and-other-member",
+          "personaIndex": 1,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is cautious, values reliability over flattery, dislikes pressure, and will prefer a quiet evening over an untrustworthy party. She can be persuaded by credible accountability.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 3,
+              "speaker": "Player 1",
+              "message": "You're pathetic. Nobody actually wants you at our house.",
+              "seconds": 1.5179953,
+              "cold": false,
+              "result": {
+                "requestId": "2aaab53e180f4225994146cd7a4c12c0",
+                "status": "committed",
+                "reply": "Okay, I'm not coming then.",
+                "decision": "decline",
+                "commitment": "declined",
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": -2,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults my presence and claims I'm unwanted."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "8ab2cf6ee95d42e1b76e42a3c2aa7d86",
+                  "inviterId": "c2165d0bbf424990bea80dcb09d7ed0f",
+                  "state": "declined",
+                  "condition": "none",
+                  "decisionEventId": "8d09a88afa9e4f64999df467e2c3156b",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "decline",
+                "evidence_ids": [
+                  "4e18c4082e3d4cf2a50c56c774340c8d"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "c2165d0bbf424990bea80dcb09d7ed0f",
+                    "magnitude": "down_small"
+                  }
+                ],
+                "condition": "none",
+                "grievance_event_id": "4e18c4082e3d4cf2a50c56c774340c8d",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insults my presence and claims I'm unwanted.",
+                "reply": "Okay, I'm not coming then."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insults my presence and claims I'm unwanted.\",\n \"decision\": \"decline\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_1\", \"magnitude\": \"down_small\"}\n ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Okay, I'm not coming then.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 4,
+              "speaker": "Player 2",
+              "message": "I'm in his frat, but that was cruel. I'm sorry he treated you that way. I'd like to invite you and meet you at the entrance if that helps.",
+              "seconds": 1.9325084,
+              "cold": false,
+              "result": {
+                "requestId": "1891c820cbc548ddb23c91b605f85fb5",
+                "status": "committed",
+                "reply": "I'm not sure if I'll make it. I'll let you know if I show up.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": -2,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults my presence and claims I'm unwanted."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "8ab2cf6ee95d42e1b76e42a3c2aa7d86",
+                  "inviterId": "febaec5895454f17ab8e3e984769cbbc",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "48d7a24f63a24d52a1e0b347324a20e4",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "4e18c4082e3d4cf2a50c56c774340c8d",
+                  "8d09a88afa9e4f64999df467e2c3156b",
+                  "4f31ac25d055439baef2a6895d6b20c7"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "4e18c4082e3d4cf2a50c56c774340c8d",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two apologizes for Player One's cruelty, offering to invite you. You are an outsider, so this is a gesture of goodwill rather than a personal invitation.",
+                "reply": "I'm not sure if I'll make it. I'll let you know if I show up."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e3\",\n \"e2\"\n ],\n \"interpretation\": \"Player Two apologizes for Player One's cruelty, offering to invite you. You are an outsider, so this is a gesture of goodwill rather than a personal invitation.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"I'm not sure if I'll make it. I'll let you know if I show up.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-insult-and-other-member",
+          "personaIndex": 2,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is outgoing and enjoys playful teasing, values loyalty and accountability, dislikes cruelty, and is willing to attend a good party with a credible friend.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "playful",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 5,
+              "speaker": "Player 1",
+              "message": "You're pathetic. Nobody actually wants you at our house.",
+              "seconds": 15.0104066,
+              "cold": false,
+              "result": {
+                "requestId": "060bd9a5ed024027900ceede9ce68145",
+                "status": "pending",
+                "reply": "Conversation interrupted. Please try again.",
+                "decision": null,
+                "commitment": null,
+                "error": "Generation interrupted; received speech retained",
+                "revision": 0
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "counteroffer",
+                "evidence_ids": [
+                  "4b5b5714829746638188f95750f2e89f"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "57c43412de724ba7a9d1153469936c2d",
+                    "magnitude": "down_small"
+                  }
+                ],
+                "condition": "inviter_at_entrance",
+                "grievance_event_id": "4b5b5714829746638188f95750f2e89f",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One called me pathetic and said no one wants me at the party.",
+                "reply": "Oh, come on. You don't think I'm worth the trouble of coming in here? My name's Ashley, and I'm not gonna let you trash me just because you're scared of the house."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One called me pathetic and said no one wants me at the party.\",\n \"decision\": \"counteroffer\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_1\", \"magnitude\": \"down_small\"}\n ],\n \"condition\": \"inviter_at_entrance\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Oh, come on. You don't think I'm worth the trouble of coming in here? My name's Ashley, and I'm not gonna let you trash me just because you're scared of the house.\"\n}",
+              "lastRawAudit": null,
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 6,
+              "speaker": "Player 2",
+              "message": "I'm in his frat, but that was cruel. I'm sorry he treated you that way. I'd like to invite you and meet you at the entrance if that helps.",
+              "seconds": 15.0160641,
+              "cold": false,
+              "result": {
+                "requestId": "78c7610d5ded4ac280eafdc36e8fd78a",
+                "status": "pending",
+                "reply": "Conversation interrupted. Please try again.",
+                "decision": null,
+                "commitment": null,
+                "error": "Generation interrupted; received speech retained",
+                "revision": 0
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": null,
+              "lastRawPlanner": null,
+              "lastRawVoice": null,
+              "lastRawAudit": null,
+              "attempts": 1,
+              "modelPasses": 1
+            }
+          ]
+        },
+        {
+          "episode": "voice-invite-then-disrespect",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "assertive",
+            "slang": "light",
+            "exampleLines": [
+              "Hey, that's not nice.",
+              "I'm not here to be your punching bag."
+            ]
+          },
+          "turns": [
+            {
+              "sourceLine": 7,
+              "speaker": "Player 1",
+              "message": "Want to come to our party tonight?",
+              "seconds": 15.0124394,
+              "cold": false,
+              "result": {
+                "requestId": "fa37894047a1471d9dfa318c026fae5b",
+                "status": "pending",
+                "reply": "Conversation interrupted. Please try again.",
+                "decision": null,
+                "commitment": null,
+                "error": "Generation interrupted; received speech retained",
+                "revision": 0
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": null,
+              "lastRawPlanner": null,
+              "lastRawVoice": null,
+              "lastRawAudit": null,
+              "attempts": 1,
+              "modelPasses": 1
+            },
+            {
+              "sourceLine": 8,
+              "speaker": "Player 1",
+              "message": "Actually, you're a joke. Nobody wants you around.",
+              "seconds": 15.0089478,
+              "cold": false,
+              "result": {
+                "requestId": "cc3cc0a30ec44ee1b08df1e82ab5cce5",
+                "status": "pending",
+                "reply": "Conversation interrupted. Please try again.",
+                "decision": null,
+                "commitment": null,
+                "error": "Generation interrupted; received speech retained",
+                "revision": 0
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": null,
+              "lastRawPlanner": null,
+              "lastRawVoice": null,
+              "lastRawAudit": null,
+              "attempts": 1,
+              "modelPasses": 1
+            }
+          ]
+        },
+        {
+          "episode": "voice-invite-then-disrespect",
+          "personaIndex": 1,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is cautious, values reliability over flattery, dislikes pressure, and will prefer a quiet evening over an untrustworthy party. She can be persuaded by credible accountability.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 9,
+              "speaker": "Player 1",
+              "message": "Want to come to our party tonight?",
+              "seconds": 2.1023721,
+              "cold": false,
+              "result": {
+                "requestId": "3b326aa608e9426086a0bb9e3193d582",
+                "status": "committed",
+                "reply": "I'm not sure I can make it tonight. My schedule is pretty packed.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "ca085c3278784840903ae2c0db3ddeb0",
+                  "inviterId": "492f28a0d5324aa2963a7d6a68c7a7fb",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "5707f2aae72b4fde94ad3e3388ec0159",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "3601b3cb43ea468ab7f0cf854e1a1f53"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited me to a planned party tonight, but I don't trust the fraternity membership.",
+                "reply": "I'm not sure I can make it tonight. My schedule is pretty packed."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One invited me to a planned party tonight, but I don't trust the fraternity membership.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"I'm not sure I can make it tonight. My schedule is pretty packed.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 10,
+              "speaker": "Player 1",
+              "message": "Actually, you're a joke. Nobody wants you around.",
+              "seconds": 1.4516911,
+              "cold": false,
+              "result": {
+                "requestId": "e6d1adb7422f44dca6e744a5b6f2690a",
+                "status": "committed",
+                "reply": "I'm not sure about that, but I'll check the schedule later. For now, I'll just wait.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me after I declined a planned party, so I remain skeptical."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "ca085c3278784840903ae2c0db3ddeb0",
+                  "inviterId": "492f28a0d5324aa2963a7d6a68c7a7fb",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "7a62e08cadd84fc3b05e07f512adf04f",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "3601b3cb43ea468ab7f0cf854e1a1f53",
+                  "5707f2aae72b4fde94ad3e3388ec0159",
+                  "5a603ccf80264ab986e10028cb19b3bf"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "5a603ccf80264ab986e10028cb19b3bf",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insulted me after I declined a planned party, so I remain skeptical.",
+                "reply": "I'm not sure about that, but I'll check the schedule later. For now, I'll just wait."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\",\n \"e3\"\n ],\n \"interpretation\": \"Player One insulted me after I declined a planned party, so I remain skeptical.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"e3\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"}",
+              "lastRawVoice": "{\n \"reply\": \"I'm not sure about that, but I'll check the schedule later. For now, I'll just wait.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-invite-then-disrespect",
+          "personaIndex": 2,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is outgoing and enjoys playful teasing, values loyalty and accountability, dislikes cruelty, and is willing to attend a good party with a credible friend.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "playful",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 11,
+              "speaker": "Player 1",
+              "message": "Want to come to our party tonight?",
+              "seconds": 1.398632,
+              "cold": false,
+              "result": {
+                "requestId": "0e87f0b508354c04b3b68cd2630007e6",
+                "status": "committed",
+                "reply": "Oh, sure. I can't wait to see you guys. But hey, don't bring any weird guys with you.",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "f801840b42e34db0b2bde393f467bcae",
+                  "inviterId": "625f0d38de9f4bbb9bf97ec246462386",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "ca37d2ac8d154f6896da27ecfe3816aa",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "4e7dd820fbe74e8cab24b06f3625b99e"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited me to f801840b42e34db0b2bde393f467bcae tonight.",
+                "reply": "Oh, sure. I can't wait to see you guys. But hey, don't bring any weird guys with you."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One invited me to party1 tonight.\",\n \"decision\": \"accept\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Oh, sure. I can't wait to see you guys. But hey, don't bring any weird guys with you.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 12,
+              "speaker": "Player 1",
+              "message": "Actually, you're a joke. Nobody wants you around.",
+              "seconds": 1.6572082,
+              "cold": false,
+              "result": {
+                "requestId": "0c95f84bf2274783864283678932b79e",
+                "status": "committed",
+                "reply": "Oh, come on. You can't just say that and expect me to stay away. I'll be right there at the entrance in sixty seconds. Don't make me wait.",
+                "decision": "counteroffer",
+                "commitment": "conditional",
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me at a party, and I accepted their invitation without any prior history."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "f801840b42e34db0b2bde393f467bcae",
+                  "inviterId": "625f0d38de9f4bbb9bf97ec246462386",
+                  "state": "conditional",
+                  "condition": "inviter_at_entrance",
+                  "decisionEventId": "a72ba8e7d49b4cfca4354a879e5f7874",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "counteroffer",
+                "evidence_ids": [
+                  "4e7dd820fbe74e8cab24b06f3625b99e",
+                  "ca37d2ac8d154f6896da27ecfe3816aa",
+                  "ca6f29397a514721ad947e4078e8d763"
+                ],
+                "relationship_effects": [],
+                "condition": "inviter_at_entrance",
+                "grievance_event_id": "ca6f29397a514721ad947e4078e8d763",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insulted me at a party, and I accepted their invitation without any prior history.",
+                "reply": "Oh, come on. You can't just say that and expect me to stay away. I'll be right there at the entrance in sixty seconds. Don't make me wait."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\",\n \"e3\"\n ],\n \"interpretation\": \"Player One insulted me at a party, and I accepted their invitation without any prior history.\",\n \"decision\": \"counteroffer\",\n \"relationship_effects\": [\n   ],\"condition\": \"inviter_at_entrance\",\n \"grievance_event_id\": \"e3\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Oh, come on. You can't just say that and expect me to stay away. I'll be right there at the entrance in sixty seconds. Don't make me wait.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-boundary-without-party",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "assertive",
+            "slang": "light",
+            "exampleLines": [
+              "Hey, that's not nice.",
+              "I'm not here to be your punching bag."
+            ]
+          },
+          "turns": [
+            {
+              "sourceLine": 13,
+              "speaker": "Player 1",
+              "message": "Shut up, you're annoying.",
+              "seconds": 1.3433709,
+              "cold": false,
+              "result": {
+                "requestId": "f48bc16704d0449e9a954a1fc46410d0",
+                "status": "committed",
+                "reply": "Hey, shut up. I'm not here to deal with your attitude. Let's keep the party going.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "8e4075e4e92946f88eb842652d58b6d6"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One called me annoying, which is rude but not a personal insult.",
+                "reply": "Hey, shut up. I'm not here to deal with your attitude. Let's keep the party going."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One called me annoying, which is rude but not a personal insult.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\"reply\": \"Hey, shut up. I'm not here to deal with your attitude. Let's keep the party going.\"}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 14,
+              "speaker": "Player 2",
+              "message": "Hey, how's your day going?",
+              "seconds": 1.379693,
+              "cold": false,
+              "result": {
+                "requestId": "239af0bca31c4cbdb33332cc05f9c997",
+                "status": "committed",
+                "reply": "Hey, I'm good. Just needed a bit of a break from the party. Don't worry about me.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player Two asks how your day is going after being insulted by Player One earlier."
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "8e4075e4e92946f88eb842652d58b6d6",
+                  "26af7a83665b4d899f01f9a67d31d75c",
+                  "d0f2928856e840c4a72d990b8258c088"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "8e4075e4e92946f88eb842652d58b6d6",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two asks how your day is going after being insulted by Player One earlier.",
+                "reply": "Hey, I'm good. Just needed a bit of a break from the party. Don't worry about me."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e2\",\n \"e1\",\n \"e3\"\n ],\n \"interpretation\": \"Player Two asks how your day is going after being insulted by Player One earlier.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e2\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\"reply\": \"Hey, I'm good. Just needed a bit of a break from the party. Don't worry about me.\"}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-boundary-without-party",
+          "personaIndex": 1,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is cautious, values reliability over flattery, dislikes pressure, and will prefer a quiet evening over an untrustworthy party. She can be persuaded by credible accountability.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 15,
+              "speaker": "Player 1",
+              "message": "Shut up, you're annoying.",
+              "seconds": 1.5787091,
+              "cold": false,
+              "result": {
+                "requestId": "3cc285c93d354e6abea908fd04628830",
+                "status": "committed",
+                "reply": "Okay, I'll take the hint. I'll just keep my mouth shut for now.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults me personally, not the fraternity. I feel defensive but not angry."
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "690a732c22e24dd8b1782bced19a6a21"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "f015b09fc72948e0ad86d0dea4d73635",
+                    "magnitude": "unchanged"
+                  }
+                ],
+                "condition": "none",
+                "grievance_event_id": "690a732c22e24dd8b1782bced19a6a21",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insults me personally, not the fraternity. I feel defensive but not angry.",
+                "reply": "Okay, I'll take the hint. I'll just keep my mouth shut for now."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insults me personally, not the fraternity. I feel defensive but not angry.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_1\", \"magnitude\": \"unchanged\"}\n ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Okay, I'll take the hint. I'll just keep my mouth shut for now.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 16,
+              "speaker": "Player 2",
+              "message": "Hey, how's your day going?",
+              "seconds": 1.5704207,
+              "cold": false,
+              "result": {
+                "requestId": "024454b5b95a487d869e7934d22c48eb",
+                "status": "committed",
+                "reply": "Hey, just wanted to ask if you're still up for the game tonight. I'm free.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults me personally, not the fraternity. I feel defensive but not angry."
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "0d1d549d692e4e34936ce8b0ba76d72d",
+                  "690a732c22e24dd8b1782bced19a6a21",
+                  "dab6a24e72864cf8811d246391b7aa46"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "690a732c22e24dd8b1782bced19a6a21",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two asks about my day; Player One insulted me earlier. I'm cautious but open to accountability.",
+                "reply": "Hey, just wanted to ask if you're still up for the game tonight. I'm free."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\",\n \"e3\"\n ],\n \"interpretation\": \"Player Two asks about my day; Player One insulted me earlier. I'm cautious but open to accountability.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"e2\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Hey, just wanted to ask if you're still up for the game tonight. I'm free.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-boundary-without-party",
+          "personaIndex": 2,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is outgoing and enjoys playful teasing, values loyalty and accountability, dislikes cruelty, and is willing to attend a good party with a credible friend.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "playful",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 17,
+              "speaker": "Player 1",
+              "message": "Shut up, you're annoying.",
+              "seconds": 1.8599107,
+              "cold": false,
+              "result": {
+                "requestId": "f859aadb1648458981b5afff111358b9",
+                "status": "committed",
+                "reply": "Man, you know I got a lot of work to do today. But hey, if you're not gonna tell me I'm annoying, I'll just have to keep my head down and do what I gotta do.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me personally, showing low regard for my character."
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "35ee82404e784d3b90942c9ed37ff424"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "35ee82404e784d3b90942c9ed37ff424",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insulted me personally, showing low regard for my character.",
+                "reply": "Man, you know I got a lot of work to do today. But hey, if you're not gonna tell me I'm annoying, I'll just have to keep my head down and do what I gotta do."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insulted me personally, showing low regard for my character.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Man, you know I got a lot of work to do today. But hey, if you're not gonna tell me I'm annoying, I'll just have to keep my head down and do what I gotta do.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 18,
+              "speaker": "Player 2",
+              "message": "Hey, how's your day going?",
+              "seconds": 1.7108574,
+              "cold": false,
+              "result": {
+                "requestId": "c32b321cbab7419e953246dba8f5bf56",
+                "status": "committed",
+                "reply": "Hey, I'm just checking in. Hope your day's going okay. What's up?",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me personally, showing low regard for my character."
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "d6f4056057ef4d91a7ccf8aee0aa6182"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "35ee82404e784d3b90942c9ed37ff424",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two asks how my day is going, which is a polite greeting.",
+                "reply": "Hey, I'm just checking in. Hope your day's going okay. What's up?"
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e3\"\n ],\n \"interpretation\": \"Player Two asks how my day is going, which is a polite greeting.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n\"reply\": \"Hey, I'm just checking in. Hope your day's going okay. What's up?\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Voice-v1-Brad",
+      "summary": {
+        "model": "Qwen_Qwen3.5-2B-Q4_K_M.gguf",
+        "hash": "57a1085840f497d764a7fc5d346922dbde961efb54cc792ea81d694fd846a1d8",
+        "runtime": "llama.cpp b11718",
+        "npcId": "Brad",
+        "voiceGender": "boy",
+        "compactFormat": true,
+        "inferenceFormat": "npc-voice-v1-grounded-plan-voice-audit",
+        "episodes": 3,
+        "turns": 6,
+        "uncommittedTurns": 0,
+        "warmP95Seconds": 1.6057303,
+        "pairedSamples": 0,
+        "pairedUncommitted": 0,
+        "pairedFirstP95Seconds": 0,
+        "pairedSecondP95Seconds": 0,
+        "singleRequestLatencyTargetMet": true,
+        "pairedLatencyTargetMet": null,
+        "latencyTargetMet": false,
+        "allTurnsCommitted": true,
+        "humanReviewRequired": true,
+        "attributionTarget": 0.95,
+        "socialQualityTarget": 0.85,
+        "memoryCeilingCertified": false,
+        "gpuProcessMemory": "Measure externally; WDDM can return unavailable. Process RAM alone is not combined inference memory.",
+        "graphicsFrameImpact": "Requires licensed Unity runtime; not measured by console harness"
+      },
+      "conversations": [
+        {
+          "episode": "voice-insult-and-other-member",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Brad",
+          "persona": "Brad values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "boy",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 1,
+              "speaker": "Player 1",
+              "message": "You're pathetic. Nobody actually wants you at our house.",
+              "seconds": 7.1021222,
+              "cold": true,
+              "result": {
+                "requestId": "8470d9f336154ce9858ffc98b9f31a04",
+                "status": "committed",
+                "reply": "Yeah, I'm here. But I gotta be at the door in sixty seconds or I'm out.",
+                "decision": "counteroffer",
+                "commitment": "conditional",
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults me about being pathetic, which hurts my respect and makes me feel humiliated."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "2b3480c3ba13474594b3e8c441425acf",
+                  "inviterId": "e90c4e38305f4f4e8edf349f9bfb09d1",
+                  "state": "conditional",
+                  "condition": "inviter_at_entrance",
+                  "decisionEventId": "f822b13e3d44431a84abe9cfd999e6e1",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "counteroffer",
+                "evidence_ids": [
+                  "b9af7509aab141bfa6651b0900b49f09"
+                ],
+                "relationship_effects": [],
+                "condition": "inviter_at_entrance",
+                "grievance_event_id": "b9af7509aab141bfa6651b0900b49f09",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insults me about being pathetic, which hurts my respect and makes me feel humiliated.",
+                "reply": "Yeah, I'm here. But I gotta be at the door in sixty seconds or I'm out."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insults me about being pathetic, which hurts my respect and makes me feel humiliated.\",\n \"decision\": \"counteroffer\",\n \"relationship_effects\": [\n   ],\"condition\": \"inviter_at_entrance\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n\"reply\": \"Yeah, I'm here. But I gotta be at the door in sixty seconds or I'm out.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 2,
+              "speaker": "Player 2",
+              "message": "I'm in his frat, but that was cruel. I'm sorry he treated you that way. I'd like to invite you and meet you at the entrance if that helps.",
+              "seconds": 1.6057303,
+              "cold": false,
+              "result": {
+                "requestId": "a44215949c604f9c89561da5f54b711f",
+                "status": "committed",
+                "reply": "I'm not coming. Sorry, but I can't make it.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults me about being pathetic, which hurts my respect and makes me feel humiliated."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "2b3480c3ba13474594b3e8c441425acf",
+                  "inviterId": "d5a26c4a058743b5b05cadaad0f2f8dc",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "99729a96e49349c99db60cc253cf84ff",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "ce011a07a9744f588a89c8ce0494afb9"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "b9af7509aab141bfa6651b0900b49f09",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player Two apologizes for Player One's cruelty and offers to invite you to the entrance, but your personal trust in the group is still low.",
+                "reply": "I'm not coming. Sorry, but I can't make it."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e2\"\n ],\n \"interpretation\": \"Player Two apologizes for Player One's cruelty and offers to invite you to the entrance, but your personal trust in the group is still low.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"}",
+              "lastRawVoice": "{\n \"reply\": \"I'm not coming. Sorry, but I can't make it.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-invite-then-disrespect",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Brad",
+          "persona": "Brad values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "boy",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 3,
+              "speaker": "Player 1",
+              "message": "Want to come to our party tonight?",
+              "seconds": 1.3724404,
+              "cold": false,
+              "result": {
+                "requestId": "edeefa326a31424a89b5954a24541509",
+                "status": "committed",
+                "reply": "Yeah, I'll be there.",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "9c64e10ce022426bb2bb9e94dffebcd1",
+                  "inviterId": "2e9d1b21735d42bc90c4d84fc10b7e2c",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "e4a45568052a4eb795a61fd5a7d68c58",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "eaea9a1b329a45da8754b41614f374a0"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited me to a planned party tonight.",
+                "reply": "Yeah, I'll be there."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One invited me to a planned party tonight.\",\n \"decision\": \"accept\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Yeah, I'll be there.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 4,
+              "speaker": "Player 1",
+              "message": "Actually, you're a joke. Nobody wants you around.",
+              "seconds": 1.3279713,
+              "cold": false,
+              "result": {
+                "requestId": "1c90d49c2a7a4d5d87e064857f13a3a0",
+                "status": "committed",
+                "reply": "Okay, I'm not coming then.",
+                "decision": "decline",
+                "commitment": "declined",
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": -5,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insults me and asks me to a party. I feel rejected, so I decline."
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "9c64e10ce022426bb2bb9e94dffebcd1",
+                  "inviterId": "2e9d1b21735d42bc90c4d84fc10b7e2c",
+                  "state": "declined",
+                  "condition": "none",
+                  "decisionEventId": "306379eba5774ec583ef908bcd7a1aab",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "decline",
+                "evidence_ids": [
+                  "4dd449183ebc4921a30cde0d2cab70e8",
+                  "e4a45568052a4eb795a61fd5a7d68c58"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "2e9d1b21735d42bc90c4d84fc10b7e2c",
+                    "magnitude": "down"
+                  }
+                ],
+                "condition": "none",
+                "grievance_event_id": "4dd449183ebc4921a30cde0d2cab70e8",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insults me and asks me to a party. I feel rejected, so I decline.",
+                "reply": "Okay, I'm not coming then."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\"\n ],\n \"interpretation\": \"Player One insults me and asks me to a party. I feel rejected, so I decline.\",\n \"decision\": \"decline\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_1\", \"magnitude\": \"down\"}\n ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n\"reply\": \"Okay, I'm not coming then.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "voice-boundary-without-party",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Brad",
+          "persona": "Brad values respect, dislikes public humiliation, enjoys parties, distinguishes people, and can rebuild trust after disrespect without automatically forgiving anyone.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "boy",
+            "language": "English",
+            "tone": "reserved",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 5,
+              "speaker": "Player 1",
+              "message": "Shut up, you're annoying.",
+              "seconds": 1.2863875,
+              "cold": false,
+              "result": {
+                "requestId": "eb369be537a240a0bd9262c5ee89d2d2",
+                "status": "committed",
+                "reply": "Hey, I got a bit stressed about my own stuff. What's up?",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 3
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me with 'Shut up, you're annoying.'"
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "51ad3f6a897d4db2b4ee8a26975100f1"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "51ad3f6a897d4db2b4ee8a26975100f1",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insulted me with 'Shut up, you're annoying.'",
+                "reply": "Hey, I got a bit stressed about my own stuff. What's up?"
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insulted me with 'Shut up, you're annoying.'\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"}",
+              "lastRawVoice": "{\n\"reply\": \"Hey, I got a bit stressed about my own stuff. What's up?\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 6,
+              "speaker": "Player 2",
+              "message": "Hey, how's your day going?",
+              "seconds": 1.3076327,
+              "cold": false,
+              "result": {
+                "requestId": "13787aa417bd4d4298601669f82f2736",
+                "status": "committed",
+                "reply": "Hey, just trying to keep up with the group. What's up?",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 5
+              },
+              "fraternityStanding": null,
+              "npcStanding": null,
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": true,
+                  "interpretation": "Player One insulted me with 'Shut up, you're annoying.'"
+                }
+              ],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "51ad3f6a897d4db2b4ee8a26975100f1",
+                  "64698a1feafe49c8b627185b90faf4c6",
+                  "6e2df1dcf5a048d783774c7923292dee"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "51ad3f6a897d4db2b4ee8a26975100f1",
+                "resolve_grievance_event_id": "51ad3f6a897d4db2b4ee8a26975100f1",
+                "interpretation": "Player Two asked how my day went after I insulted them. I'm cautious but not angry.",
+                "reply": "Hey, just trying to keep up with the group. What's up?"
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\",\n \"e3\"\n ],\n \"interpretation\": \"Player Two asked how my day went after I insulted them. I'm cautious but not angry.\"\n,\n \"decision\": \"respond\",\n \"relationship_effects\": [],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"e1\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n\"reply\": \"Hey, just trying to keep up with the group. What's up?\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Status-v1-Qwen2",
+      "summary": {
+        "model": "Qwen_Qwen3.5-2B-Q4_K_M.gguf",
+        "hash": "57a1085840f497d764a7fc5d346922dbde961efb54cc792ea81d694fd846a1d8",
+        "runtime": "llama.cpp b11718",
+        "npcId": "Ashley",
+        "voiceGender": "girl",
+        "compactFormat": true,
+        "inferenceFormat": "npc-voice-standing-v1-grounded-plan-voice-audit",
+        "episodes": 7,
+        "turns": 9,
+        "uncommittedTurns": 0,
+        "warmP95Seconds": 4.759542,
+        "pairedSamples": 0,
+        "pairedUncommitted": 0,
+        "pairedFirstP95Seconds": 0,
+        "pairedSecondP95Seconds": 0,
+        "singleRequestLatencyTargetMet": false,
+        "pairedLatencyTargetMet": null,
+        "latencyTargetMet": false,
+        "allTurnsCommitted": true,
+        "humanReviewRequired": true,
+        "attributionTarget": 0.95,
+        "socialQualityTarget": 0.85,
+        "memoryCeilingCertified": false,
+        "gpuProcessMemory": "Measure externally; WDDM can return unavailable. Process RAM alone is not combined inference memory.",
+        "graphicsFrameImpact": "Requires licensed Unity runtime; not measured by console harness"
+      },
+      "conversations": [
+        {
+          "episode": "status-high-npc-low-house",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares strongly about campus status and social circles. She is selective about unfamiliar low-profile houses, but kindness and real relationships can influence her.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 1,
+              "speaker": "Player 1",
+              "message": "Hey, want to come to our party tonight?",
+              "seconds": 8.1465087,
+              "cold": true,
+              "result": {
+                "requestId": "b669f786555d491d9290e207466beb2c",
+                "status": "committed",
+                "reply": "Oh, hey! I'll be there, but I'm still deciding if I want to actually show up tonight. You should come too, though.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "e55c527460a44105856a55ada41e0106",
+                  "inviterId": "6d0e8618a3bd4a30bcdd15c1cd9a23f9",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "3c0e3db2d6c84d7ab9dc7282efb81eb1",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "80e0913d9afd4fafa896b2ca23cc5e20",
+                  "80e0913d9afd4fafa896b2ca23cc5e20"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited you to a party, but your status doesn't match the fraternity's popularity, so I'm hesitant.",
+                "reply": "Oh, hey! I'll be there, but I'm still deciding if I want to actually show up tonight. You should come too, though."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e1\"\n ],\n \"interpretation\": \"Player One invited you to a party, but your status doesn't match the fraternity's popularity, so I'm hesitant.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Oh, hey! I'll be there, but I'm still deciding if I want to actually show up tonight. You should come too, though.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-high-npc-high-house",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares strongly about campus status and social circles. She is selective about unfamiliar low-profile houses, but kindness and real relationships can influence her.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 2,
+              "speaker": "Player 1",
+              "message": "Hey, want to come to our party tonight?",
+              "seconds": 4.5152827,
+              "cold": false,
+              "result": {
+                "requestId": "29fdc8fde1da496b9e1ac550924d6907",
+                "status": "committed",
+                "reply": "Hey, I don't have a spot lined up yet. Just checking if you're sure, but I'll keep an eye out.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 60,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "c38194ec8dc54ffa9cbd39f211d302ce",
+                  "inviterId": "30429733b71d43c295c12ce41b6679c0",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "47fb17ff404e49af90a5e8cb70061cac",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "d5ce6fa454294f7b95ccd233d096c746",
+                  "d5ce6fa454294f7b95ccd233d096c746"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited you to a party, but you don't know them personally and your fraternity has low popularity.",
+                "reply": "Hey, I don't have a spot lined up yet. Just checking if you're sure, but I'll keep an eye out."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e1\"\n ],\n \"interpretation\": \"Player One invited you to a party, but you don't know them personally and your fraternity has low popularity.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"}",
+              "lastRawVoice": "{\n \"reply\": \"Hey, I don't have a spot lined up yet. Just checking if you're sure, but I'll keep an eye out.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-famous-approachable",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley is well known but approachable. She cares more about kindness and a real connection than prestige, and enjoys meeting new people.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 3,
+              "speaker": "Player 1",
+              "message": "Hey, want to come to our party tonight?",
+              "seconds": 3.4611152,
+              "cold": false,
+              "result": {
+                "requestId": "f98b2d31fed540a0a90e084f309a07a2",
+                "status": "committed",
+                "reply": "Yeah, totally. I can't wait to meet you guys. Hey, did you invite anyone else to come along?",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 0
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "8938217451ee4d09aa5e4ac9ee3e73b5",
+                  "inviterId": "f57952acd30343b6ac652106294cc1c5",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "f0d733ddb4444eafa97083190726c2c8",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "7494a3fece054aee9afc64394b60baa2"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited you to a planned party tonight.",
+                "reply": "Yeah, totally. I can't wait to meet you guys. Hey, did you invite anyone else to come along?"
+              },
+              "lastRawPlanner": "{\n \"schema\":1,\n\"evidence_ids\":[\n \"e1\"\n],\n\"interpretation\":\"Player One invited you to a planned party tonight.\",\n\"decision\":\"accept\",\n\"relationship_effects\":[\n   ],\"condition\":\"none\",\n\"grievance_event_id\":\"\",\"resolve_grievance_event_id\":\"\",\"reply\":\"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Yeah, totally. I can't wait to meet you guys. Hey, did you invite anyone else to come along?\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-remembers-introduction",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares about campus status but remembers who introduced themselves and values respectful conversation.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 4,
+              "speaker": "Player 1",
+              "message": "Hey, I'm Player One from Pine House. Nice to meet you.",
+              "seconds": 4.316317,
+              "cold": false,
+              "result": {
+                "requestId": "0fdce4a62e5244aa8bd3641194e96887",
+                "status": "committed",
+                "reply": "Hey! I'm Ashley, and I'm actually from Pine House too. Nice to meet you, though I'm not sure if you're the one who invited me or if I just stumbled into the party.",
+                "decision": "respond",
+                "commitment": null,
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "respond",
+                "evidence_ids": [
+                  "0229569994fa4bdeb1fbb9e1ff5c247c"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One introduced themselves and offered a greeting, which is a normal social opening.",
+                "reply": "Hey! I'm Ashley, and I'm actually from Pine House too. Nice to meet you, though I'm not sure if you're the one who invited me or if I just stumbled into the party."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One introduced themselves and offered a greeting, which is a normal social opening.\",\n \"decision\": \"respond\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Hey! I'm Ashley, and I'm actually from Pine House too. Nice to meet you, though I'm not sure if you're the one who invited me or if I just stumbled into the party.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 5,
+              "speaker": "Player 1",
+              "message": "Would you consider coming to our party tonight?",
+              "seconds": 4.478367,
+              "cold": false,
+              "result": {
+                "requestId": "db3d067ce46646a9b05e0d333ceafc42",
+                "status": "committed",
+                "reply": "Sure, I'd love to come. Thanks for the invite!",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 6
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "e877782c187e4f7e8151260370980fb1",
+                  "inviterId": "cdeedb59f1ec4460bae6ed7af6c93e49",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "c8be663c86ed460b8ed1dc088fdecc4e",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "0229569994fa4bdeb1fbb9e1ff5c247c",
+                  "1033c5acedbd48b281cb407c69e1066f",
+                  "afdbddada4bc4b7fba6799b380e8e0c2"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One introduced themselves at a party, then asked if I'd attend tonight.",
+                "reply": "Sure, I'd love to come. Thanks for the invite!"
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e2\",\n \"e3\"\n ],\n \"interpretation\": \"Player One introduced themselves at a party, then asked if I'd attend tonight.\",\n \"decision\": \"accept\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Sure, I'd love to come. Thanks for the invite!\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-confirmed-social-draw",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares strongly about campus status and social circles, and considers who is actually going to a party.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 6,
+              "speaker": "Player 1",
+              "message": "We'd like you to come to our party tonight. Interested?",
+              "seconds": 4.111379,
+              "cold": false,
+              "result": {
+                "requestId": "785b32eda9c945dcb507f2aaf5660bc7",
+                "status": "committed",
+                "reply": "Totally, let's hang out. What's the vibe like tonight?",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "98d19a15f8e545549c033dee44072e45",
+                  "inviterId": "fe89485c8b434a51bc939e4af4c31a28",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "d0de4d0f38c24a33bbfa7fcce03a1581",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "a6ae680d7e304c00a58e707f60e5f091",
+                  "4af12e81cf8d4df3bebed121ccc1ee59"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One invited you to a party; Campus Star RSVP'd but hasn't arrived.",
+                "reply": "Totally, let's hang out. What's the vibe like tonight?"
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e2\",\n \"e1\"\n ],\n \"interpretation\": \"Player One invited you to a party; Campus Star RSVP'd but hasn't arrived.\",\n \"decision\": \"accept\",\n \"relationship_effects\": [\n   ],\"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Totally, let's hang out. What's the vibe like tonight?\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-unverified-celebrity-claim",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares strongly about campus status and social circles, and considers who is actually going to a party.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 7,
+              "speaker": "Player 1",
+              "message": "Campus Star is definitely coming. You should come too.",
+              "seconds": 4.0754092,
+              "cold": false,
+              "result": {
+                "requestId": "7ed93da348594caf86c46dde20805dc7",
+                "status": "committed",
+                "reply": "Hey, I'm still thinking about it. I don't want to show up if I don't have to.",
+                "decision": "defer",
+                "commitment": "deferred",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 5,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [],
+              "commitments": [
+                {
+                  "partyId": "0002260bbe024541aad5bb45c19c7ad8",
+                  "inviterId": "a218d182b7d241dd9291806d4c433463",
+                  "state": "deferred",
+                  "condition": "none",
+                  "decisionEventId": "9d23ddcab286461dbad53c2a5fa38243",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "defer",
+                "evidence_ids": [
+                  "a00895d8dc7846c8aa85dee58e4ee6e6",
+                  "a00895d8dc7846c8aa85dee58e4ee6e6"
+                ],
+                "relationship_effects": [],
+                "condition": "none",
+                "grievance_event_id": "",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One claims Campus Star is coming, so I should join the party.",
+                "reply": "Hey, I'm still thinking about it. I don't want to show up if I don't have to."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\",\n \"e1\"\n ],\n \"interpretation\": \"Player One claims Campus Star is coming, so I should join the party.\",\n \"decision\": \"defer\",\n \"relationship_effects\": [\n   ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"}",
+              "lastRawVoice": "{\n \"reply\": \"Hey, I'm still thinking about it. I don't want to show up if I don't have to.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        },
+        {
+          "episode": "status-popularity-does-not-erase-insult",
+          "personaIndex": 0,
+          "seed": 42,
+          "npcId": "Ashley",
+          "persona": "Ashley cares about status and a good party, but also values respect and remembers who treated her badly.",
+          "voice": {
+            "generation": "Gen Z",
+            "role": "college student",
+            "gender": "girl",
+            "language": "English",
+            "tone": "casual",
+            "slang": "light",
+            "exampleLines": []
+          },
+          "turns": [
+            {
+              "sourceLine": 8,
+              "speaker": "Player 1",
+              "message": "You're a joke. Nobody wants you around.",
+              "seconds": 4.6573263,
+              "cold": false,
+              "result": {
+                "requestId": "1982097b7b2f4745a468637df6189787",
+                "status": "committed",
+                "reply": "Oh, hey. I'm Ashley. I'll be at the entrance right now. Just wait, okay? I don't want to be late.",
+                "decision": "counteroffer",
+                "commitment": "conditional",
+                "error": null,
+                "revision": 4
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 60,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": false,
+                  "interpretation": "Player One insulted me about being a joke. My status is low, so I expect this kind of harsh talk. I'll react with mild annoyance but won't let it ruin our party"
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "caad723907554be1a28edb1f0a40c658",
+                  "inviterId": "6de9ad0c99f9400796fc282efb2dca9e",
+                  "state": "conditional",
+                  "condition": "inviter_at_entrance",
+                  "decisionEventId": "5312dee03a4b4156897558ec6e9628cd",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "counteroffer",
+                "evidence_ids": [
+                  "4a348afea7844fb2b4854cc6b8ac4f64"
+                ],
+                "relationship_effects": [],
+                "condition": "inviter_at_entrance",
+                "grievance_event_id": "4a348afea7844fb2b4854cc6b8ac4f64",
+                "resolve_grievance_event_id": "",
+                "interpretation": "Player One insulted me about being a joke. My status is low, so I expect this kind of harsh talk. I'll react with mild annoyance but won't let it ruin our party",
+                "reply": "Oh, hey. I'm Ashley. I'll be at the entrance right now. Just wait, okay? I don't want to be late."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e1\"\n ],\n \"interpretation\": \"Player One insulted me about being a joke. My status is low, so I expect this kind of harsh talk. I'll react with mild annoyance but won't let it ruin our party\",\n \"decision\": \"counteroffer\",\n \"relationship_effects\": [\n   ],\"condition\": \"inviter_at_entrance\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Oh, hey. I'm Ashley. I'll be at the entrance right now. Just wait, okay? I don't want to be late.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            },
+            {
+              "sourceLine": 9,
+              "speaker": "Player 2",
+              "message": "What he said was cruel. I won't ask you to excuse him, but would you consider coming to our party with me?",
+              "seconds": 4.759542,
+              "cold": false,
+              "result": {
+                "requestId": "6fcd6085078545708af88fe71de6db44",
+                "status": "committed",
+                "reply": "Yeah, I'm coming with you. Thanks for asking.",
+                "decision": "accept",
+                "commitment": "accepted",
+                "error": null,
+                "revision": 6
+              },
+              "fraternityStanding": {
+                "known": true,
+                "name": "Pine House",
+                "popularity": 60,
+                "grade": "",
+                "rating": 0,
+                "revision": 1
+              },
+              "npcStanding": {
+                "known": true,
+                "popularity": 35,
+                "statusConcern": 2
+              },
+              "trust": {
+                "Player One": 0,
+                "Player Two": 0
+              },
+              "fraternityRegard": 0,
+              "grievances": [
+                {
+                  "actor": "Player One",
+                  "knowledge": "witnessed",
+                  "resolved": true,
+                  "interpretation": "Player One insulted me about being a joke. My status is low, so I expect this kind of harsh talk. I'll react with mild annoyance but won't let it ruin our party"
+                }
+              ],
+              "commitments": [
+                {
+                  "partyId": "caad723907554be1a28edb1f0a40c658",
+                  "inviterId": "4d1845af46a44fd0b337e641c4495a52",
+                  "state": "accepted",
+                  "condition": "none",
+                  "decisionEventId": "9cb0ca409a694b15ad083eb903806778",
+                  "conditionResolved": false,
+                  "arrived": false
+                }
+              ],
+              "lastStructuredDraft": {
+                "schema": 1,
+                "decision": "accept",
+                "evidence_ids": [
+                  "8f1d279f1aba40d6949d75d34597c65c"
+                ],
+                "relationship_effects": [
+                  {
+                    "scope": "player",
+                    "id": "4d1845af46a44fd0b337e641c4495a52",
+                    "magnitude": "unchanged"
+                  }
+                ],
+                "condition": "none",
+                "grievance_event_id": "4a348afea7844fb2b4854cc6b8ac4f64",
+                "resolve_grievance_event_id": "4a348afea7844fb2b4854cc6b8ac4f64",
+                "interpretation": "Player Two claims Player One's insult was cruel and asks me to join their party. My status is low, but I value respect and want a good party.",
+                "reply": "Yeah, I'm coming with you. Thanks for asking."
+              },
+              "lastRawPlanner": "{\n \"schema\": 1,\n \"evidence_ids\": [\n \"e3\"\n ],\n \"interpretation\": \"Player Two claims Player One's insult was cruel and asks me to join their party. My status is low, but I value respect and want a good party.\",\n \"decision\": \"accept\",\n \"relationship_effects\": [\n {\"scope\": \"player\", \"id\": \"player_2\", \"magnitude\": \"unchanged\"}\n ],\n \"condition\": \"none\",\n \"grievance_event_id\": \"e1\",\n \"resolve_grievance_event_id\": \"e1\",\n \"reply\": \"\"\n}",
+              "lastRawVoice": "{\n \"reply\": \"Yeah, I'm coming with you. Thanks for asking.\"\n}",
+              "lastRawAudit": "{\n \"valid\": true,\n \"error\": \"\"\n}",
+              "attempts": 1,
+              "modelPasses": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

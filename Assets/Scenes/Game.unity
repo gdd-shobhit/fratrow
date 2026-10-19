@@ -1492,6 +1492,7 @@ Terrain:
   m_AllowAutoConnect: 1
   m_EnableHeightmapRayTracing: 1
   m_EnableTreesAndDetailsRayTracing: 0
+  m_EnableHeightmapLODFrustumCulling: 1
   m_TreeMotionVectorModeOverride: 3
 --- !u!4 &516520552
 Transform:
@@ -1083348,6 +1083349,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  m_InScenePlaced: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -1088598,108 +1088600,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 927136568}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &995812533
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 995812535}
-  - component: {fileID: 995812536}
-  - component: {fileID: 995812537}
-  m_Layer: 0
-  m_Name: GameManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &995812535
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 995812533}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.05132, y: 0.0005, z: 6.47012}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &995812536
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 995812533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2426679925
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &995812537
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 995812533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15d27c73de95ef84780faca4f4644696, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkedGameManager
-  ShowTopMostFoldoutHeaderGroup: 1
-  playerClasses:
-  - {fileID: 11400000, guid: 851a2c81f1f38264eb363505b25e4a0d, type: 2}
-  - {fileID: 11400000, guid: c406855af96b0df48a3aba97e3e288e0, type: 2}
-  - {fileID: 11400000, guid: d7854b864cf0ac24ba5af323bc303c35, type: 2}
-  - {fileID: 11400000, guid: 30348cabfdd47ef40be579211ea6971b, type: 2}
-  guestClasses:
-  - {fileID: 11400000, guid: f74c15bed102a3a4bba5b1552279005a, type: 2}
-  - {fileID: 11400000, guid: 6904fc3c461ba5c4a8aeda60f650bae2, type: 2}
-  - {fileID: 11400000, guid: 7befe4896a7275946aef594574baa18c, type: 2}
-  - {fileID: 11400000, guid: ff391b91a31961245891bd09dd59f7be, type: 2}
-  myFraternity:
-    m_InternalValue:
-      fratName: 
-      rating: 0
-      grade: 0
-      memberCount: 0
-      popularity: 0
-      cashValue: 0
-  _totalPopularity:
-    m_InternalValue: 0
-  _totalCashValue:
-    m_InternalValue: 0
-  _totalTroubleMaking:
-    m_InternalValue: 0
-  fraternityLocal:
-    fratName: 
-    rating: 0
-    grade: 0
-    memberCount: 0
-    popularity: 0
-    cashValue: 0
 --- !u!1 &1000852997 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8985098693318107852, guid: 6fe6a5df5ce28bc4fa5ad864a711723d, type: 3}
@@ -1089747,6 +1089647,7 @@ MonoBehaviour:
   ConnectionData:
     Address: 127.0.0.1
     Port: 7777
+    WebSocketPath: /
     ServerListenAddress: 127.0.0.1
     ClientBindPort: 0
   DebugSimulator:
@@ -1091816,6 +1091717,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  m_InScenePlaced: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -1092779,7 +1092681,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2114283754330233424}
   m_Enabled: 1
-  serializedVersion: 12
+  serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.6237045, b: 0.16509432, a: 1}
   m_Intensity: 1
@@ -1092831,7 +1092733,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -1092893,7 +1092795,6 @@ SceneRoots:
   - {fileID: 1416004313}
   - {fileID: 1938985282}
   - {fileID: 970740102}
-  - {fileID: 995812535}
   - {fileID: 951641321}
   - {fileID: 10184261}
   - {fileID: 1433843702}

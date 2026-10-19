@@ -1,28 +1,23 @@
-using GLTFast.Schema;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using Unity.Collections.LowLevel.Unsafe;
-using Unity.Properties;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEditor.Recorder.OutputPath;
 
 public class GameplayUIManager : MonoBehaviour
 {
     private VisualElement root;
 
-    // Stat sliders (read-only, show selected class stats)
     private Slider _popularitySlider;
     private Slider _troubleMakerSlider;
     private Slider _cashSlider;
     private Label _cashValueLabel;
 
     private Label _dayLabel;
-    private Label _FratNameLabel;
+    private Label _fratNameLabel;
+    private Label _fratGradeLabel;
+    private Label _fratRatingLabel;
     private NetworkedParty _partyDetails;
+    Coroutine _fratBindRoutine;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         root = GetComponent<UIDocument>().rootVisualElement;
@@ -31,48 +26,104 @@ public class GameplayUIManager : MonoBehaviour
         _cashSlider = root.Q<Slider>("Cash");
         _cashValueLabel = root.Q<Label>("CashValueText");
         _dayLabel = root.Q<Label>("DayNumber");
-        _FratNameLabel = root.Q<Label>("FratName");
-        _partyDetails = NetworkedPartyManager.Instance.NetworkedParty;
-        _dayLabel.dataSource = _partyDetails;
-        _FratNameLabel.dataSource = NetworkedGameManager.Instance.fraternityLocal;
+        _fratNameLabel = root.Q<Label>("FratName");
+        _fratGradeLabel = root.Q<Label>("FratGrade");
+        _fratRatingLabel = root.Q<Label>("FratRating");
+        _partyDetails = NetworkedPartyManager.Instance != null
+            ? NetworkedPartyManager.Instance.NetworkedParty
+            : null;
+
+        if (_dayLabel != null && _partyDetails != null)
+        {
+            _dayLabel.dataSource = _partyDetails;
+        }
 
         SetupStatSliders();
         RefreshCashValueLabelFromManager();
+        BindFraternityUi();
+        if (_fratBindRoutine != null)
+        {
+            StopCoroutine(_fratBindRoutine);
+        }
+        _fratBindRoutine = StartCoroutine(BindFraternityWhenReady());
     }
 
-    private void OnEnable()
+    void OnEnable()
     {
-        // Game manager
+        BindFraternityUi();
+        if (NetworkedGameManager.Instance == null)
+        {
+            return;
+        }
+
         NetworkedGameManager.Instance.OnPopularityChanged += UpdatePopularitySlider;
         NetworkedGameManager.Instance.OnTroubleChanged += UpdateTroubleSlider;
         NetworkedGameManager.Instance.OnCashValueChanged += UpdateCashSlider;
 
         if (_partyDetails != null)
+        {
             _partyDetails.OnDayNumberChangedEvent += UpdateDayNumber;
+        }
     }
 
-    private void UpdateDayNumber(int value)
+    void OnDisable()
     {
+        if (_fratBindRoutine != null)
+        {
+            StopCoroutine(_fratBindRoutine);
+            _fratBindRoutine = null;
+        }
 
-        _dayLabel.text = value.ToString();
-    }
-
-    private void OnDisable()
-    {
-        NetworkedGameManager.Instance.OnPopularityChanged -= UpdatePopularitySlider;
-        NetworkedGameManager.Instance.OnTroubleChanged -= UpdateTroubleSlider;
-        NetworkedGameManager.Instance.OnCashValueChanged -= UpdateCashSlider;
+        if (NetworkedGameManager.Instance != null)
+        {
+            NetworkedGameManager.Instance.OnPopularityChanged -= UpdatePopularitySlider;
+            NetworkedGameManager.Instance.OnTroubleChanged -= UpdateTroubleSlider;
+            NetworkedGameManager.Instance.OnCashValueChanged -= UpdateCashSlider;
+            NetworkedGameManager.Instance.OnFraternityChanged -= OnFraternityChanged;
+        }
 
         if (_partyDetails != null)
+        {
             _partyDetails.OnDayNumberChangedEvent -= UpdateDayNumber;
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator BindFraternityWhenReady()
     {
-        
+        for (var i = 0; i < 120; i++)
+        {
+            if (BindFraternityUi())
+            {
+                yield break;
+            }
+
+            yield return null;
+        }
     }
-    private void SetupStatSliders()
+
+    bool BindFraternityUi()
+    {
+        var gm = NetworkedGameManager.Instance;
+        if (gm == null)
+        {
+            return false;
+        }
+
+        gm.OnFraternityChanged -= OnFraternityChanged;
+        gm.OnFraternityChanged += OnFraternityChanged;
+        RefreshFraternityPanel();
+        return gm.IsSpawned;
+    }
+
+    void UpdateDayNumber(int value)
+    {
+        if (_dayLabel != null)
+        {
+            _dayLabel.text = value.ToString();
+        }
+    }
+
+    void SetupStatSliders()
     {
         if (_popularitySlider != null)
         {
@@ -94,11 +145,54 @@ public class GameplayUIManager : MonoBehaviour
         }
     }
 
-    private void UpdatePopularitySlider(float newValue)
+    void OnFraternityChanged(FraternityData data) => ApplyFraternityPanel(data);
+
+    void RefreshFraternityPanel()
     {
-        _popularitySlider.value = InvertForSlider(newValue, _popularitySlider.lowValue, _popularitySlider.highValue);
+        var gm = NetworkedGameManager.Instance;
+        if (gm == null)
+        {
+            return;
+        }
+
+        var data = gm.IsSpawned ? gm.myFraternity.Value : gm.fraternityLocal;
+        ApplyFraternityPanel(data);
     }
-    private void UpdateCashSlider(float newValue)
+
+    void ApplyFraternityPanel(FraternityData data)
+    {
+        // Default struct is Grade A + rating 0 — show starting C/50 until server seeds.
+        if (FraternityGradeCalculator.IsUninitialized(data))
+        {
+            data = FraternityGradeCalculator.CreateStarting(
+                string.IsNullOrWhiteSpace(data.fratName) ? "Frat Test Name" : data.fratName);
+        }
+
+        if (_fratNameLabel != null)
+        {
+            _fratNameLabel.text = string.IsNullOrWhiteSpace(data.fratName) ? "Fraternity" : data.fratName;
+        }
+
+        if (_fratGradeLabel != null)
+        {
+            _fratGradeLabel.text = FraternityGradeCalculator.ToLetter(data.grade);
+        }
+
+        if (_fratRatingLabel != null)
+        {
+            _fratRatingLabel.text = $"Rating {data.rating}";
+        }
+    }
+
+    void UpdatePopularitySlider(float newValue)
+    {
+        if (_popularitySlider != null)
+        {
+            _popularitySlider.value = InvertForSlider(newValue, _popularitySlider.lowValue, _popularitySlider.highValue);
+        }
+    }
+
+    void UpdateCashSlider(float newValue)
     {
         if (_cashSlider != null)
         {
@@ -124,15 +218,15 @@ public class GameplayUIManager : MonoBehaviour
         _cashValueLabel.text = $"Cash: {cashAmount:F2}";
     }
 
-    private void UpdateTroubleSlider(float newValue)
+    void UpdateTroubleSlider(float newValue)
     {
-        _troubleMakerSlider.value = InvertForSlider(newValue, _troubleMakerSlider.lowValue, _troubleMakerSlider.highValue);
+        if (_troubleMakerSlider != null)
+        {
+            _troubleMakerSlider.value = InvertForSlider(newValue, _troubleMakerSlider.lowValue, _troubleMakerSlider.highValue);
+        }
     }
 
-    /// <summary>
-    /// Inverts value for display on inverted sliders: actual 20 should show visually as 20.
-    /// </summary>
-    private static float InvertForSlider(float actualValue, float lowValue, float highValue)
+    static float InvertForSlider(float actualValue, float lowValue, float highValue)
     {
         return highValue + lowValue - actualValue;
     }

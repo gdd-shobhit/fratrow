@@ -33,13 +33,15 @@
             <ui:Label text="Current Time: " name="Day"/>
             <ui:Label text="Label" name="Time"/>
         </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-            <ui:Label text="Fraternity Name: " name="Day"/>
-            <ui:Label text="Fraternity Name" name="FratName">
-                <Bindings>
-                    <ui:DataBinding property="text" data-source-path="fratName" data-source-type="FraternityData, Assembly-CSharp" binding-mode="ToTarget"/>
-                </Bindings>
-            </ui:Label>
+        <ui:VisualElement name="FratIdentity" class="frat-identity-panel">
+            <ui:VisualElement class="frat-identity-header">
+                <ui:Label text="FRATERNITY" class="frat-identity-eyebrow"/>
+                <ui:Label text="Frat Test Name" name="FratName" class="frat-identity-name"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="frat-identity-meta">
+                <ui:Label text="C" name="FratGrade" class="frat-grade-badge"/>
+                <ui:Label text="Rating 50" name="FratRating" class="frat-rating-label"/>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Drunk Level: " name="Day"/>

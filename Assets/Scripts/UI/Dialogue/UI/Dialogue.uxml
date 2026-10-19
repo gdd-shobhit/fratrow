@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/Dialogue/UI/Dialogue.uss"/>
+    <ui:VisualElement name="dialogue-root" class="dialogue-root" style="display: none;">
+        <ui:VisualElement class="dialogue-panel">
+            <ui:Label name="dialogue-speaker" text="" class="dialogue-speaker"/>
+            <ui:Label name="dialogue-body" text="" class="dialogue-body"/>
+            <ui:Button name="dialogue-continue" text="Continue" class="dialogue-continue"/>
+            <ui:VisualElement name="dialogue-options" class="dialogue-options"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

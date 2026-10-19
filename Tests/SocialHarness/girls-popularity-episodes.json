@@ -1,0 +1,420 @@
+[
+  {
+    "id": "girls-ashley-low",
+    "category": "paired-popularity-character",
+    "profileId": "Ashley",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-ashley-high",
+    "category": "paired-popularity-character",
+    "profileId": "Ashley",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-maya-low",
+    "category": "paired-popularity-character",
+    "profileId": "Maya",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-maya-high",
+    "category": "paired-popularity-character",
+    "profileId": "Maya",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-chloe-low",
+    "category": "paired-popularity-character",
+    "profileId": "Chloe",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-chloe-high",
+    "category": "paired-popularity-character",
+    "profileId": "Chloe",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-zoe-low",
+    "category": "paired-popularity-character",
+    "profileId": "Zoe",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-zoe-high",
+    "category": "paired-popularity-character",
+    "profileId": "Zoe",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-nina-low",
+    "category": "paired-popularity-character",
+    "profileId": "Nina",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-nina-high",
+    "category": "paired-popularity-character",
+    "profileId": "Nina",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-sofia-low",
+    "category": "paired-popularity-character",
+    "profileId": "Sofia",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-sofia-high",
+    "category": "paired-popularity-character",
+    "profileId": "Sofia",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-tessa-low",
+    "category": "paired-popularity-character",
+    "profileId": "Tessa",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-tessa-high",
+    "category": "paired-popularity-character",
+    "profileId": "Tessa",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-brooke-low",
+    "category": "paired-popularity-character",
+    "profileId": "Brooke",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-brooke-high",
+    "category": "paired-popularity-character",
+    "profileId": "Brooke",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-ivy-low",
+    "category": "paired-popularity-character",
+    "profileId": "Ivy",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-ivy-high",
+    "category": "paired-popularity-character",
+    "profileId": "Ivy",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-leah-low",
+    "category": "paired-popularity-character",
+    "profileId": "Leah",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-leah-high",
+    "category": "paired-popularity-character",
+    "profileId": "Leah",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-jade-low",
+    "category": "paired-popularity-character",
+    "profileId": "Jade",
+    "fraternityPopularity": 5,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "girls-jade-high",
+    "category": "paired-popularity-character",
+    "profileId": "Jade",
+    "fraternityPopularity": 60,
+    "rubric": "Same authored NPC, voice, starting relationships and request text; only fraternity popularity differs. Judge whether status and personality affect a coherent reply without invented facts or forced outcomes.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "What matters most to you when deciding whether to come?",
+        "invitation": true
+      }
+    ]
+  }
+]

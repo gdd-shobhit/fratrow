@@ -50,15 +50,13 @@ public class NetworkBootstrap : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+        EnsureNetworkManagerReady();
     }
 
     private void Start()
     {
-        var nm = NetworkManager.Singleton;
-        if (nm != null)
-        {
-            nm.OnServerStarted += OnServerStarted;
-        }
+        EnsureNetworkManagerReady();
+        SubscribeServerStarted();
     }
 
     private void OnDestroy()
@@ -68,6 +66,52 @@ public class NetworkBootstrap : MonoBehaviour
         {
             nm.OnServerStarted -= OnServerStarted;
         }
+    }
+
+    /// <summary>
+    /// NetworkManager.Singleton is assigned in OnEnable. With Enter Play Mode Options
+    /// (no domain/scene reload) that can be skipped after a script recompile, leaving
+    /// Singleton null until something re-registers it. Multiplayer Sessions then fail with
+    /// "Cannot start when NetworkManager.Singleton is not set."
+    /// </summary>
+    public bool EnsureNetworkManagerReady()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
+            return true;
+
+        nm = FindFirstObjectByType<NetworkManager>();
+        if (nm == null)
+        {
+            Debug.LogError("[NetworkBootstrap] No NetworkManager found in loaded scenes.");
+            return false;
+        }
+
+        if (!nm.gameObject.activeInHierarchy)
+            nm.gameObject.SetActive(true);
+
+        if (NetworkManager.Singleton == null)
+            nm.SetSingleton();
+
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("[NetworkBootstrap] Failed to register NetworkManager.Singleton.");
+            return false;
+        }
+
+        Debug.Log("[NetworkBootstrap] NetworkManager.Singleton was missing; re-registered from scene instance.");
+        SubscribeServerStarted();
+        return true;
+    }
+
+    private void SubscribeServerStarted()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null)
+            return;
+
+        nm.OnServerStarted -= OnServerStarted;
+        nm.OnServerStarted += OnServerStarted;
     }
 
     private void OnServerStarted()
@@ -95,11 +139,14 @@ public class NetworkBootstrap : MonoBehaviour
         if (_isInitialized)
         {
             Debug.Log("[NetworkBootstrap] Services already initialized.");
-            return true;
+            return EnsureNetworkManagerReady();
         }
 
         try
         {
+            if (!EnsureNetworkManagerReady())
+                return false;
+
             Debug.Log("[NetworkBootstrap] Initializing Unity Services...");
 
             // Initialize Unity Services Core

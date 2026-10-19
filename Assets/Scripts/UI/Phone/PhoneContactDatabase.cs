@@ -81,6 +81,25 @@ namespace Systems.Phone
             return _byId.TryGetValue(id, out var c) ? c : null;
         }
 
+        public static ContactSO GetByDisplayName(string displayName)
+        {
+            EnsureInitialized();
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return null;
+            }
+
+            foreach (var c in _contacts)
+            {
+                if (string.Equals(c.displayName, displayName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return c;
+                }
+            }
+
+            return null;
+        }
+
         static void AddContact(ContactSO contact)
         {
             if (!_byId.TryAdd(contact.Id, contact))
@@ -91,6 +110,17 @@ namespace Systems.Phone
             _contacts.Add(contact);
         }
 
+        static SerializableGuid DeterministicId(string name)
+        {
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            var bytes = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes("contact:" + name));
+            return new SerializableGuid(
+                System.BitConverter.ToUInt32(bytes, 0),
+                System.BitConverter.ToUInt32(bytes, 4),
+                System.BitConverter.ToUInt32(bytes, 8),
+                System.BitConverter.ToUInt32(bytes, 12));
+        }
+
         static ContactSO MakeContact(string name, GuestClass guestClass, ContactGender gender, bool unlocked = true)
         {
             var c = ScriptableObject.CreateInstance<ContactSO>();
@@ -99,7 +129,7 @@ namespace Systems.Phone
             c.linkedGuestClass = guestClass;
             c.gender = gender;
             c.startsUnlocked = unlocked;
-            c.EnsureId();
+            c.SetId(DeterministicId(name));
             return c;
         }
 
@@ -120,12 +150,20 @@ namespace Systems.Phone
         {
             AddContact(MakeContact("Brad", GuestClass.Jock, ContactGender.Guy));
             AddContact(MakeContact("Tyler", GuestClass.Jock, ContactGender.Guy));
-            AddContact(MakeContact("Megan", GuestClass.MeanGirl, ContactGender.Girl));
+            AddContact(MakeContact("Megan", GuestClass.MeanGirl, ContactGender.Girl, unlocked: false));
             AddContact(MakeContact("Ashley", GuestClass.MeanGirl, ContactGender.Girl));
             AddContact(MakeContact("Kevin", GuestClass.Nerd, ContactGender.Guy));
             AddContact(MakeContact("Priya", GuestClass.Nerd, ContactGender.Girl));
             AddContact(MakeContact("Sam", GuestClass.None, ContactGender.Both));
             AddContact(MakeContact("Jordan", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Alex", GuestClass.Jock, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Riley", GuestClass.MeanGirl, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Casey", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Morgan", GuestClass.Nerd, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Jamie", GuestClass.Jock, ContactGender.Both));
+            AddContact(MakeContact("Avery", GuestClass.MeanGirl, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Quinn", GuestClass.None, ContactGender.Both, unlocked: false));
+            AddContact(MakeContact("Drew", GuestClass.Jock, ContactGender.Both, unlocked: false));
         }
 
         static void SeedDefaultTemplates()

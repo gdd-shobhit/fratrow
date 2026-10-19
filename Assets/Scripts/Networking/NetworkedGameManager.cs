@@ -7,6 +7,7 @@ using UnityEngine;
 /// NetworkBehaviour singleton for GameManager.
 /// Syncs total metrics (popularity, cash) across the network.
 /// Server authoritative for game progression.
+/// Campus NetworkBehaviours must be baked on this GameObject (prefab/scene) — do not AddComponent them at runtime.
 /// </summary>
 public class NetworkedGameManager : NetworkBehaviour
 {
@@ -33,6 +34,7 @@ public class NetworkedGameManager : NetworkBehaviour
     public event System.Action<float> OnPopularityChanged;
     public event System.Action<float> OnCashValueChanged;
     public event System.Action<float> OnTroubleChanged;
+    public event System.Action<FraternityData> OnFraternityChanged;
 
     [SerializeField]
     public FraternityData fraternityLocal;
@@ -66,17 +68,17 @@ public class NetworkedGameManager : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        if(IsClient)
+        myFraternity.OnValueChanged += OnMyFraternityChanged;
+        _totalPopularity.OnValueChanged += OnTotalPopularityChanged;
+        _totalCashValue.OnValueChanged += OnTotalCashValueChanged;
+        _totalTroubleMaking.OnValueChanged += OnTotalTroubleMakingChanged;
+
+        if (IsServer)
         {
-            Debug.LogWarning($"[NetoworkedGameManager] OnNetworkSpawn on {NetworkManager.Singleton.LocalClientId}");
-            // Subscribe to network variable changes
-            _totalPopularity.OnValueChanged += OnTotalPopularityChanged;
-            _totalCashValue.OnValueChanged += OnTotalCashValueChanged;
-            _totalTroubleMaking.OnValueChanged += OnTotalTroubleMakingChanged;   
+            InitializeFraternityServer();
         }
 
-        fraternityLocal = myFraternity.Value;
-        fraternityLocal.fratName = fratName;
+        SyncFraternityLocal(myFraternity.Value);
     }
 
     private void Awake()
@@ -116,10 +118,74 @@ public class NetworkedGameManager : NetworkBehaviour
     {
         base.OnNetworkDespawn();
 
-        // Unsubscribe from network variable changes
+        myFraternity.OnValueChanged -= OnMyFraternityChanged;
         _totalPopularity.OnValueChanged -= OnTotalPopularityChanged;
         _totalCashValue.OnValueChanged -= OnTotalCashValueChanged;
         _totalTroubleMaking.OnValueChanged -= OnTotalTroubleMakingChanged;
+    }
+
+    void InitializeFraternityServer()
+    {
+        var data = myFraternity.Value;
+        if (FraternityGradeCalculator.IsUninitialized(data))
+        {
+            int members = data.memberCount;
+            data = FraternityGradeCalculator.CreateStarting(fratName);
+            data.memberCount = Mathf.Clamp(members, 0, FraternityData.MAX_MEMBERS_ALLOWED);
+            Debug.Log($"[Fraternity] Seeded starting grade {FraternityGradeCalculator.ToLetter(data.grade)} rating {data.rating}");
+        }
+        else if (string.IsNullOrWhiteSpace(data.fratName))
+        {
+            data.fratName = fratName;
+        }
+
+        myFraternity.Value = data;
+        SyncFraternityLocal(data);
+        // NetworkVariable may not notify subscribers for the first server write in all cases.
+        OnFraternityChanged?.Invoke(data);
+    }
+
+    /// <summary>
+    /// Server-only: recompute rating/grade from team totals and write <see cref="myFraternity"/>.
+    /// </summary>
+    public void RecalculateFraternityGradeServer()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        var data = myFraternity.Value;
+        if (string.IsNullOrWhiteSpace(data.fratName))
+        {
+            data.fratName = fratName;
+        }
+
+        FraternityGradeCalculator.ApplyToFraternityData(
+            ref data,
+            _totalPopularity.Value,
+            _totalCashValue.Value,
+            data.memberCount);
+
+        myFraternity.Value = data;
+        SyncFraternityLocal(data);
+        Debug.Log($"[Fraternity] Grade {FraternityGradeCalculator.ToLetter(data.grade)} rating {data.rating} (pop={data.popularity}, cash={data.cashValue}, members={data.memberCount})");
+        OnFraternityChanged?.Invoke(data);
+    }
+
+    void SyncFraternityLocal(FraternityData data)
+    {
+        fraternityLocal = data;
+        if (string.IsNullOrWhiteSpace(fraternityLocal.fratName))
+        {
+            fraternityLocal.fratName = fratName;
+        }
+    }
+
+    void OnMyFraternityChanged(FraternityData previous, FraternityData current)
+    {
+        SyncFraternityLocal(current);
+        OnFraternityChanged?.Invoke(current);
     }
 
     // Network variable change handlers

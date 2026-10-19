@@ -213,3 +213,27 @@
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
 }
+
+.weekend-row {
+    margin-top: 12px;
+    flex-direction: column;
+}
+
+.weekend-btn {
+    margin-top: 6px;
+    height: 36px;
+    background-color: rgb(50, 90, 140);
+    color: white;
+    border-radius: 8px;
+}
+
+.weekend-btn-host {
+    background-color: rgb(140, 80, 40);
+}
+
+.weekend-status {
+    margin-top: 6px;
+    color: rgb(180, 190, 210);
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}

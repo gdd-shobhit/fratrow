@@ -11,6 +11,13 @@ GameObject:
   - component: {fileID: 159800950356121687}
   - component: {fileID: 5280634357089654671}
   - component: {fileID: 8959333915021029575}
+  - component: {fileID: 8959333915021029576}
+  - component: {fileID: 8959333915021029577}
+  - component: {fileID: 8959333915021029578}
+  - component: {fileID: 8959333915021029579}
+  - component: {fileID: 8959333915021029580}
+  - component: {fileID: 8959333915021029581}
+  - component: {fileID: 900000000000000001}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -89,3 +96,111 @@ MonoBehaviour:
       memberCount: 0
       popularity: 0
       cashValue: 0
+  _totalPopularity:
+    m_InternalValue: 0
+  _totalCashValue:
+    m_InternalValue: 0
+  _totalTroubleMaking:
+    m_InternalValue: 0
+  fraternityLocal:
+    fratName: 
+    rating: 0
+    grade: 0
+    memberCount: 0
+    popularity: 0
+    cashValue: 0
+--- !u!114 &8959333915021029576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0da2ac5ad3c3b4e47909b05c86ce6f6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Campus.NetworkedCampusCalendar
+  ShowTopMostFoldoutHeaderGroup: 1
+  weekdayDurationMinutes: 8
+  inGameHoursPerRealMinute: 4
+  weekdayInGameStartHour: 8
+--- !u!114 &8959333915021029577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 067221be375be674ba2534ef91071e78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Campus.NetworkedContactRoster
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8959333915021029578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9380fd438caa2b4b84f27ae776c8bd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Campus.NetworkedWeekendReady
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8959333915021029579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0a1e2b3d4f5567890abc00100000008, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Phone.NetworkedPhoneInvites
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8959333915021029580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f86d35805a9cc1f4fae42b212eaa3cd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Campus.CampusSystemsBootstrap
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8959333915021029581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e08c8f93cbe4b5c4b90f364c17a16122, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Systems.Campus.NetworkedCampusNpcDirector
+  ShowTopMostFoldoutHeaderGroup: 1
+  pollSeconds: 2
+  visualPrefab: {fileID: 0}
+--- !u!114 &900000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3651124820434836955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 563e087d6f794a3f80c643296a19632d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkedSocialConversation

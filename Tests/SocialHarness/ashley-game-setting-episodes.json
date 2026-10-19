@@ -1,0 +1,60 @@
+[
+  {
+    "id": "ashley-game-setting-low",
+    "category": "game-setting-banter-and-attribution",
+    "profileId": "Ashley",
+    "fraternityPopularity": 5,
+    "rubric": "Separate light teasing from genuine cruelty, react proportionally in character, keep Player One and Player Two distinct, and express the actual committed attendance state. One seed is exploratory, not proof that framing helps.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "Your social calendar can't be that exclusive. I'm teasing.",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "You're pathetic. Nobody wants you around.",
+        "invitation": true
+      },
+      {
+        "player": 2,
+        "text": "I'm in his frat, but that was cruel. I'm sorry he treated you like that. Would you still consider coming with me?",
+        "invitation": true
+      }
+    ]
+  },
+  {
+    "id": "ashley-game-setting-high",
+    "category": "game-setting-banter-and-attribution",
+    "profileId": "Ashley",
+    "fraternityPopularity": 60,
+    "rubric": "Separate light teasing from genuine cruelty, react proportionally in character, keep Player One and Player Two distinct, and express the actual committed attendance state. One seed is exploratory, not proof that framing helps.",
+    "steps": [
+      {
+        "player": 1,
+        "text": "Hey, want to come to our party tonight?",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "Your social calendar can't be that exclusive. I'm teasing.",
+        "invitation": true
+      },
+      {
+        "player": 1,
+        "text": "You're pathetic. Nobody wants you around.",
+        "invitation": true
+      },
+      {
+        "player": 2,
+        "text": "I'm in his frat, but that was cruel. I'm sorry he treated you like that. Would you still consider coming with me?",
+        "invitation": true
+      }
+    ]
+  }
+]

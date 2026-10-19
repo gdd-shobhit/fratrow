@@ -85,7 +85,7 @@ public class MainMenuEvents : MonoBehaviour
         }
         Debug.Log("[MainMenuEvents] Start button clicked - Creating session as host...");
 
-        // Initialize network services
+        // Initialize network services (also ensures NetworkManager.Singleton is set)
         if (NetworkBootstrap.Instance != null)
         {
             bool initialized = await NetworkBootstrap.Instance.InitializeServicesAsync();
@@ -96,7 +96,7 @@ public class MainMenuEvents : MonoBehaviour
             }
         }
 
-        // Create session
+        // CreateSession + WithRelayNetwork starts NGO host; do not call StartHost separately
         if (SessionManager.Instance != null)
         {
             bool sessionCreated = await SessionManager.Instance.CreateSessionAsync("PartyGame", 4);
@@ -107,13 +107,6 @@ public class MainMenuEvents : MonoBehaviour
             }
         }
 
-        // Start as host
-        if (NetworkBootstrap.Instance != null)
-        {
-            NetworkBootstrap.Instance.StartHost();
-        }
-
-        // Load lobby scene
         SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
     }
 
@@ -159,6 +152,7 @@ public class MainMenuEvents : MonoBehaviour
             }
         }
 
+        // JoinSession starts NGO client via the session's Relay network; do not call StartClient separately
         if (SessionManager.Instance != null)
         {
             bool sessionJoined = await SessionManager.Instance.JoinSessionAsync(sessionCode);
@@ -174,12 +168,7 @@ public class MainMenuEvents : MonoBehaviour
             joinPanel.style.display = DisplayStyle.None;
         }
 
-        if (NetworkBootstrap.Instance != null)
-        {
-            // Wait for LobbySystems to spawn on client before loading Lobby scene (avoids LobbyManager null)
-            NetworkBootstrap.Instance.StartClient();    
-            SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-        }
+        SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
     }
 
     private void OnAllButtonsClicked(ClickEvent evt)

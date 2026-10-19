@@ -18,6 +18,11 @@
                             <ui:Button name="app-contacts" text="Contacts" class="app-icon app-icon-contacts"/>
                             <ui:Button name="app-messages" text="Messages" class="app-icon app-icon-messages"/>
                         </ui:VisualElement>
+                        <ui:VisualElement class="weekend-row">
+                            <ui:Button name="btn-ready-weekend" text="Ready for Weekend" class="weekend-btn"/>
+                            <ui:Button name="btn-start-weekend" text="Start Weekend" class="weekend-btn weekend-btn-host"/>
+                            <ui:Label name="weekend-ready-status" text="Ready 0" class="weekend-status"/>
+                        </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement name="view-contacts" class="phone-view view-contacts" style="display: none;">
                         <ui:Label text="Contacts" class="app-title"/>

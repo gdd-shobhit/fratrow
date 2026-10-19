@@ -52,6 +52,10 @@ namespace Systems.Phone
                 return;
             }
 
+            var contact = PhoneContactDatabase.GetById(contactId);
+            var named = contact != null ? Systems.Campus.NamedNpcDatabase.GetByContactName(contact.displayName) : null;
+            if (named != null && NetworkedSocialConversation.Manages(named.npcId)) return;
+
             if (guestClass < (int)GuestClass.None || guestClass > (int)GuestClass.Jock)
             {
                 guestClass = (int)GuestClass.None;
@@ -83,10 +87,23 @@ namespace Systems.Phone
 
             invite = _pendingInvites[0];
             _pendingInvites.RemoveAt(0);
+            var contact = PhoneContactDatabase.GetById(invite.ContactId);
+            var named = contact != null ? Systems.Campus.NamedNpcDatabase.GetByContactName(contact.displayName) : null;
+            if (named != null && NetworkedSocialConversation.Manages(named.npcId)) return false;
             return true;
         }
 
         public int PendingCount => _pendingInvites?.Count ?? 0;
+
+        public void ClearAllServer()
+        {
+            if (!IsServer || _pendingInvites == null)
+            {
+                return;
+            }
+
+            _pendingInvites.Clear();
+        }
     }
 
     public struct PendingPhoneInvite : INetworkSerializable, IEquatable<PendingPhoneInvite>

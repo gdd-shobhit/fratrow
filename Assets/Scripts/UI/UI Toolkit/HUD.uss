@@ -115,6 +115,79 @@ Slider #unity-dragger {
     padding-left: 0;
 }
 
+.frat-identity-panel {
+    flex-direction: column;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    margin-left: 0;
+    margin-right: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.35);
+    border-right-color: rgba(255, 255, 255, 0.35);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+    background-color: rgba(12, 14, 22, 0.72);
+    min-height: 88px;
+}
+
+.frat-identity-header {
+    flex-direction: column;
+    margin-bottom: 8px;
+}
+
+.frat-identity-eyebrow {
+    font-size: 12px;
+    color: rgb(170, 180, 200);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.frat-identity-name {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    white-space: normal;
+}
+
+.frat-identity-meta {
+    flex-direction: row;
+    align-items: center;
+}
+
+.frat-grade-badge {
+    min-width: 40px;
+    height: 36px;
+    -unity-text-align: middle-center;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(255, 210, 90);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    margin-right: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.frat-rating-label {
+    font-size: 18px;
+    color: rgb(210, 218, 235);
+    -unity-font-style: bold;
+}
+
 .inventory-slot {
     width: 40%;
     height: 150px;

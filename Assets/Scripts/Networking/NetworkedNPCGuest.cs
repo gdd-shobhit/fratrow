@@ -1,5 +1,6 @@
 using System;
 using Unity.Netcode;
+using Unity.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -14,6 +15,10 @@ public class NetworkedNPCGuest : NetworkBehaviour
     private NetworkVariable<float> _popularity = new NetworkVariable<float>(0f);
     private NetworkVariable<float> _troubleMaker = new NetworkVariable<float>(0f);
     private NetworkVariable<float> _cashValue = new NetworkVariable<float>(0f);
+    readonly NetworkVariable<FixedString64Bytes> _npcId = new NetworkVariable<FixedString64Bytes>();
+    readonly NetworkVariable<FixedString64Bytes> _partyId = new NetworkVariable<FixedString64Bytes>();
+    public string NpcId => _npcId.Value.ToString();
+    public string PartyId => _partyId.Value.ToString();
 
     // Reference to local NPCGuest component
     private NPCGuest _npcGuest;
@@ -41,6 +46,13 @@ public class NetworkedNPCGuest : NetworkBehaviour
         {
             SyncFromLocalGuest();
         }
+        else if (NetworkedGameManager.Instance.guestClassesDict.TryGetValue(_guestClass.Value, out var data))
+        {
+            _npcGuest.InitializeFromSO(data);
+            _npcGuest.SetCharacterStats(_popularity.Value, _troubleMaker.Value, _cashValue.Value);
+        }
+        if (!string.IsNullOrEmpty(NpcId))
+        { gameObject.name = "PartyGuest_" + NpcId; _npcGuest.ApplyNamedIdentity(NpcId); }
     }
 
     public override void OnNetworkDespawn()
@@ -58,9 +70,9 @@ public class NetworkedNPCGuest : NetworkBehaviour
     /// Initialize guest data from GuestSO. Server-only method.
     /// Called when server spawns a new guest.
     /// </summary>
-    public void InitializeGuestData(GuestSO guestSO)
+    public void InitializeGuestData(GuestSO guestSO, string npcId = null, string partyId = null)
     {
-        if (!IsServer)
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
         {
             Debug.LogWarning("[NetworkedNPCGuest] InitializeGuestData called on client! Only server can initialize.");
             return;
@@ -75,12 +87,15 @@ public class NetworkedNPCGuest : NetworkBehaviour
         Debug.Log($"[NetworkedNPCGuest] Server initializing guest: {guestSO.guestName}");
 
         _guestClass.Value = guestSO.guestClass;
-        _popularity.Value = guestSO.popularity;
-        _troubleMaker.Value = guestSO.troubleMaker;
-        _cashValue.Value = guestSO.cashvalue;
+        _npcGuest = GetComponent<NPCGuest>();
+        _popularity.Value = _npcGuest != null ? _npcGuest.Popularity : guestSO.popularity;
+        _troubleMaker.Value = _npcGuest != null ? _npcGuest.TroubleMaker : guestSO.troubleMaker;
+        _cashValue.Value = _npcGuest != null ? _npcGuest.CashValue : guestSO.cashvalue;
+        _npcId.Value = new FixedString64Bytes(npcId ?? "");
+        _partyId.Value = new FixedString64Bytes(partyId ?? "");
 
         // Initialize local NPCGuest component
-        if (_npcGuest != null)
+        if (_npcGuest != null && IsSpawned)
         {
             InitializeGuestDataOnClientRPC();
         }
@@ -89,7 +104,10 @@ public class NetworkedNPCGuest : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void InitializeGuestDataOnClientRPC()
     {
+        if (IsServer) return;
         _npcGuest.InitializeFromSO(NetworkedGameManager.Instance.guestClassesDict[_guestClass.Value]);
+        _npcGuest.SetCharacterStats(_popularity.Value, _troubleMaker.Value, _cashValue.Value);
+        _npcGuest.ApplyNamedIdentity(NpcId);
     }
 
     /// <summary>

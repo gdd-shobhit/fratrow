@@ -71,6 +71,9 @@ public class NetworkedParty : NetworkBehaviour
     {
         if (!IsServer || _partyState.Value == PartyState.Active) return;
 
+        NetworkedSocialConversation.Instance?.StartSocialPartyServer();
+        Systems.Campus.NetworkedCampusCalendar.Instance?.EnterPartyPhaseServer();
+
         Debug.Log($"[NetworkedParty] Server starting party - Day {_dayNumber.Value}, Guest Limit: {_guestLimit.Value}");
 
          _dayNumber.Value++;
@@ -101,10 +104,19 @@ public class NetworkedParty : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        if (_partyState.Value == PartyState.Ended) return;
+        NetworkedSocialConversation.Instance?.EndSocialPartyServer();
+
         Debug.Log("[NetworkedParty] Server ending party.");
 
         _partyState.Value = PartyState.Ended;
         End();
+        if (NetworkedSocialConversation.Instance != null && NetworkedSocialConversation.Instance.Enabled)
+        {
+            foreach (var guest in currentGuests.ToArray())
+                if (guest != null && guest.TryGetComponent<NetworkObject>(out var networked) && networked.IsSpawned) networked.Despawn(true);
+            currentGuests.Clear();
+        }
 
         OnPartyEndedClientRPC();
     }
@@ -131,7 +143,17 @@ public class NetworkedParty : NetworkBehaviour
         NetworkedGameManager.Instance.AddTotalCashValue(CashValue);
         NetworkedGameManager.Instance.AddTotalPopularityValue(Popularity);
 
-        Debug.Log($"Party rewards distributed: +{CashValue} Cash, +{Popularity} Popularity");
+        float surviveBoost = FraternityGradeCalculator.SurviveChaosBoost(TroubleMaker);
+        if (surviveBoost > 0f)
+        {
+            NetworkedGameManager.Instance.AddTotalPopularityValue(surviveBoost);
+            Debug.Log($"[NetworkedParty] Survived chaos boost +{surviveBoost:F1} popularity (trouble={TroubleMaker:F1})");
+        }
+
+        NetworkedGameManager.Instance.AddTotalTroubleMaking(TroubleMaker);
+        NetworkedGameManager.Instance.RecalculateFraternityGradeServer();
+
+        Debug.Log($"Party rewards distributed: +{CashValue} Cash, +{Popularity} Popularity (+{surviveBoost:F1} survive), +{TroubleMaker} Trouble");
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
