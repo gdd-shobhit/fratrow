@@ -65,6 +65,37 @@ See `docs/COLLABORATIVE-DESIGN-PRINCIPLE.md` for full protocol and examples.
 
 @.claude/docs/coding-standards.md
 
+## Unity Editor Automation — `unity-mcp` CLI, never the MCP tools
+
+Drive the Unity Editor with the **`unity-mcp` command-line tool** (Bash or
+PowerShell), every time. Do not call `mcp__UnityMCP__*` tools — they are denied
+in `.claude/settings.json` — and this rule overrides the `unity-mcp-skill`
+skill. The CLI talks to the same MCP for Unity server and reaches every tool the
+MCP exposes, without the MCP round-trip.
+
+- **Installed globally** as a uv tool (`~/.local/bin/unity-mcp`, on the user
+  PATH; a shell opened before the install may need that full path). It is pinned
+  to `mcpforunityserver==10.3.0` to match `com.coplaydev.unity-mcp#v10.3.0` in
+  `Packages/manifest.json` — when that tag changes, run
+  `uv tool install --force "mcpforunityserver==<new version>"`.
+- **Check first**: `unity-mcp status`. It needs the Editor open on this project
+  and the server listening on `127.0.0.1:8080`. Editor open but no server → start
+  it in the background with `mcp-for-unity --transport http --http-url http://127.0.0.1:8080`
+  (also installed globally) and wait for the Editor bridge to connect
+  (`unity-mcp instances`).
+- **Discover, don't guess**: `unity-mcp --help`, `unity-mcp <group> --help`
+  (`gameobject`, `component`, `scene`, `prefab`, `asset`, `material`, `script`,
+  `code execute` for C#, `editor` for play mode and console, `build`, `profiler`,
+  `ui`, …). Add `-f json` for machine-readable output.
+- **Any MCP tool by its own name**: `unity-mcp raw <tool_name> '<json params>'`,
+  e.g. `unity-mcp raw read_console '{"count": 20}'` — same names and parameters
+  as the MCP schema. Many steps at once: `unity-mcp batch inline '<json>'`.
+- **Editor closed, or headless work** (tests, builds): Unity's own command line —
+  `"C:\Program Files\Unity\Hub\Editor\<version>\Editor\Unity.exe" -batchmode -projectPath <root> …`
+  with `<version>` from `ProjectSettings/ProjectVersion.txt`. It cannot open the
+  project while the Editor has it open. Compile-only check:
+  `tools/ci/unity-compile-check.ps1`.
+
 ## Context Management
 
 Read `.claude/docs/context-management.md` on demand — it is a reference, not
