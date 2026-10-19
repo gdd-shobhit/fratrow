@@ -109,7 +109,8 @@
       "PowerShell(git *clean* -Xdqf*)",
       "PowerShell(git *clean* -Xqdf*)",
       "PowerShell(Get-Content *.env*)",
-      "PowerShell(*>.env*)"
+      "PowerShell(*>.env*)",
+      "mcp__UnityMCP"
     ]
   },
   "hooks": {
