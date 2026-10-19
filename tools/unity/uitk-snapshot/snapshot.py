@@ -9,9 +9,11 @@ the GPU, not -nographics) to render the screen into a RenderTexture via PanelSet
 Typical use, from the repo root:
 
     python tools/unity/uitk-snapshot/snapshot.py \
-        --uxml "Assets/Scripts/UI/UI Toolkit/HUDVisualTree.uxml" \
-        --out production/qa/evidence/hud.png \
-        --fixture tools/unity/uitk-snapshot/examples/hud-party.fixture.json
+        --uxml "Assets/Scripts/UI/UI Toolkit/LobbyVisualTree.uxml" \
+        --out production/qa/evidence/lobby.png \
+        --fixture tools/unity/uitk-snapshot/examples/lobby/host.fixture.json
+
+    python tools/unity/uitk-snapshot/snapshot.py --batch tools/unity/uitk-snapshot/examples/lobby/lobby.batch.json
 
 See README.md next to this file for the fixture format, batch files and known limits.
 

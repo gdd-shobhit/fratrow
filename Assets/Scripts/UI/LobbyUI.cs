@@ -422,7 +422,9 @@ public class LobbyUI : MonoBehaviour
             string current = LobbyManager.Instance != null ? LobbyManager.Instance.FratName : "";
             if (string.IsNullOrEmpty(current))
                 current = PlayerPrefs.GetString(LobbyManager.FratNamePrefKey, "");
-            _fratNameField.SetValueWithoutNotify(current);
+            // Assign through value (not SetValueWithoutNotify): only a real change clears the field's placeholder styling,
+            // otherwise a pre-filled name renders grey/italic. Any echo is a no-op, the name is unchanged.
+            _fratNameField.value = current;
             _fratNameField.RegisterValueChangedCallback(OnFratNameEdited);
         }
 

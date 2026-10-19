@@ -91,7 +91,7 @@ Each op targets `root.Q(name)` (or `withClass`; `"all": true` targets every matc
 | Key | Effect |
 |---|---|
 | `text` | Label/Button text (or the value of a text field) |
-| `value` | `SetValueWithoutNotify` on TextField, DropdownField, Toggle, Slider... |
+| `value` | `SetValueWithoutNotify` on TextField, DropdownField, Toggle, Slider... A TextField with a placeholder keeps its placeholder styling after this. To match code that assigns `.value`, use `"props": {"value": ...}`. |
 | `placeholder`, `tooltip`, `label`, `choices` | The matching property |
 | `enabled` | `SetEnabled` |
 | `display` | `flex` / `none` |

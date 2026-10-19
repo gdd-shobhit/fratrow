@@ -1,0 +1,40 @@
+{
+  "ops": [
+    {"name": "SessionCode", "text": "K7QX2P"},
+    {"name": "ReadyCount", "text": "Ready 2/3"},
+    {"name": "LobbyStatus", "text": "Waiting for everyone to ready up"},
+    {"name": "FratNameField", "props": {"value": "Alpha Beta Gamma"}},
+    {"name": "FratNameHint", "text": "Only you (the host) can name the house."},
+    {"name": "PlayerCount", "text": "3/4"},
+    {"name": "PlayerList", "clear": true, "append": [
+      {"type": "VisualElement", "class": ["lobby-player-row", "lobby-player-row--local"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Shobhit"},
+        {"type": "Label", "class": ["hud-chip", "lobby-chip--host"], "text": "HOST"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "President"},
+        {"type": "Label", "class": ["hud-chip", "hud-chip--good"], "text": "READY"}
+      ]},
+      {"type": "VisualElement", "class": ["lobby-player-row"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Jordan"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "Chad"},
+        {"type": "Label", "class": ["hud-chip", "hud-chip--good"], "text": "READY"}
+      ]},
+      {"type": "VisualElement", "class": ["lobby-player-row"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Sam the Very Long Named Brother"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "RichGuy"},
+        {"type": "Label", "class": ["hud-chip"], "text": "NOT READY"}
+      ]}
+    ]},
+    {"name": "PlayerNameField", "value": "Shobhit"},
+    {"name": "ClassDropdown", "value": "President"},
+    {"name": "PopularityFill", "style": {"width": "70%"}},
+    {"name": "PopularityValue", "text": "70"},
+    {"name": "TroubleMakerFill", "style": {"width": "40%"}},
+    {"name": "TroubleMakerValue", "text": "-20"},
+    {"name": "CashFill", "style": {"width": "55%"}},
+    {"name": "CashValue", "text": "55"},
+    {"name": "SkinLabel", "text": "Varsity Jacket"},
+    {"name": "MeshLabel", "text": "Male Base"},
+    {"name": "ReadyButton", "text": "Unready", "addClass": ["lobby-button--ready-on"]},
+    {"name": "StartGameButton", "enabled": false}
+  ]
+}
