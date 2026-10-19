@@ -1,9 +1,10 @@
 # Character Pipeline — Modular Humanoid (Female first)
 
-> Status: **M4 done 2026-10-18** — the characters1 trio (blonde, redhead,
-> black bob) as recipes on the shared base: 14 cosmetics, painted faces and
-> irises, per-character sliders/height/skin/colours, generated Unity prefabs
-> (`Prefabs/CH_F_*.prefab`) dressed by `CharacterAppearance`.
+> Status: **M4 built 2026-10-18, Unity check pending** — the characters1 trio
+> (blonde, redhead, black bob) as recipes on the shared base: 14 cosmetics,
+> painted faces and irises, per-character sliders/height/skin/colours, generated
+> Unity prefabs (`Prefabs/CH_F_*.prefab`) dressed by `CharacterAppearance`.
+> Blender evidence done; the Unity batch check (`/charkit-verify`) has not run yet.
 > Evidence in `production/qa/evidence/m1-female-base/`, `.../m2-unity-humanoid/`,
 > `.../m3-cosmetic-pipeline/`, `.../m4-trio/` · next: characters2 backlog,
 > spring bones, player/NPC adoption · Branch: `feat/female-trio-m4`
