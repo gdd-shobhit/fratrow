@@ -85,9 +85,9 @@ namespace FratRow.Art.Characters.Editor
                 Debug.LogError($"[TrioCheck] {character.name}: no CharacterAppearance with a recipe");
                 return;
             }
-            appearance.Load(appearance.Recipe);
-            appearance.Apply();
-            long tris = character.GetComponentsInChildren<SkinnedMeshRenderer>(true).Sum(r => CharacterHumanoidCheck.TriangleCount(r.sharedMesh))
+            appearance.Refresh();
+            long tris = character.GetComponentsInChildren<SkinnedMeshRenderer>(true).Where(r => !r.forceRenderingOff)
+                            .Sum(r => CharacterHumanoidCheck.TriangleCount(r.sharedMesh))
                         + character.GetComponentsInChildren<MeshFilter>(true).Sum(f => CharacterHumanoidCheck.TriangleCount(f.sharedMesh));
             Debug.Log($"[TrioCheck] {appearance.Recipe.id}: wearing {string.Join(", ", appearance.Worn().Select(w => w.item.id))}; " +
                       $"{tris} tris dressed, height {appearance.Height:0.00}");

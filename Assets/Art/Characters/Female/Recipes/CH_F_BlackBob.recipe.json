@@ -28,9 +28,9 @@
     "brows": "#2A1E1C", "browThickness": 1.25, "browArch": 0.8,
     "lashes": "#1A1212", "wing": 1.0,
     "eyeshadow": "#7A4E44", "eyeshadowAlpha": 0.3,
-    "lips": "#B05A63",
+    "lips": "#B05A63", "lipAlpha": 0.85,
     "blush": "#D98A84", "blushAlpha": 0.25,
-    "freckles": 0.0
+    "freckles": 0.0, "freckleColor": "#B0674A"
   },
   "iris": "#5BA35F"
 }

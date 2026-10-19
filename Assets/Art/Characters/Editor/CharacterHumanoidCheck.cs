@@ -82,7 +82,7 @@ namespace FratRow.Art.Characters.Editor
                     appearance.SkinMaterial = skin;
                     appearance.SkinColor = new Color(0.93f, 0.78f, 0.68f);
                     appearance.Apply();
-                    var mesh = appearance.Body.sharedMesh;
+                    var mesh = appearance.DressedBody.sharedMesh;
                     Debug.Log($"[HumanoidCheck] dressed '{label}': body now {TriangleCount(mesh)} tris in {mesh.subMeshCount} submesh, " +
                               $"{character.GetComponentsInChildren<Renderer>().Length} renderers");
                 }, label);
@@ -226,6 +226,8 @@ namespace FratRow.Art.Characters.Editor
             var proxies = new List<Proxy>();
             foreach (var smr in character.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
+                if (smr.forceRenderingOff) // e.g. the source body CharacterAppearance draws through a dressed copy
+                    continue;
                 var proxy = new GameObject(smr.name + "_baked");
                 SceneManager.MoveGameObjectToScene(proxy, scene);
                 var baked = new Mesh { name = proxy.name };

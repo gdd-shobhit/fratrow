@@ -12,20 +12,26 @@ namespace FratRow.Characters
     /// Skinned items are re-bound to the character's bones by name (every charkit
     /// export shares the SK_Human skeleton). Rigid items are parented to their Socket_*
     /// bones at the placement they were authored with on the rest-pose body. The body
-    /// mesh is replaced by a copy without covered triangles, merged into one submesh
-    /// so skin is a single draw call; copies are cached per item combination.
+    /// is drawn by a dressed copy of the body renderer whose mesh has the covered
+    /// triangles removed (one submesh, so skin is a single draw call; cached per item
+    /// combination); the original body renderer is only switched off, never modified.
     ///
-    /// The look comes from a CharacterRecipe (loaded on Start when assigned) or from
-    /// the fields set directly; Apply always uses the current fields. Height is this
-    /// transform's uniform scale, so place the character with a parent if gameplay
-    /// needs to scale it too.
+    /// The look comes from a CharacterRecipe (loaded before applying when assigned) or
+    /// from the fields set directly. In the editor the character previews dressed
+    /// outside Play mode too: everything spawned for the preview is DontSave, so scenes
+    /// and prefabs never store it. Height is this transform's uniform scale, so place
+    /// the character with a parent if gameplay needs to scale it too.
     /// </summary>
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     public class CharacterAppearance : MonoBehaviour
     {
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
         static readonly Dictionary<Mesh, Dictionary<string, Mesh>> TrimmedBodies = new Dictionary<Mesh, Dictionary<string, Mesh>>();
+
+        /// <summary>Name of the spawned renderer that draws the dressed body.</summary>
+        public const string DressedBodyName = "DressedBody";
 
         [SerializeField] CharacterRecipe recipe;
         [SerializeField] SkinnedMeshRenderer body;
@@ -38,18 +44,22 @@ namespace FratRow.Characters
         [SerializeField] List<BodySlider> sliders = new List<BodySlider>();
         [SerializeField] List<WornItem> items = new List<WornItem>();
         [SerializeField] bool applyOnStart = true;
+        [SerializeField, Tooltip("Show the character dressed in the editor outside Play mode.")]
+        bool previewInEditor = true;
 
-        [SerializeField, HideInInspector] Mesh sourceBodyMesh;
-        [SerializeField, HideInInspector] Material[] sourceBodyMaterials;
         readonly List<GameObject> spawned = new List<GameObject>();
+        SkinnedMeshRenderer dressedBody;
 
-        /// <summary>The body renderer (SKM_F_Body), found by name if not assigned.</summary>
+        /// <summary>The source body renderer (SKM_F_Body), found by name if not assigned.</summary>
         public SkinnedMeshRenderer Body => body ? body : (body = FindRenderer("_Body"));
+
+        /// <summary>The renderer drawing the dressed body after Apply (null before).</summary>
+        public SkinnedMeshRenderer DressedBody => dressedBody;
 
         /// <summary>The eyes renderer (SKM_F_Eyes), found by name if not assigned.</summary>
         public SkinnedMeshRenderer Eyes => eyes ? eyes : (eyes = FindRenderer("_Eyes"));
 
-        /// <summary>Recipe loaded on Start (before Apply); null to set the look field by field.</summary>
+        /// <summary>Recipe loaded before applying; null to set the look field by field.</summary>
         public CharacterRecipe Recipe
         {
             get => recipe;
@@ -90,19 +100,50 @@ namespace FratRow.Characters
             set => eyeTexture = value;
         }
 
-        /// <summary>Material used for the merged body (falls back to the body's first material).</summary>
+        /// <summary>Material used for the dressed body (falls back to the body's first material).</summary>
         public Material SkinMaterial
         {
             get => skinMaterial;
             set => skinMaterial = value;
         }
 
+        /// <summary>Whether the character shows dressed in the editor outside Play mode.</summary>
+        public bool PreviewInEditor
+        {
+            get => previewInEditor;
+            set => previewInEditor = value;
+        }
+
+        void OnEnable()
+        {
+            // Preview only on a real character (a bare component, e.g. in tests, has no body yet).
+            if (!Application.isPlaying && previewInEditor && Body != null)
+                Refresh();
+        }
+
+        void OnDisable()
+        {
+            if (!Application.isPlaying)
+                Clear();
+        }
+
         void Start()
         {
+            if (!Application.isPlaying)
+                return;
             if (recipe != null)
                 Load(recipe);
             if (applyOnStart)
                 Apply();
+        }
+
+        /// <summary>Loads the recipe (if any) and applies it.</summary>
+        [ContextMenu("Apply")]
+        public void Refresh()
+        {
+            if (recipe != null)
+                Load(recipe);
+            Apply();
         }
 
         /// <summary>Copies a recipe's look into this character's fields (call Apply to show it).</summary>
@@ -121,25 +162,31 @@ namespace FratRow.Characters
         /// <summary>Adds an item (replacing anything in its slots on the next Apply).</summary>
         public void Wear(CosmeticItem item, params Color[] colors) => items.Add(new WornItem(item, colors));
 
-        /// <summary>Removes previously applied items and dresses the character from the current settings.</summary>
-        [ContextMenu("Apply")]
+        /// <summary>The items that survive slot resolution, in wearing order (missing items skipped).</summary>
+        public List<WornItem> Worn()
+        {
+            var valid = items.FindAll(w => w.item != null && w.item.model != null);
+            bool[] keep = CosmeticSlots.Resolve(valid.ConvertAll(w => w.item.slot));
+            var worn = new List<WornItem>(valid.Count);
+            for (int i = 0; i < valid.Count; i++)
+                if (keep[i])
+                    worn.Add(valid[i]);
+            return worn;
+        }
+
+        /// <summary>Removes previously applied items and dresses the character from the current fields.</summary>
         public void Apply()
         {
             Clear();
-            SkinnedMeshRenderer bodyRenderer = Body;
-            if (bodyRenderer == null)
+            SkinnedMeshRenderer source = Body;
+            if (source == null || source.sharedMesh == null)
             {
                 Debug.LogError($"[CharacterAppearance] {name}: no body SkinnedMeshRenderer", this);
                 return;
             }
-            if (sourceBodyMesh == null)
-            {
-                sourceBodyMesh = bodyRenderer.sharedMesh;
-                sourceBodyMaterials = bodyRenderer.sharedMaterials;
-            }
 
             Dictionary<string, Transform> bones = IndexBones();
-            int idCount = CountBodyIds(sourceBodyMesh);
+            int idCount = CountBodyIds(source.sharedMesh);
             var masks = new List<bool[]>();
             foreach (WornItem worn in Worn())
             {
@@ -155,49 +202,36 @@ namespace FratRow.Characters
                 }
                 else
                 {
-                    SpawnRigid(worn, bones, bodyRenderer);
+                    SpawnRigid(worn, bones, source);
                 }
             }
 
-            bodyRenderer.sharedMesh = TrimmedBody(sourceBodyMesh, BodyMask.Union(masks, idCount));
-            bodyRenderer.sharedMaterials = new[] { skinMaterial ? skinMaterial : sourceBodyMaterials[0] };
-            SetLook(bodyRenderer, 0, skinColor, faceTexture);
-            ApplySliders(bodyRenderer);
+            dressedBody = SpawnBody(source, TrimmedBody(source.sharedMesh, BodyMask.Union(masks, idCount)));
+            source.forceRenderingOff = true;
             SkinnedMeshRenderer eyesRenderer = Eyes;
             if (eyesRenderer != null)
-            {
                 for (int m = 0; m < eyesRenderer.sharedMaterials.Length; m++)
                     SetLook(eyesRenderer, m, Color.white, eyeTexture);
-                ApplySliders(eyesRenderer);
-            }
             transform.localScale = Vector3.one * height;
         }
 
-        /// <summary>The items that survive slot resolution, in wearing order (missing items skipped).</summary>
-        public List<WornItem> Worn()
-        {
-            var valid = items.FindAll(w => w.item != null && w.item.model != null);
-            bool[] keep = CosmeticSlots.Resolve(valid.ConvertAll(w => w.item.slot));
-            var worn = new List<WornItem>(valid.Count);
-            for (int i = 0; i < valid.Count; i++)
-                if (keep[i])
-                    worn.Add(valid[i]);
-            return worn;
-        }
-
-        /// <summary>Removes spawned items and restores the untrimmed body.</summary>
+        /// <summary>Removes spawned items and the dressed body, and shows the original body again.</summary>
         [ContextMenu("Clear")]
         public void Clear()
         {
             foreach (GameObject go in spawned)
                 DestroySafe(go);
             spawned.Clear();
-            if (body != null && sourceBodyMesh != null)
+            dressedBody = null;
+            if (!Application.isPlaying)
             {
-                body.sharedMesh = sourceBodyMesh;
-                body.sharedMaterials = sourceBodyMaterials;
-                body.SetPropertyBlock(null);
+                // A preview left over from before a script reload is no longer in `spawned`.
+                foreach (Transform t in GetComponentsInChildren<Transform>(true))
+                    if (t != null && t != transform && (t.gameObject.hideFlags & HideFlags.DontSave) != 0)
+                        DestroySafe(t.gameObject);
             }
+            if (body != null)
+                body.forceRenderingOff = false;
             if (eyes != null)
                 eyes.SetPropertyBlock(null);
         }
@@ -205,7 +239,7 @@ namespace FratRow.Characters
         SkinnedMeshRenderer FindRenderer(string nameSuffix)
         {
             foreach (SkinnedMeshRenderer smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (smr.name.Contains(nameSuffix))
+                if (smr.name.Contains(nameSuffix) && (smr.gameObject.hideFlags & HideFlags.DontSave) == 0)
                     return smr;
             return null;
         }
@@ -217,6 +251,39 @@ namespace FratRow.Characters
                 if (!bones.ContainsKey(t.name))
                     bones.Add(t.name, t);
             return bones;
+        }
+
+        /// <summary>Tracks a spawned object; outside Play mode it is never saved with the scene or prefab.</summary>
+        void Track(GameObject go)
+        {
+            if (!Application.isPlaying)
+                foreach (Transform t in go.GetComponentsInChildren<Transform>(true))
+                    t.gameObject.hideFlags = HideFlags.DontSave;
+            spawned.Add(go);
+        }
+
+        SkinnedMeshRenderer SpawnBody(SkinnedMeshRenderer source, Mesh mesh)
+        {
+            var go = new GameObject(DressedBodyName);
+            go.transform.SetParent(source.transform.parent, false);
+            go.transform.localPosition = source.transform.localPosition;
+            go.transform.localRotation = source.transform.localRotation;
+            go.transform.localScale = source.transform.localScale;
+            go.layer = source.gameObject.layer;
+            var smr = go.AddComponent<SkinnedMeshRenderer>();
+            smr.sharedMesh = mesh;
+            smr.bones = source.bones;
+            smr.rootBone = source.rootBone;
+            smr.localBounds = source.localBounds;
+            smr.updateWhenOffscreen = source.updateWhenOffscreen;
+            smr.quality = source.quality;
+            smr.shadowCastingMode = source.shadowCastingMode;
+            smr.receiveShadows = source.receiveShadows;
+            smr.sharedMaterials = new[] { skinMaterial ? skinMaterial : source.sharedMaterials[0] };
+            SetLook(smr, 0, skinColor, faceTexture);
+            ApplySliders(smr);
+            Track(go);
+            return smr;
         }
 
         void SpawnSkinned(WornItem worn, Dictionary<string, Transform> bones)
@@ -245,12 +312,12 @@ namespace FratRow.Characters
                 for (int m = 0; m < smr.sharedMaterials.Length; m++)
                     SetLook(smr, m, worn.ColorAt(m), null);
                 ApplySliders(smr);
-                spawned.Add(smr.gameObject);
+                Track(smr.gameObject);
             }
             DestroySafe(instance); // the item's own skeleton copy
         }
 
-        void SpawnRigid(WornItem worn, Dictionary<string, Transform> bones, SkinnedMeshRenderer bodyRenderer)
+        void SpawnRigid(WornItem worn, Dictionary<string, Transform> bones, SkinnedMeshRenderer source)
         {
             CosmeticItem item = worn.item;
             GameObject instance = Instantiate(item.model, transform); // same scene as the character
@@ -264,7 +331,7 @@ namespace FratRow.Characters
                 }
                 // The node was authored in character rest space; keep that placement relative to the socket.
                 Matrix4x4 nodeRest = instance.transform.worldToLocalMatrix * node.localToWorldMatrix;
-                Matrix4x4 local = SocketRest(socket, bodyRenderer).inverse * nodeRest;
+                Matrix4x4 local = SocketRest(socket, source).inverse * nodeRest;
                 node.SetParent(socket, false);
                 node.localPosition = local.GetColumn(3);
                 node.localRotation = local.rotation;
@@ -273,7 +340,7 @@ namespace FratRow.Characters
                 Renderer renderer = node.GetComponent<Renderer>();
                 for (int m = 0; renderer != null && m < renderer.sharedMaterials.Length; m++)
                     SetLook(renderer, m, worn.ColorAt(m), null);
-                spawned.Add(node.gameObject);
+                Track(node.gameObject);
             }
             DestroySafe(instance);
         }
@@ -282,18 +349,18 @@ namespace FratRow.Characters
         /// The socket's rest-pose transform in character space, from its nearest skinned
         /// ancestor's bind pose (sockets never deform, so they have no bind pose of their own).
         /// </summary>
-        Matrix4x4 SocketRest(Transform socket, SkinnedMeshRenderer bodyRenderer)
+        Matrix4x4 SocketRest(Transform socket, SkinnedMeshRenderer source)
         {
             Matrix4x4 chain = Matrix4x4.identity;
             Transform t = socket;
-            Mesh mesh = sourceBodyMesh;
-            Transform[] bodyBones = bodyRenderer.bones;
+            Mesh mesh = source.sharedMesh;
+            Transform[] bodyBones = source.bones;
             while (t != null && t != transform)
             {
                 int index = System.Array.IndexOf(bodyBones, t);
                 if (index >= 0)
                 {
-                    Matrix4x4 meshToRoot = transform.worldToLocalMatrix * bodyRenderer.transform.localToWorldMatrix;
+                    Matrix4x4 meshToRoot = transform.worldToLocalMatrix * source.transform.localToWorldMatrix;
                     return meshToRoot * mesh.bindposes[index].inverse * chain;
                 }
                 chain = Matrix4x4.TRS(t.localPosition, t.localRotation, t.localScale) * chain;
@@ -370,8 +437,7 @@ namespace FratRow.Characters
 
             Mesh trimmed = Instantiate(source);
             trimmed.name = source.name + "_dressed";
-            if (!Application.isPlaying)
-                trimmed.hideFlags = HideFlags.DontSave; // an edit-mode preview must not end up inside a saved scene
+            trimmed.hideFlags = HideFlags.DontSave; // generated at runtime, never an asset or part of a scene
             trimmed.subMeshCount = 1;
             trimmed.SetTriangles(BodyMask.FilterTriangles(triangles.ToArray(), ids, hidden), 0);
             perMask[key] = trimmed;

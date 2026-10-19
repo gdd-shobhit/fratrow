@@ -17,6 +17,16 @@ render the dressed line-up (`charkit/recipes.py`); Unity reads the same file to
 build the character. Every girl is the same body: what differs is slider values,
 height, skin, face paint and items.
 
+**Editing is two-way.** In Unity, selecting a character (or its
+`CharacterRecipe` asset) shows every slider, height, skin, items, colours and
+face style; edits re-dress the character live and are written back to this JSON
+by `CharacterRecipeSync` (`RecipeDocument` canonical layout — the file never
+gets reformatted). So for tuning an existing character, the user can just edit
+in Unity; this skill is for creating characters, scripted changes, and the
+Blender side (painting, line-up). After a Unity edit to face style, iris or skin,
+repaint in Blender (Phase 5). To copy a character in Unity:
+*Tools → FratRow → Characters → New Character From Selected Recipe*.
+
 Every `AskUserQuestion` call follows `.claude/docs/automation-modes.md`
 (collaborative asks always · guided major-only · autonomous logs and proceeds;
 `automation_always_ask` categories always prompt).
@@ -96,7 +106,10 @@ the skin tint), so **changing `skin` requires repainting**.
 
 Present the draft and ask: "May I write
 `Assets/Art/Characters/Female/Recipes/CH_F_<Name>.recipe.json`?" Write it with
-the Write tool (UTF-8, no BOM — Python's `json.load` rejects a BOM).
+the Write tool (UTF-8, no BOM — Python's `json.load` rejects a BOM) in the
+canonical layout `RecipeDocument.ToJson` writes (copy an existing recipe's
+shape: one slider/item per line, the `face` block grouped as in the existing
+files, every face key present), so Unity's first save does not reformat it.
 
 ## Phase 4: Validate in Blender
 

@@ -162,13 +162,26 @@ in batch mode).
 
 ## Faces and recipes
 
-**Recipes** (`Assets/Art/Characters/Female/Recipes/<id>.recipe.json`) are the
-source of truth for a character: base model, height, skin (sRGB hex), slider
-values, face/eye texture names, and items with optional colours per material
-slot. Unity's `CharacterRecipeImporter` turns each into a `CharacterRecipe`
-asset beside it and a prefab variant of the base model in `Female/Prefabs/`
-(*Rebuild Recipes and Prefabs* re-runs it). The `face` and `iris` blocks are
-read only by Blender.
+**Recipes** (`Assets/Art/Characters/Female/Recipes/<id>.recipe.json`,
+`RecipeDocument`) are the source of truth for a character: base model, height,
+skin (sRGB hex), slider values, face/eye texture names, items with optional
+colours per material slot, and the face-painting style. Unity's
+`CharacterRecipeImporter` turns each into a `CharacterRecipe` asset beside it
+and, once, a prefab variant of the base model in `Female/Prefabs/` that
+references the recipe (*Rebuild Recipes and Prefabs* rebuilds all).
+
+**Editing is two-way.** Select a character (scene or Prefab Mode) or its recipe
+asset: the inspector shows every body slider by name (0–1), height, skin,
+clothes and colours, and the face style. Changes re-dress the character live —
+characters preview dressed in the editor without Play mode, through `DontSave`
+objects that never end up in scenes or prefabs — and are written straight back
+to the recipe file (`CharacterRecipeSync`; undo/redo included, Play-mode tweaks
+too). Edits to the file (by hand or from tools) flow into Unity on import. If the
+file names items or textures Unity has not imported, Unity refuses to save over
+it rather than drop them. *New Character From Selected Recipe* copies a recipe
+(and its face/eye textures, to repaint) as a new character. Face style, iris and
+skin colour live in the recipe too, but the textures are painted by Blender:
+run `tasks.paint_faces()` after changing them.
 
 **Faces** are painted by `tools/blender/charkit/faces.py` from the recipe:
 brows, lash line and wing, eyeshadow, lips, blush and freckles, placed in 3D
