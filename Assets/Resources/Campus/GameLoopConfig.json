@@ -1293,5 +1293,63 @@
       "text": "lives in a trash heap",
       "truth": "trashed"
     }
-  ]
+  ],
+  "drunk": {
+    "tipsyAt": 0.15,
+    "threshold": 0.4,
+    "wastedAt": 1,
+    "max": 1.5,
+    "soberPerSecond": 0.0015,
+    "drinkCooldownSeconds": 5,
+    "partyHype": 2,
+    "policeTalkPenalty": 0.3,
+    "crimeDetect": 0.1,
+    "speech": {
+      "startIntensity": 0.1,
+      "curve": 1,
+      "typo": 0.05,
+      "dropLetter": 0.03,
+      "doubleLetter": 0.04,
+      "swapLetters": 0.08,
+      "slur": 0.45,
+      "stretch": 0.15,
+      "repeatWord": 0.06,
+      "shout": 0.05,
+      "interjection": 0.08,
+      "lowercaseAt": 0.25,
+      "tangent": 0.35,
+      "trailOff": 0.15,
+      "cosmeticScale": 0.7,
+      "interjections": [
+        "*hic*",
+        "uhh",
+        "bro",
+        "dude",
+        "like",
+        "wait",
+        "lol",
+        "hahaha",
+        "ok ok",
+        "listen"
+      ],
+      "tangents": [
+        "i love you man",
+        "no but seriously you\u0027re like my best friend",
+        "is it hot in here or is it me",
+        "where\u0027s my phone",
+        "i\u0027m not even that drunk",
+        "ok i need a slice of pizza",
+        "we should get matching tattoos",
+        "who wants to do a keg stand",
+        "you have really nice eyebrows",
+        "i think i\u0027m gonna text my ex"
+      ],
+      "trailOffs": [
+        "... wait what was i saying",
+        "... nevermind",
+        "... where was i",
+        "... ok anyway"
+      ]
+    }
+  }
 }

@@ -1,4 +1,4 @@
-# ADR-0002: Gossip writes to NPC memory are batched, core-identified and deferrable
+# ADR-0003: Gossip writes to NPC memory are batched, core-identified and deferrable
 
 ## Status
 

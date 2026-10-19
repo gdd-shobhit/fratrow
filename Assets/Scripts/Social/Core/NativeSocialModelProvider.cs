@@ -20,7 +20,12 @@ namespace FratRow.Social
         public int Seed { get; set; }
         public bool CompactFormat { get; set; }
         public bool GroundedReplies { get; set; } = true;
+        /// <summary>Free speech; see <see cref="LlamaServerModelProvider.PersonaReplies"/>. The native shim has no chat
+        /// history API, so the conversation is flattened into the user message.</summary>
+        public bool PersonaReplies { get; set; }
         public bool UseRequestSeed { get; set; } = true;
+        public int RsvpOverrides { get; private set; }
+        public int VoiceRetries { get; private set; }
         IntPtr handle;
         volatile bool disposed;
         public int PromptTokens { get; private set; }
@@ -66,6 +71,42 @@ namespace FratRow.Social
                     cancellation.ThrowIfCancellationRequested();
                     using (cancellation.Register(() => Native.Cancel(handle)))
                     {
+                        if (PersonaReplies)
+                        {
+                            var persona = new PersonaSocialTurn(context);
+                            int seed = UseRequestSeed ? Seed ^ context.SamplingSeed : Seed;
+                            var watch = Stopwatch.StartNew();
+                            string reply = null, problem = null;
+                            for (int attempt = 0; attempt < 2 && reply == null; attempt++)
+                            {
+                                ModelPasses++;
+                                int voiceStatus = Native.Generate(handle, persona.FlattenedPrompt(), persona.VoiceSystem(retry: attempt > 0), PersonaSocialTurn.VoiceGrammar,
+                                    unchecked(seed + 7919 * attempt), PersonaSocialTurn.VoiceTemperature, out var voice, out var voiceError, out int voiceIn, out int voiceOut);
+                                LastRawReply = Take(voice); string voiceDetail = Take(voiceError);
+                                PromptTokens += voiceIn; OutputTokens += voiceOut;
+                                cancellation.ThrowIfCancellationRequested();
+                                if (voiceStatus != 0) throw new InvalidOperationException("Native persona voice: " + voiceDetail);
+                                try
+                                {
+                                    string cleaned = PersonaSocialTurn.Clean(LastRawReply, persona.NpcName, persona.SpeakerName);
+                                    if (attempt == 0 && (persona.Repeats(cleaned) || PersonaSocialTurn.MetaTalk(cleaned))) { VoiceRetries++; problem = "Reply repeated an earlier line or broke character"; continue; }
+                                    reply = cleaned;
+                                }
+                                catch (ArgumentException e) { problem = e.Message; }
+                            }
+                            if (reply == null) throw new ArgumentException("Voiced reply unusable: " + problem);
+                            ModelPasses++;
+                            int status = Native.Generate(handle, persona.StatePrompt(reply), persona.StateSystem, persona.StateGrammar, seed, PersonaSocialTurn.StateTemperature,
+                                out var data, out var failure, out int promptTokens, out int completionTokens);
+                            LastRawDecision = Take(data); string detail = Take(failure);
+                            PromptTokens += promptTokens; OutputTokens += completionTokens;
+                            GenerationMilliseconds = watch.Elapsed.TotalMilliseconds;
+                            cancellation.ThrowIfCancellationRequested();
+                            if (status != 0) throw new InvalidOperationException("Native persona state: " + detail);
+                            var voiced = persona.Decode(LastRawDecision, reply, codec);
+                            if (persona.Override != null) { RsvpOverrides++; LastRawCheck = "rsvp label " + persona.Override; }
+                            LastRawOutput = codec.Encode(voiced); return voiced;
+                        }
                         if (GroundedReplies)
                         {
                             var grounded = new GroundedSocialTurn(context);

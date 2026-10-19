@@ -202,11 +202,13 @@ namespace FratRow.Game
         }
 
         /// <summary>Design §4.4 detection probability for a crime at a location.</summary>
-        public float DetectionChance(CrimeDef crime, string location, int witnesses)
+        public float DetectionChance(CrimeDef crime, string location, int witnesses, float drunk01 = 0)
         {
             var t = Config.police;
             float p = crime.baseDetect + (PatrolAt(location) ? t.patrolHere : PatrolNear(location) ? t.patrolNear : 0) + witnesses * t.witnessFactor;
             if (AnyRole("risk_manager")) p -= t.riskManagerDetectBonus;
+            // Drunk brothers are sloppy (design/gdd/drunk-mechanic.md §3.5).
+            p += drunk01 * Config.drunk.crimeDetect;
             return Clamp(p, 0.02f, 0.95f);
         }
     }

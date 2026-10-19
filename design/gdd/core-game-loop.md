@@ -134,6 +134,7 @@ is detained. Each action produces an **ActionResult** and usually a **news item*
 | `trace_rumor` NPC, story / `expose_rumor` story | in person or text / anywhere | Follow a rumor to its source; publicly debunk a traced rival lie. |
 | `steal_mascot` rival | rival house, evenings (17–20) | Crime. Popularity +4 if not caught. |
 | `claim_role` | anywhere | Take a free role. |
+| `drink` [item] | `PartyHouse`, any phase but SemesterEnd | One serving from the shared stash or open containers; the brother's `drunk` rises. Past the threshold his speech is rewritten (`design/gdd/drunk-mechanic.md`). |
 | ready | anywhere | Existing ready-up. When all are ready, the host may start the weekend. |
 
 **Party-night actions** (at `PartyHouse` unless stated)
@@ -458,6 +459,7 @@ Arrivals are drawn as `floor(expected) + Bernoulli(frac)`. Each filler's archety
 | Roster data | Data | `Assets/Resources/Campus/CampusRoster.json`. Loaded by `NamedNpcDatabase`, `PhoneContactDatabase` and the core. |
 | Config data | Data | `Assets/Resources/Campus/GameLoopConfig.json`. Loaded by the core (Unity reads it via `TextAsset`; the harness reads the file). |
 | Campus gossip (`design/gdd/campus-gossip.md`) | both | Reads party, crime, police, rival, Dean, rush and settlement events to seed stories; its opinions feed destination appeal (§4.8), rush interest (§4.7) and Δpop (§4.2). Adds four actions (§3.4). |
+| Drunk mechanic (`design/gdd/drunk-mechanic.md`) | Core ↔ Core | Brothers drink from the same stash/`openServings` as guests (`BeginParty` keeps containers opened earlier in the week). Drunk brothers' talk/invite/rush text is rewritten in `Conversation`, and `talk_to_police` / crime detection take a drunk penalty. |
 
 ### 6.1 Identity
 

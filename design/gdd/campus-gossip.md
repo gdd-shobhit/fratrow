@@ -4,7 +4,7 @@
 > `GameSession.GossipActions.cs`, `GossipTypes.cs`). No Unity UI yet; the new actions already route through the generic action RPC.
 > **Tuning**: every number below is a key under `gossip`, `storyKinds[]` or `smearClaims[]` in `Assets/Resources/Campus/GameLoopConfig.json`.
 > **Related**: `design/gdd/core-game-loop.md` (§3.4 actions, §3.6 crimes, §3.7 rivals, §3.8 settlement, §4.2 popularity),
-> `design/gdd/campus-roster.md` (gossip trait, schedules), `Docs/SocialBrains.md` (NPC memory), ADR-0002 (ledger writes).
+> `design/gdd/campus-roster.md` (gossip trait, schedules), `Docs/SocialBrains.md` (NPC memory), ADR-0003 (ledger writes).
 > **Research basis**: Allport & Postman's basic law of rumor (importance × ambiguity; leveling, sharpening); Dunbar and Robbins & Karan
 > (most talk is about absent others, a minority of it negative); Grosser et al. 2010 (negative gossip travels over friendship ties);
 > Maki–Thompson rumor model (spreaders stop when they keep meeting people who already know); Estévez et al. 2022 (it takes more than one
@@ -158,7 +158,7 @@ memory carries the alleged actor and original words (who said what); vaguer rete
 anyone the teller didn't. Every record carries the story **topic**, its subject and a valence (0 when not believed); a second teller who
 tips an NPC into believing writes a new record; a successful denial and an exposure write valence-0 records on the same topic, so NPC
 memory follows what each NPC *currently* holds. Rival-only stories still move opinions but write no records unless `ledgerAllStories` is
-on (each record grows the social journal; see ADR-0002). All gossip writes of a tick/action/round go out in **one** social transaction
+on (each record grows the social journal; see ADR-0003). All gossip writes of a tick/action/round go out in **one** social transaction
 with core-assigned, content-hashed ids, so the bridge can write them in the background; gossip records never invalidate an in-flight
 conversation, and a failed write never stops the game loop (NPC memory is best-effort).
 

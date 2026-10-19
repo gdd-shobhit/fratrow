@@ -99,20 +99,23 @@ typing `LOCAL` or the host's IP into the Join field.
 - **Two local clients:** `Tests/SocialHarness/run-two-clients.ps1` and the inbox driver now accept campaign commands.
   `{"requestId":"1","action":"game","text":"buy","item":"keg","amount":2}` runs as that client. `game_dump` (host only)
   writes the whole campaign state.
-- **Headless tests:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj` runs 23 rule and integration
+- **Headless tests:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj` runs 38 rule and integration
   tests. They cover RSVP arrivals, conditional entrance promises, witnesses entering memory, raids and their
   mitigation over 30 seeds, insults creating grievances and withdrawn RSVPs, Bid Day, probation and suspension, roles, busts and detention, police parking, save/load
-  determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover. It
-  also runs the 27 campus-gossip tests (gossip GDD §8). Add `-- --gossip` to run only those.
+  determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover.
+  They also cover the drunk mechanic (`DrunkTests.cs`, `design/gdd/drunk-mechanic.md`) and run the 27 campus-gossip tests
+  (gossip GDD §8). Add `-- --gossip` to run only the gossip tests.
 - **Gossip cost:** `... -- --profile-gossip --weeks 6 --seed 61` plays the same bot semester with gossip off and on. It reports wall
   time, social transactions, state and journal size, time spent in gossip writes and reads, and one round's host-frame cost,
   synchronous vs deferred.
 - **Whole semesters:** `dotnet run --project Tests/GameLoopHarness/GameLoopHarness.csproj -- --simulate --weeks 6 --players 4 --seed 7 [--reckless]`
   writes `Library/GameLoopHarness/report.md`. Add `--model <gguf> --llama-server <exe>` to use the real local model.
 - **One party, tick by tick:** `... -- --debug-party --heat 60 --pop 45`.
-- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 65 checks.
+- **Drunk speech calibration:** `... -- --drunk-speech "your line" [--samples 5] [--seed 1] [--cosmetic]` prints the line
+  at every drunk level using the `drunk` section of the live config.
+- **Social integrity suite (existing):** `dotnet run --project Tests/SocialHarness/SocialHarness.csproj` runs the 76 checks.
 - **Compile against the open editor's references:** `tools/ci/unity-compile-check.ps1`. From a git worktree, pass
-  `-RepoRoot <worktree> -UnityProjectDir D:\fratrow` to borrow the main checkout's `Library` (fixed: the flag used to be ignored).
+  `-RepoRoot <worktree> -UnityProjectDir D:\fratrow` to borrow the main checkout's `Library`.
 
 ## Tuning
 
@@ -142,7 +145,7 @@ Reloading mid-party respawns the guests. To start fresh, use **FratRow → Campa
 - The social journal is never compacted, so long campaigns grow it (an existing v1 limitation). Every transaction appends the
   *whole* state. Measured in a 6-week bot semester (`--profile-gossip`): 746 MB with gossip off and 1.1 GB with gossip on (state 1.2 MB
   vs 1.6 MB). Compaction (truncate the journal after a verified snapshot) is the top infrastructure follow-up. Gossip already
-  batches its writes (ADR-0002).
+  batches its writes (ADR-0003).
 - Gossip actions have no Unity UI yet (not even F1 panel buttons). They already work through `NetworkedCampaign.RequestAction`
   (any action id goes to the core) and the inbox driver's `game` command. The
   host should build the bridge with `new SocialWorldBridge(world, deferGossipWrites: true)` and call `WaitForGossipWrites()` before

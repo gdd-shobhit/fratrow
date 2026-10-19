@@ -10,7 +10,7 @@ using FratRow.Social;
 
 /// <summary>
 /// <c>dotnet run --project Tests/GameLoopHarness -- --simulate [--weeks 6] [--players 4] [--seed 7] [--reckless]
-/// [--model path.gguf --llama-server llama-server.exe] [--report Library/GameLoopHarness/report.md]</c>
+/// [--model path.gguf --llama-server llama-server.exe [--persona]] [--report Library/GameLoopHarness/report.md]</c>
 /// Plays a whole semester with bot brothers and prints/writes a week-by-week report.
 /// </summary>
 static class Simulation
@@ -30,8 +30,9 @@ static class Simulation
         string providerName = "heuristic (no model)";
         if (model != null && server != null)
         {
-            provider = new LlamaServerModelProvider(new JsonCodec(), server, model, SocialModelCatalog.HashFor(Path.GetFileName(model)));
-            providerName = "llama.cpp " + Path.GetFileName(model);
+            bool persona = args.Contains("--persona");
+            provider = new LlamaServerModelProvider(new JsonCodec(), server, model, SocialModelCatalog.HashFor(Path.GetFileName(model))) { PersonaReplies = persona };
+            providerName = "llama.cpp " + Path.GetFileName(model) + (persona ? " (persona replies)" : " (grounded replies)");
         }
         var watch = Stopwatch.StartNew();
         using var f = new GameFixture(seed: seed, players: players, provider: provider, tweak: c =>
@@ -47,7 +48,8 @@ static class Simulation
         report.AppendLine("Roster: " + f.Roster.npcs.Count + " NPCs (" + f.Roster.npcs.Count(n => n.isPnm) + " PNMs). Roles: " +
             string.Join(", ", f.Session.State.players.Select(p => p.displayName + "=" + p.role)));
         report.AppendLine();
-        int lastNews = 0, lastConversation = 0, lastStory = 0;
+        int lastNews = 0, lastConversation = 0, lastStory = 0, acceptedTotal = 0, showedTotal = 0, declinedCameTotal = 0;
+        var reportedParties = new HashSet<string>();
         while (f.Session.State.phase != Phase.SemesterEnd)
         {
             int week = f.Session.State.week;
@@ -78,6 +80,16 @@ static class Simulation
             var rsvps = f.Conversations.Skip(lastConversation).Where(c => c.action == ActionIds.Invite && c.result.status == "committed")
                 .GroupBy(c => c.result.commitment ?? "none").Select(g => g.Key + "=" + g.Count());
             report.AppendLine("RSVPs: " + string.Join(", ", rsvps));
+            // State.party is replaced at the week rollover, so take this week's party from the social ledger instead.
+            string weekParty = f.Store.Read().parties.Where(p => (p.state == "ended" || p.state == "cancelled") && !reportedParties.Contains(p.partyId))
+                .Select(p => p.partyId).LastOrDefault();
+            if (weekParty != null) reportedParties.Add(weekParty);
+            var followThrough = FollowThrough(f, weekParty, result.namedGuests);
+            if (followThrough != null)
+            {
+                report.AppendLine(followThrough.Value.line);
+                acceptedTotal += followThrough.Value.accepted; showedTotal += followThrough.Value.showed; declinedCameTotal += followThrough.Value.declinedCame;
+            }
             lastConversation = f.Conversations.Count;
             report.AppendLine();
             report.AppendLine("News:");
@@ -95,6 +107,8 @@ static class Simulation
         report.AppendLine("Totals: " + f.Conversations.Count + " conversations (" + commits + " committed), invites " + bots.Invites + ", rush talks " + bots.RushTalks +
             ", bids " + bots.Bids + ", crimes " + bots.Crimes + ", busts " + bots.Busts + ", failed action attempts " + bots.ActionsFailed +
             ". Wall time " + watch.Elapsed.TotalSeconds.ToString("0.0") + " s.");
+        report.AppendLine("RSVP follow-through (semester): " + showedTotal + " of " + acceptedTotal + " accepted NPCs showed up; " +
+            declinedCameTotal + " NPCs who declined came anyway (expected 0).");
         foreach (var line in bots.Log) report.AppendLine("- " + line);
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
         File.WriteAllText(reportPath, report.ToString());
@@ -121,5 +135,23 @@ static class Simulation
         }
         report.AppendLine("Word of mouth this week (Δpop): " + string.Join(", ", week.entries.Select(e => s.House(e.houseId).name + " " + e.wordOfMouth.ToString("+0.0;-0.0;0.0"))));
         report.AppendLine();
+    }
+
+    /// <summary>Words → saved RSVP → attendance: accepted NPCs who showed up, and declined NPCs who came anyway, for one week's party.</summary>
+    static (string line, int accepted, int showed, int declinedCame)? FollowThrough(GameFixture f, string partyId, IEnumerable<string> namedGuests)
+    {
+        if (string.IsNullOrEmpty(partyId)) return null;
+        var attended = new HashSet<string>(namedGuests ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+        bool Came(string npcId) => attended.Contains(npcId) || attended.Contains(f.Roster.npcs.Find(n => n.id == npcId)?.displayName ?? npcId);
+        var rsvps = f.Store.Read().npcs.Select(n => (id: n.npcId, c: n.commitments.Find(x => x.partyId == partyId))).Where(x => x.c != null).ToList();
+        var accepted = rsvps.Where(x => x.c.state == "accepted").ToList();
+        var declined = rsvps.Where(x => x.c.state == "declined").Select(x => x.id).ToList();
+        int showed = accepted.Count(x => x.c.arrived || Came(x.id));
+        var declinedCame = declined.Where(Came).ToList();
+        var noShows = accepted.Where(x => !x.c.arrived && !Came(x.id)).Select(x => x.id).ToList();
+        string line = "RSVP follow-through: accepted " + accepted.Count + " (showed up " + showed + (noShows.Count > 0 ? "; no-shows: " + string.Join(", ", noShows) : "") +
+            "), conditional " + rsvps.Count(x => x.c.state == "conditional") + ", deferred " + rsvps.Count(x => x.c.state == "deferred") +
+            ", declined " + declined.Count + " (came anyway: " + (declinedCame.Count == 0 ? "none" : string.Join(", ", declinedCame)) + ").";
+        return (line, accepted.Count, showed, declinedCame.Count);
     }
 }

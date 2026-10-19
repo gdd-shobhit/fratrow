@@ -18,6 +18,8 @@ namespace FratRow.Game
         public const string BeerRun = "beer_run", TalkToPolice = "talk_to_police";
         // Gossip (design/gdd/campus-gossip.md §3.7): target = NPC, item = story id.
         public const string AskGossip = "ask_gossip", DenyRumor = "deny_rumor", TraceRumor = "trace_rumor", ExposeRumor = "expose_rumor";
+        // Any phase but semester end, at the house (item = optional drink id)
+        public const string Drink = "drink";
     }
 
     /// <summary>
@@ -50,6 +52,9 @@ namespace FratRow.Game
         public string conversationText = "";
         public string conversationChannel = "";
         public string socialPartyId = "";
+        /// <summary>For talk-type actions: the speaker's visible <see cref="FratRow.Social.SpeakerConditions"/> value.
+        /// <see cref="conversationText"/> is already what they actually said (drunk speech rewritten).</summary>
+        public string speakerCondition = "";
 
         public static ActionResult Ok(string message = "") => new ActionResult { ok = true, code = "ok", message = message };
         public static ActionResult Fail(string code, string message) => new ActionResult { ok = false, code = code, message = message };

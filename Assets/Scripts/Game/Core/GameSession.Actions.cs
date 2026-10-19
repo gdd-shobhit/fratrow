@@ -45,6 +45,7 @@ namespace FratRow.Game
                     case ActionIds.ExposeRumor: return ExposeRumor(p, a);
                     case ActionIds.AskNumber: return AskNumber(p, a);
                     case ActionIds.Buy: return Buy(p, a);
+                    case ActionIds.Drink: return Drink(p, a);
                     case ActionIds.WorkShift: return WeekdayChore(p, a, Config.shopLocation, Config.actions.workPerDay, () => { int pay = (int)Math.Round(Config.economy.workShiftPay * RoleOf(p).workPayMult); PlayerHouse.cash += pay; return "Worked a shift: +$" + pay + "."; });
                     case ActionIds.Study: return WeekdayChore(p, a, Config.libraryLocation, Config.actions.studyPerDay, () => { p.studyThisWeek++; return "Studied (" + p.studyThisWeek + " sessions this week)."; });
                     case ActionIds.Workout: return WeekdayChore(p, a, Config.gymLocation, Config.actions.workoutPerDay, () => { p.rep += 1; return "Hit the gym."; });
@@ -140,10 +141,13 @@ namespace FratRow.Game
                 text = lines[NextRng("line").Range(0, lines.Length)].Replace("{npc}", def.displayName).Replace("{house}", PlayerHouse.name);
             }
             if (a.action == ActionIds.RushTalk) npc.rushTalksToday++;
+            // What the NPC hears is what a drunk brother actually manages to say. Button lines stay keyword-safe.
+            text = SpokenText(p, text, cosmeticOnly: a.action != ActionIds.Talk);
             return new ActionResult
             {
                 ok = true, code = "ok", message = "Talking to " + def.displayName + "...", conversationText = text,
-                conversationChannel = inPerson ? "in_person" : "text", socialPartyId = State.socialPartyId ?? ""
+                conversationChannel = inPerson ? "in_person" : "text", socialPartyId = State.socialPartyId ?? "",
+                speakerCondition = DrunkCondition(p)
             };
         }
 
@@ -346,7 +350,7 @@ namespace FratRow.Game
                     if (party.dispatchedPatrol < 0) return ActionResult.Fail("invalid_target", "There are no cops to talk to.");
                     if (party.talkAttempted) return ActionResult.Fail("already_done", "Someone already tried talking to them.");
                     party.talkAttempted = true;
-                    float chance = Config.police.talkSuccess + RoleOf(p).policeTalkBonus + p.rep / 200f;
+                    float chance = Config.police.talkSuccess + RoleOf(p).policeTalkBonus + p.rep / 200f - Drunk01(p) * Config.drunk.policeTalkPenalty;
                     bool success = NextRng("police-talk").Chance(Clamp(chance, 0.05f, 0.9f));
                     if (success) party.policeTalked = true;
                     return ActionResult.Ok(success ? "You smooth-talked dispatch. If they show up, it'll just be a warning." : "That didn't land. They're still coming.");
@@ -410,7 +414,7 @@ namespace FratRow.Game
             }
             var witnesses = location == "phone" ? new List<string>() : NpcsAt(location);
             if (npcDef != null) witnesses.Remove(npcDef.id);
-            bool caught = NextRng("crime-" + crime.id).Chance(DetectionChance(crime, location, witnesses.Count));
+            bool caught = NextRng("crime-" + crime.id).Chance(DetectionChance(crime, location, witnesses.Count, Drunk01(p)));
             string act = crime.name.ToLowerInvariant();
             string phrase = (string.IsNullOrEmpty(crime.gossipPhrase) ? act + " at {rival}" : crime.gossipPhrase).Replace("{rival}", rival.name);
             string rumorEvent = null, crimeEvent = null;

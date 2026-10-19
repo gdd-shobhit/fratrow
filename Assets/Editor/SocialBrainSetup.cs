@@ -32,6 +32,16 @@ public static class SocialBrainSetup
     [MenuItem("FratRow/Social Brains/Disable development experiment")]
     public static void Disable() => EditorPrefs.SetBool("FratRow.Social.Enabled", false);
 
+    const string ReplyModeKey = "FratRow.Social.ReplyMode";
+    [MenuItem("FratRow/Social Brains/Reply mode: persona (model speaks in character)")]
+    public static void PersonaReplies() { EditorPrefs.SetString(ReplyModeKey, "persona"); Debug.Log("[Social] Persona replies: the model voices each NPC from their persona and your chat history. Applies to the next host session."); }
+    [MenuItem("FratRow/Social Brains/Reply mode: persona (model speaks in character)", true)]
+    static bool PersonaRepliesCheck() { Menu.SetChecked("FratRow/Social Brains/Reply mode: persona (model speaks in character)", NetworkedSocialConversation.ReplyMode() == "persona"); return true; }
+    [MenuItem("FratRow/Social Brains/Reply mode: grounded (template lines)")]
+    public static void GroundedReplies() { EditorPrefs.SetString(ReplyModeKey, "grounded"); Debug.Log("[Social] Grounded replies: the model picks social acts and the host composes template lines. Applies to the next host session."); }
+    [MenuItem("FratRow/Social Brains/Reply mode: grounded (template lines)", true)]
+    static bool GroundedRepliesCheck() { Menu.SetChecked("FratRow/Social Brains/Reply mode: grounded (template lines)", NetworkedSocialConversation.ReplyMode() == "grounded"); return true; }
+
     [MenuItem("FratRow/Social Brains/Bake and validate network components")]
     public static void Bake()
     {

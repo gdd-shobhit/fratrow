@@ -149,7 +149,8 @@ namespace FratRow.Social
             if (!s.players.Any(p => p.playerId == playerId)) throw new UnauthorizedAccessException("Unknown bound player");
             if (string.IsNullOrWhiteSpace(request.requestId) || request.requestId.Length > 64 ||
                 string.IsNullOrWhiteSpace(request.text) || request.text.Length > SocialRules.InputCharacters ||
-                (request.channel != "text" && request.channel != "in_person") || SocialWorld.Npc(s, request.npcId) == null)
+                (request.channel != "text" && request.channel != "in_person") || !SpeakerConditions.IsValid(request.speakerCondition) ||
+                SocialWorld.Npc(s, request.npcId) == null)
                 throw new ArgumentException("Invalid conversation request");
             if (!string.IsNullOrEmpty(request.partyId) && SocialWorld.Party(s, request.partyId) == null)
                 throw new ArgumentException("Unknown party");

@@ -377,7 +377,7 @@ namespace FratRow.Game
                 location = location ?? "campus", witnesses = new List<string>(witnesses), subjectId = story == null ? "" : Subject(story, 0),
                 topicId = story == null ? "" : Topic(story), valence = valence });
 
-        /// <summary>Last failure writing gossip to NPC memory ("" if none) and the count. NPC memory is best-effort (ADR-0002).</summary>
+        /// <summary>Last failure writing gossip to NPC memory ("" if none) and the count. NPC memory is best-effort (ADR-0003).</summary>
         public string LastGossipLedgerError { get; private set; } = "";
         public int GossipLedgerFailures { get; private set; }
 

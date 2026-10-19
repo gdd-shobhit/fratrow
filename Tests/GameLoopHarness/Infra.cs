@@ -121,7 +121,9 @@ sealed class GameFixture : IDisposable
             }
         else foreach (var p in Session.State.players) Players.Add(new PlayerCredential { playerId = p.playerId });
         Provider = provider ?? new HeuristicSocialModelProvider(Store.Read, seed);
-        Service = new SocialConversationService(World, Codec, Provider, Access, TimeSpan.FromSeconds(120), requireGroundedProposal: true);
+        // Persona replies carry model-written words; every other provider must stay grounded (mirrors NetworkedSocialConversation).
+        bool persona = Provider is LlamaServerModelProvider llama && llama.PersonaReplies;
+        Service = new SocialConversationService(World, Codec, Provider, Access, TimeSpan.FromSeconds(120), requireGroundedProposal: !persona);
         Session.DrainEvents(Events);
     }
 
@@ -138,7 +140,8 @@ sealed class GameFixture : IDisposable
     {
         var r = Session.Apply(new PlayerAction { playerId = P(i), action = action, target = npcId, text = text });
         if (!r.ok) return new ConversationResult { status = "rejected", error = r.code + ": " + r.message };
-        var request = new ConversationRequest { requestId = SocialWorld.Id(), npcId = npcId, text = r.conversationText, channel = r.conversationChannel, partyId = r.socialPartyId };
+        var request = new ConversationRequest { requestId = SocialWorld.Id(), npcId = npcId, text = r.conversationText, channel = r.conversationChannel, partyId = r.socialPartyId,
+            speakerCondition = r.speakerCondition };
         var result = await Service.SubmitAsync(P(i), request);
         Session.OnConversationCommitted(P(i), npcId, action, result);
         Conversations.Add((P(i), npcId, action, r.conversationText, result));
