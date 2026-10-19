@@ -254,6 +254,17 @@ static class Program
                     Assert(t.Decode(L("accept"), "I'll be there. Let me know if you need anything.", codec).decision == "accept", "An unrelated 'if' sentence downgraded a plain yes");
                     return t.Build("accept", "unchanged", "unchanged", "", "", "Bro, say less.");
                 }
+                if (c.CurrentText == "honestly you're kind of a loser, nobody wants you around")
+                {
+                    // Blame-scenario regression: the 2B label left trust unchanged (even "up") and saved no grievance after this line.
+                    var hurt = t.Decode(codec.Encode(new { decision = "respond", trust = "up", regard = "unchanged", grievance = "", resolve = "" }), "Wow. Okay.", codec);
+                    Assert(hurt.relationship_effects[0].magnitude == "down" && hurt.grievance_event_id == c.ObservedEventId,
+                        "An explicit insult left trust unchanged or saved no grievance");
+                    Assert(hurt.relationship_effects[1].magnitude == "down_small", "House regard ignored an insult from a member");
+                }
+                if (c.CurrentText == "you're not mad at me too, right?")
+                    Assert(t.Decode(L("respond"), "Nope. Just wanna make sure we all vibe on Saturday.", codec).decision == "respond",
+                        "'Nope' to a non-party question was saved as declining the party");
                 if (c.CurrentText == "you seem hard to impress")
                 {
                     Assert(t.ExistingCommitment == "accepted", "Fixture did not record the acceptance");
@@ -262,7 +273,8 @@ static class Program
                 }
                 return t.Build("respond", "unchanged", "unchanged", "", "", "Hey.");
             }
-            foreach (var line in new[] { "what are you into?", "party Saturday, you should come", "you seem hard to impress" })
+            foreach (var line in new[] { "what are you into?", "party Saturday, you should come", "you seem hard to impress", "you're not mad at me too, right?",
+                "honestly you're kind of a loser, nobody wants you around" })
             {
                 var r = await h.Service.SubmitAsync(h.P1.playerId, h.Request(line));
                 Assert(playtestFailure == null, playtestFailure ?? ""); Assert(r.status == "committed", "Playtest regression turn did not commit: " + line);

@@ -196,7 +196,10 @@ namespace FratRow.Social
         }
 
         static readonly Regex SaysYes = new Regex(@"\b(i'?m in\b|count me in|i'?ll (be there|come through|come by|swing by|pull up|show up|stop by|go)\b|see you (there|saturday|then)|i'?m (coming|going)\b|(definitely|totally) (coming|going|there)\b|yeah,? i'?ll come|i'?ll come\b)", RegexOptions.IgnoreCase);
-        static readonly Regex SaysNo = new Regex(@"\b(not coming|i'?ll pass|gonna pass|hard pass|pass on (it|that|the party|this)|can'?t make it|won'?t (be there|come|make it|go|attend)\b|not (going|gonna (go|come|make it))\b|not tonight|not this time|nope\b|count me out|no thanks|i'?m out\b|i'?d rather not|skip (it|this|that|the party))", RegexOptions.IgnoreCase);
+        static readonly Regex StrongNo = new Regex(@"\b(not coming|i'?ll pass|gonna pass|hard pass|pass on (it|that|the party|this)|can'?t make it|won'?t (be there|come|make it|go|attend)\b|not (going|gonna (go|come|make it))\b|count me out|no thanks|i'?m out\b|i'?d rather not|skip (it|this|that|the party))", RegexOptions.IgnoreCase);
+        /// <summary>Refusals only when the speaker just asked about the party ("Nope." to "you're not mad, right?" is not an RSVP).</summary>
+        static readonly Regex WeakNo = new Regex(@"\b(nope|not tonight|not this time)\b", RegexOptions.IgnoreCase);
+        static readonly Regex SaysNo = new Regex(StrongNo + "|" + WeakNo, RegexOptions.IgnoreCase);
         static readonly Regex SaysMaybe = new Regex(@"\b(maybe|think about it|not sure|we'?ll see|i'?ll see|depends|idk|undecided|let me know|might (come|go|swing|stop))\b", RegexOptions.IgnoreCase);
         /// <summary>Conditions turn a yes or no into "undecided" (only the entrance counteroffer is an executable condition).</summary>
         static readonly Regex Conditional = new Regex(@"\b(if|unless|only if|as long as|provided)\b|,\s*or\b|\bor (else|i won'?t|i'?m not)\b", RegexOptions.IgnoreCase);
@@ -236,7 +239,8 @@ namespace FratRow.Social
         {
             Override = null;
             var allowed = GroundedSocialTurn.Decisions(context).ToList();
-            bool yes = SaysYes.IsMatch(reply), no = SaysNo.IsMatch(reply), maybe = SaysMaybe.IsMatch(reply);
+            bool aboutParty = SpeechCues.IsInvite(context.CurrentText ?? "");
+            bool yes = SaysYes.IsMatch(reply), no = StrongNo.IsMatch(reply) || (aboutParty && WeakNo.IsMatch(reply)), maybe = SaysMaybe.IsMatch(reply);
             bool conditional = ConditionalAnswer(reply) && !NamesEntrance.IsMatch(reply);
             string worded = yes && no ? null : (yes || no) && conditional ? "defer" : yes ? "accept" :
                 no ? (maybe ? "defer" : "decline") : maybe ? "defer" : null;
@@ -269,7 +273,16 @@ namespace FratRow.Social
             var label = codec.Decode<Label>(stateJson) ?? throw new ArgumentException("Missing persona state label");
             if (!Magnitudes.Contains(label.trust) || !Magnitudes.Contains(label.regard)) throw new ArgumentException("Invalid persona effect");
             string decision = Reconcile(label.decision, reply);
-            return Build(decision, label.trust, label.regard, ids.RestoreId(label.grievance), ids.RestoreId(label.resolve), reply);
+            string trust = label.trust, regard = label.regard, grievance = ids.RestoreId(label.grievance);
+            // An explicit insult always registers, as it does for the heuristic provider: the 2B label often left trust
+            // unchanged (even "up") and saved no grievance. The label can make it worse, never milder.
+            if (SpeechCues.IsInsult(context.CurrentText ?? ""))
+            {
+                trust = "down";
+                if (Array.IndexOf(Magnitudes, regard) > Array.IndexOf(Magnitudes, "down_small")) regard = "down_small";
+                if (string.IsNullOrEmpty(grievance) && context.GrievanceCandidateIds.Contains(context.ObservedEventId)) grievance = context.ObservedEventId;
+            }
+            return Build(decision, trust, regard, grievance, ids.RestoreId(label.resolve), reply);
         }
 
         /// <summary>Assembles a validated proposal. The interpretation is host-written; evidence is the received speech.</summary>
