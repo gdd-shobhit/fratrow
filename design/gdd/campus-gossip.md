@@ -81,10 +81,12 @@ Each kind has a `topic` (party, conduct, status, rush, said, smear), a `valence`
 ### 3.3 Seeding (the significance gate)
 
 `Seed(kind, severity, knowers, …)` creates a story only if: gossip is enabled; `severity ≥ seedThreshold` (35); at least one real NPC
-knows it. A story with the same kind and subjects that is still going around is **reinforced** — severity and heat raised, age reset,
-new knowers added — instead of duplicated ("Kappa throws good parties" is one reputation, refreshed every weekend). Caps: at most
-`maxNewStoriesPerWeek` (14) per gossip week (Sunday→Saturday) and `maxPerKindPerWeek` (3) of any one kind, unless
-`severity ≥ capBypassSeverity` (80); at most `maxActiveStories` (16) active — a new story evicts the coldest one only if it is hotter. Initial knowers know it
+knows it. A story with the same kind, subjects, **source and claim** that is still going around is **reinforced** — severity and heat
+raised, age reset, new knowers added — instead of duplicated ("Kappa throws good parties" is one reputation, refreshed every weekend);
+two houses' smears stay two stories, each traceable to its own liar. Caps: at most `maxNewStoriesPerWeek` (14) per gossip week
+(Sunday→Saturday) and `maxPerKindPerWeek` (3) of any one kind, unless `severity ≥ capBypassSeverity` (80) or the story is a deliberate
+player act (a planted rumor always gets its story); at most `maxActiveStories` (16) active — a new story evicts the coldest one only if
+it is hotter (player-made ones always evict). Initial knowers know it
 firsthand (`heardFrom = witness`, belief 1, detail 0) unless the seeding site says otherwise (smears: `heardFrom` is the liar).
 
 ### 3.4 Spreading (rounds)
@@ -99,7 +101,7 @@ firsthand (`heardFrom = witness`, belief 1, detail 0) unless the seeding site sa
 - **One hop per round.** All tells are chosen first and applied after; listeners receive the version their teller had at the start of
   the round. Nobody hears a story from someone who learned it in the same round.
 - **Hearing it new.** detail = teller's + 1 with `levelingChance` (0.45), capped at 2 (names fade to "one of the X guys"; a victim's
-  name fades, a celebrity's never does); spice = teller's + 1 with `sharpenChance` × teller gossip (cap `maxSpice` 2); belief per §4.3.
+  name fades, a celebrity's never does); spice = teller's + 1 with `sharpenChance` (0.3) × teller gossip (cap `maxSpice` 2); belief per §4.3.
 - **Hearing it again.** The teller gains a **stifle**; after `stifleAfter` (2) the teller stops spreading it. If the teller is a new
   source, the listener's belief rises (§4.3) and a better-detailed version replaces theirs (converging reports keep names alive).
 
@@ -133,7 +135,7 @@ All are conversations: allowed in person or by text with an unlocked contact, al
 | Action | Target / item | Effect | Limit |
 |---|---|---|---|
 | `ask_gossip` | NPC | The NPC's top 3 stories, **in their version**, with ids (`[#12] …`). Members never dish dirt on their own house. | 1 per NPC per day |
-| `deny_rumor` | NPC, story id | Only bad stories about the players' house or a brother. Knows it secondhand → belief × (1 − power) (§4.5), and a true story's exaggeration resets to accurate. Witness → fails. **Hadn't heard → now they have** (belief `denyBackfireBelief` 0.3, secondhand). | 1 per NPC per day |
+| `deny_rumor` | NPC, story id | Only bad stories about the players' house or a brother. Knows it secondhand → belief × (1 − power) (§4.5), and a true story's exaggeration resets to accurate. Witness → fails. **Hadn't heard → now they have** (belief `denyBackfireBelief` 0.3, secondhand). | 1 per NPC per day for the whole crew |
 | `trace_rumor` | NPC, story id | Who told them; may mark the story traced. | `tracePerDay` (4) per player |
 | `expose_rumor` | story id | §3.6. | once per story |
 
@@ -143,24 +145,29 @@ All are conversations: allowed in person or by text with an unlocked contact, al
 - **Rush interest** (core §4.7): += `rushWeight` (0.3) × opinion(house).
 - **Weekly popularity** (core §4.2): += word of mouth (§4.4), applied at every settlement while stories are remembered.
 - **Phone numbers**: an NPC whose opinion of a player is ≤ `numberRefuseOpinion` (−12) refuses `ask_number`: "I've heard about you."
-- **Conversation**: each believed story about the players reaches the NPC's social memory as a rumor receipt (§3.9). The LLM reads it as
-  reported, not witnessed; the deterministic provider's decision score moves 0.06 per receipt naming the speaker and 0.03 per receipt
-  about the house (± 0.18 cap).
+- **Conversation**: stories about the players reach the NPC's social memory as rumor records (§3.9). The LLM reads them as reported, not
+  witnessed. The deterministic provider uses only the **latest** record per story: 0.06 per believed story naming the speaker, 0.03 per
+  believed story about the house (± 0.18 cap). Records the NPC doesn't believe, successful denials and debunks carry valence 0 and
+  cancel the effect; records older than 3 social weeks stop counting.
 
 ### 3.9 NPC memory (social ledger)
 
 Stories involving the players (their house, a brother, or the players as the second house) become social records: one origin record
 per seeding, one receipt per retelling. A full-detail (detail 0) retelling **links** to the teller's own record, so the listener's
 memory carries the alleged actor and original words (who said what); vaguer retellings are unlinked paraphrases that do not name
-anyone the teller didn't. Rival-only stories still move opinions but write no records unless `ledgerAllStories` is on (each record grows
-the social journal; see ADR-0002). All gossip writes of a tick/action/round go out in **one** social transaction with core-assigned
-ids, so the bridge can write them in the background.
+anyone the teller didn't. Every record carries the story **topic**, its subject and a valence (0 when not believed); a second teller who
+tips an NPC into believing writes a new record; a successful denial and an exposure write valence-0 records on the same topic, so NPC
+memory follows what each NPC *currently* holds. Rival-only stories still move opinions but write no records unless `ledgerAllStories` is
+on (each record grows the social journal; see ADR-0002). All gossip writes of a tick/action/round go out in **one** social transaction
+with core-assigned, content-hashed ids, so the bridge can write them in the background; gossip records never invalidate an in-flight
+conversation, and a failed write never stops the game loop (NPC memory is best-effort).
 
 ## 4. Formulas
 
 All randomness uses the campaign seed (`GameRng`), per round `Rng("gossip-<day|brunch>", round)` keyed by semester/week/day.
 
-**4.1 Who-said-what severity.** For a committed turn with applied deltas `trust`, `regard`, grievance `g`, and RSVP change:
+**4.1 Who-said-what severity.** Evaluated **once per committed turn** (a replayed or retried commit seeds nothing); bystanders count only
+if the NPC is still at the player's spot when the reply commits. For a committed turn with applied deltas `trust`, `regard`, grievance `g`, and RSVP change:
 `bad = 45·g + 15·[trust ≤ −5] + 10·[regard < 0] + 25·[accepted/conditional → declined]`; `severity = bad × (0.8 + npcPop/100)`.
 Example: an insult to Ashley (pop 10) that creates a grievance with trust −5 and regard −2 → (45+15+10) × 0.9 = **63** → seeded.
 A "come on, don't be lame" (trust −2) → 0 → never a story. Charm is news only as an **upset**: `upset = npcPop − housePop > 0` and
@@ -211,8 +218,15 @@ sev 40: **4.3 days**; sev 70: **9.4**; sev 85: **14.3**.
 - **Weekend started early**: the skipped days' rounds run first; the gossip result is identical to playing the week out (tested).
 - **Save/load mid-day**: all gossip state is in `GameState`; continuing gives the same result (tested). Pending ledger writes are flushed
   at the end of every tick and action, so a save never misses them.
-- **Crash with deferred writes in flight / replay after reload**: record ids are deterministic per campaign; recording an id that already
-  exists is a no-op, so NPC memories are not duplicated.
+- **Crash with deferred writes in flight / replay after reload**: record ids hash the campaign, a counter and the content. An identical
+  replay reproduces the ids and records nothing twice; a replay that diverged gets new ids (no silent collision). NPCs keep what they
+  were told in the discarded timeline, like any other social memory.
+- **A client re-sends a committed conversation** (same request id): the stored result returns, and gossip ignores it — no new story, no
+  refreshed age, no new bystanders.
+- **The social journal fails** (disk error): gossip writes are dropped and counted (`GossipLedgerFailures`, `LastGossipLedgerError`);
+  ticks and actions carry on. Deferred writes record the failure and surface it from `WaitForGossipWrites()`.
+- **A rival suspended at this Sunday's settlement**: its party still happened — its stories seed (party-time suspension decides).
+- **A guest pledges on Sunday**: where they partied Saturday is captured before Bid Day, so they still count as that party's witness.
 - **Suspended players' house at party time**: no party stories and no stood-up stories (the party didn't happen); the suspension itself
   is a story. **Suspended at this Sunday's settlement** (e.g. by the raid itself): the party did happen — its stories seed, and the
   social party is recorded as ended, not cancelled. (Fixes a pre-existing settlement bug that cancelled RSVPs of a party that took place.)
@@ -242,7 +256,7 @@ sev 40: **4.3 days**; sev 70: **9.4**; sev 85: **14.3**.
 | `tellBase`, `negativityBias` | 0.75, 1.25 | 0.5–0.9, 1–1.5 | How talkative campus is; bad news bias. |
 | `negativeTieMin`, `familiarityPerHour`, `friendHours` | 0.55, 0.03, 12 | 0.5–0.7, 0.02–0.05, 8–16 | Who trades dirt. Above 0.65 nasty stories get stuck in cliques. |
 | `stifleAfter` | 2 | 1–4 | How fast stories burn out. |
-| `levelingChance`, `sharpenChance`, `maxSpice` | 0.45, 0.4, 2 | 0.3–0.6, 0.2–0.6, 1–2 | Name loss and exaggeration per hop. |
+| `levelingChance`, `sharpenChance`, `maxSpice` | 0.45, 0.3, 2 | 0.3–0.6, 0.2–0.6, 1–2 | Name loss and exaggeration per hop. |
 | `beliefThreshold`, `multiSourceBelief`, `beliefBase`, `beliefTie`, `beliefRepeat` | 0.6, 0.4, 0.35, 0.35, 0.3 | ±0.1 | When a story changes minds. |
 | `heatRetentionBase`, `heatRetentionPerSeverity`, `retireHeat`, `memoryWeeks` | 0.55, 0.35, 8, 3 | sum ≤ 0.95, 5–12, 2–4 | Story life (§4.6) and how long opinions last. |
 | `opinionScale`, `opinionCap`, `positiveOpinionFactor` | 30, 50, 0.6 | 20–40, 30–60, 0.4–1 | Per-NPC opinion strength; how much less good news counts. |
@@ -294,3 +308,10 @@ Each is an automated test in `Tests/GameLoopHarness/GossipTests.cs` (`dotnet run
 21. With gossip disabled: no stories, no word of mouth, actions refused.
 22. A raided party whose settlement suspends the house is recorded as ended (not cancelled) in the social backend, advances the
     social day, and its raid still becomes a story.
+23. Replaying a committed conversation (same request id) two days later changes no story: same age, no new knowers, no second story.
+24. Two houses' smears about the players are two stories; the players' lie about Kappa stays theirs next to Theta's; the same liar
+    repeating the same claim reinforces it.
+25. With a journal that fails every write, days keep advancing, actions keep answering, and every failure is counted and visible.
+26. A believed secondhand smear lowers the deterministic provider's score for the players; once exposed it no longer does; a second
+    brother can't deny to the same NPC the same day; an unattributed trashing records no vandal.
+27. A rival suspended at this settlement still gets stories about the party it threw.

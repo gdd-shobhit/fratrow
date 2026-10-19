@@ -113,8 +113,10 @@ namespace FratRow.Social
         /// <summary>Gossip receipts only: who the story is about as the teller named them (a player id, "players" for the
         /// players' house, or a rival house name); "" when the teller didn't say. Additive save field.</summary>
         public string subjectId = "";
-        /// <summary>Gossip receipts only: +1 flattering, -1 damaging for <see cref="subjectId"/>.</summary>
+        /// <summary>Gossip receipts only: +1 flattering, -1 damaging for <see cref="subjectId"/>; 0 = heard but not believed, denied or debunked.</summary>
         public int valence;
+        /// <summary>Gossip records only: the story this record is about ("story:12"). The latest record per topic is what the NPC holds now.</summary>
+        public string topicId = "";
     }
     /// <summary>One NPC-to-NPC retelling for <see cref="SocialWorld.ShareGossip"/>. <c>viaEventId</c> links the teller's own record
     /// (only for full-detail retellings); empty means an unlinked paraphrase.</summary>
@@ -122,15 +124,17 @@ namespace FratRow.Social
     {
         /// <summary>Optional caller-assigned id (≤ 64 chars). Recording an id that already exists is a no-op (idempotent replay).</summary>
         public string eventId;
-        public string tellerId, listenerId, viaEventId, text, subjectId;
+        public string tellerId, listenerId, viaEventId, text, subjectId, topicId;
         public int valence;
     }
-    /// <summary>A world observation recorded in the same transaction as gossip shares (story origins, overheard lines, denials).</summary>
+    /// <summary>A world observation recorded in the same transaction as gossip shares (story origins, overheard lines, denials,
+    /// debunks). Subject, valence and topic mean the same as on a receipt.</summary>
     [Serializable] public sealed class GossipObservation
     {
         /// <summary>Optional caller-assigned id, as for <see cref="GossipShare.eventId"/>.</summary>
         public string eventId;
-        public string kind, actorId, targetId, text, location;
+        public string kind, actorId, targetId, text, location, subjectId, topicId;
+        public int valence;
         public List<string> witnesses = new List<string>();
     }
     [Serializable] public sealed class PartyRecord

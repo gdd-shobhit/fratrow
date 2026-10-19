@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using FratRow.Social;
 
 namespace FratRow.Game
@@ -228,13 +231,25 @@ namespace FratRow.Game
 
         bool AboutPlayers(GossipStory s) => s.houseId == Config.playerHouseId || s.otherHouseId == Config.playerHouseId || Player(s.playerId) != null;
 
+        /// <summary>One capped line of player speech: control and line/paragraph separators become spaces, invisible format characters
+        /// (bidi overrides, zero-width) are dropped, double quotes become single quotes.</summary>
         string CleanQuote(string text)
         {
             if (string.IsNullOrEmpty(text)) return "";
-            var chars = text.Select(c => char.IsControl(c) ? ' ' : c == '"' ? '\'' : c).ToArray();
-            string q = string.Join(" ", new string(chars).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            var sb = new StringBuilder(text.Length);
+            foreach (char c in text)
+            {
+                var category = char.GetUnicodeCategory(c);
+                if (category == UnicodeCategory.Format) continue;
+                bool breaks = char.IsControl(c) || category == UnicodeCategory.LineSeparator || category == UnicodeCategory.ParagraphSeparator;
+                sb.Append(breaks ? ' ' : c == '"' ? '\'' : c);
+            }
+            string q = string.Join(" ", sb.ToString().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
             int max = Math.Max(10, G.quoteChars);
-            return q.Length <= max ? q : q.Substring(0, max - 1).TrimEnd() + "…";
+            if (q.Length <= max) return q;
+            int cut = max - 1;
+            if (char.IsHighSurrogate(q[cut - 1])) cut--; // never split an emoji
+            return q.Substring(0, cut).TrimEnd() + "…";
         }
 
         // ---------- Seeding (design §3.3) ----------
@@ -255,9 +270,11 @@ namespace FratRow.Game
             var who = ValidKnowers(knowers);
             if (who.Count == 0) return null;
             houseId = houseId ?? ""; playerId = playerId ?? ""; npcId = npcId ?? ""; otherHouseId = otherHouseId ?? "";
+            origin = origin ?? "witness"; detail = detail ?? "";
             // The same story while it's still going around is reinforced and refreshed, not told as new ("Kappa throws good parties").
+            // Same source and claim too: two houses' smears are two stories, each traceable to its own liar.
             var same = State.stories.Find(s => !s.retired && s.kind == kind && s.houseId == houseId && s.playerId == playerId && s.npcId == npcId &&
-                s.otherHouseId == otherHouseId && s.fabricated == fabricated);
+                s.otherHouseId == otherHouseId && s.fabricated == fabricated && s.origin == origin && s.detail == detail);
             if (same != null)
             {
                 same.severity = Math.Max(same.severity, severity);
@@ -267,20 +284,22 @@ namespace FratRow.Game
                 gossipVersion++;
                 return same;
             }
-            bool scandal = force || severity >= G.capBypassSeverity;
+            // A deliberate player act (planting a rumor) always gets its story; the volume caps are for ambient campus chatter.
+            bool playerMade = origin.StartsWith("player:", StringComparison.Ordinal);
+            bool scandal = force || playerMade || severity >= G.capBypassSeverity;
             if (!scandal && State.storiesThisWeek >= G.maxNewStoriesPerWeek) return null;
             if (!scandal && State.stories.Count(s => s.kind == kind && s.createdDay >= State.gossipWeekStart) >= G.maxPerKindPerWeek) return null;
             var active = State.stories.Where(s => !s.retired).ToList();
             if (active.Count >= G.maxActiveStories)
             {
                 var coldest = active.OrderBy(s => s.heat).ThenBy(s => s.id).First();
-                if (coldest.heat >= severity && !force) return null;
+                if (coldest.heat >= severity && !force && !playerMade) return null;
                 coldest.retired = true;
             }
             var story = new GossipStory
             {
                 id = ++State.storySeq, kind = kind, houseId = houseId, playerId = playerId, npcId = npcId, otherHouseId = otherHouseId,
-                quote = CleanQuote(quote), detail = detail ?? "", origin = origin ?? "witness", fabricated = fabricated, severity = severity,
+                quote = CleanQuote(quote), detail = detail, origin = origin, fabricated = fabricated, severity = severity,
                 heat = severity, createdDay = DayIndex, semester = State.semester, week = State.week
             };
             State.stories.Add(story);
@@ -307,11 +326,17 @@ namespace FratRow.Game
             string ledger = socialEventId ?? "";
             if (ledger == "" && Recorded(story))
             {
-                // One origin record they all witnessed.
-                ledger = NewLedgerId();
-                string actor = story.playerId != "" ? story.playerId : story.houseId != "" ? HouseName(story.houseId) : null;
-                string target = story.npcId != "" ? story.npcId : story.otherHouseId != "" ? HouseName(story.otherHouseId) : null;
-                QueueObservation(ledger, "gossip_" + story.kind, actor, target, StoryText(story, 0, 0), location, fresh);
+                // One origin record they all witnessed. The actor is whoever did it: for a trashed house that's the culprit (or
+                // nobody known), never the victim.
+                string text = StoryText(story, 0, 0);
+                ledger = NewLedgerId("gossip_" + story.kind, story.id.ToString(), text, string.Join(",", fresh));
+                string actor = story.playerId != "" ? story.playerId : story.kind == "house_trashed" ? (story.otherHouseId != "" ? HouseName(story.otherHouseId) : null) :
+                    story.houseId != "" ? HouseName(story.houseId) : null;
+                string target = story.npcId != "" ? story.npcId : story.kind == "house_trashed" ? HouseName(story.houseId) :
+                    story.otherHouseId != "" ? HouseName(story.otherHouseId) : null;
+                // The shared record only colours memory if every one of them believes it (witnesses do; a smear's listeners may not).
+                bool allBelieve = fresh.All(id => Clamp(beliefFor?.Invoke(id) ?? 1f, 0, 1) >= G.beliefThreshold);
+                QueueObservation(ledger, "gossip_" + story.kind, actor, target, text, location, fresh, story, allBelieve ? Config.StoryKind(story.kind)?.valence ?? 0 : 0);
             }
             if (story.socialEventId == "") story.socialEventId = ledger;
             bool sourced = heardFrom != "witness";
@@ -327,24 +352,52 @@ namespace FratRow.Game
         /// <summary>Stories that reach NPC conversation memory: those involving the players, or all with <c>ledgerAllStories</c>.</summary>
         bool Recorded(GossipStory s) => G.ledgerAllStories || AboutPlayers(s);
 
-        /// <summary>Deterministic 32-hex social event id for a gossip record (same campaign + counter → same id).</summary>
-        string NewLedgerId()
+        /// <summary>
+        /// Deterministic 32-hex social event id for a gossip record: a hash of campaign, counter and content. An identical replay after a
+        /// reload reproduces the id (recorded once); a replay that diverged gets new ids instead of silently colliding.
+        /// </summary>
+        string NewLedgerId(params string[] content)
         {
-            var rng = GameRng.For(State.seed, "gossip-ledger:" + State.campaignId, ++State.ledgerSeq);
-            return rng.NextULong().ToString("x16") + rng.NextULong().ToString("x16");
+            string key = State.campaignId + "|" + State.seed + "|" + (++State.ledgerSeq) + "|" + string.Join("|", content);
+            using (var sha = SHA256.Create())
+            {
+                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(key));
+                var hex = new StringBuilder(32);
+                for (int i = 0; i < 16; i++) hex.Append(hash[i].ToString("x2"));
+                return hex.ToString();
+            }
         }
 
-        void QueueObservation(string eventId, string kind, string actor, string target, string text, string location, List<string> witnesses) =>
-            ledgerObservations.Add(new GossipObservation { eventId = eventId, kind = kind, actorId = actor, targetId = target, text = text,
-                location = location ?? "campus", witnesses = new List<string>(witnesses) });
+        static string Topic(GossipStory s) => "story:" + s.id;
 
-        /// <summary>Hands every queued gossip record to the social backend as one transaction (ids were assigned when queued).</summary>
+        /// <summary>Queues a world record about a story; subject/valence/topic let NPC memory know what each witness now holds.</summary>
+        void QueueObservation(string eventId, string kind, string actor, string target, string text, string location, List<string> witnesses,
+            GossipStory story, int valence) =>
+            ledgerObservations.Add(new GossipObservation { eventId = eventId, kind = kind, actorId = actor, targetId = target, text = text,
+                location = location ?? "campus", witnesses = new List<string>(witnesses), subjectId = story == null ? "" : Subject(story, 0),
+                topicId = story == null ? "" : Topic(story), valence = valence });
+
+        /// <summary>Last failure writing gossip to NPC memory ("" if none) and the count. NPC memory is best-effort (ADR-0002).</summary>
+        public string LastGossipLedgerError { get; private set; } = "";
+        public int GossipLedgerFailures { get; private set; }
+
+        /// <summary>
+        /// Hands every queued gossip record to the social backend as one transaction (ids were assigned when queued). Never throws:
+        /// a failing journal costs NPC memories, not the game loop. The queues are emptied either way, so they stay bounded.
+        /// </summary>
         internal void FlushGossipLedger()
         {
             if (ledgerObservations.Count == 0 && ledgerShares.Count == 0) return;
-            social.RecordGossip(ledgerObservations, ledgerShares);
+            var seen = ledgerObservations.ToList();
+            var told = ledgerShares.ToList();
             ledgerObservations.Clear();
             ledgerShares.Clear();
+            try { social.RecordGossip(seen, told); }
+            catch (Exception e)
+            {
+                GossipLedgerFailures++;
+                LastGossipLedgerError = e.GetType().Name + ": " + e.Message;
+            }
         }
 
         // ---------- Spreading (design §3.4) ----------
@@ -432,8 +485,21 @@ namespace FratRow.Game
         string BrunchSpot(string npcId)
         {
             var npc = Npc(npcId);
-            return npc == null || npc.destination == "" || npc.destination == "home" ? null : "party:" + npc.destination;
+            string went = npc == null ? "" : WeekendDestination(npc);
+            return went == "" || went == "home" ? null : "party:" + went;
         }
+
+        // Where each NPC partied Saturday, captured before Bid Day (joining a house clears an NPC's destination).
+        Dictionary<string, string> weekendDestinations;
+
+        void SnapshotWeekendDestinations()
+        {
+            weekendDestinations = new Dictionary<string, string>();
+            foreach (var n in State.npcs) weekendDestinations[n.npcId] = n.destination;
+        }
+
+        string WeekendDestination(NpcGameState n) =>
+            weekendDestinations != null && weekendDestinations.TryGetValue(n.npcId, out var went) ? went : n.destination;
 
         /// <summary>Tie strength between two NPCs this round (design §4.2). 0 = they don't talk.</summary>
         float Tie(string a, string b, Dictionary<string, string> place)
@@ -549,16 +615,15 @@ namespace FratRow.Game
                 // Maki–Thompson stifling: telling people who already know burns the teller out.
                 if (++teller.stifles >= G.stifleAfter) teller.spreader = false;
                 if (mine.heardFrom == "witness" || mine.heardFrom == teller.npcId || mine.tellers.Contains(teller.npcId)) return;
+                bool believed = Believes(mine);
                 if (mine.tellers.Count < 4) mine.tellers.Add(teller.npcId);
                 mine.belief = Clamp(mine.belief + G.beliefRepeat * t.tie * (1 - mine.belief), 0, 0.97f);
-                // Converging reports keep names alive (the more detailed version wins).
+                // Converging reports keep names alive (the more detailed version wins). A sharper version, or hearing it from a
+                // second person until they believe it, replaces what this NPC holds in memory.
                 int detail = Math.Min(2, t.detail + (rng.Chance(G.levelingChance) ? 1 : 0));
-                if (detail < mine.detail)
-                {
-                    // The sharper version replaces what this NPC remembers (at most two upgrades per story).
-                    mine.detail = detail;
-                    QueueShare(s, teller.npcId, t.ledger, mine);
-                }
+                bool sharper = detail < mine.detail;
+                if (sharper) mine.detail = detail;
+                if (sharper || (!believed && Believes(mine))) QueueShare(s, teller.npcId, t.ledger, mine);
                 gossipVersion++;
                 return;
             }
@@ -576,16 +641,19 @@ namespace FratRow.Game
 
         /// <summary>
         /// Queues the ledger receipt for one retelling. Only a full-detail retelling links to the teller's record, so the listener's memory
-        /// carries the alleged actor and original words; vaguer retellings are unlinked paraphrases ("one of the Kappa guys...").
+        /// carries the alleged actor and original words; vaguer retellings are unlinked paraphrases ("one of the Kappa guys..."). A receipt
+        /// the listener doesn't believe carries valence 0: they heard it, but it doesn't colour how they treat anyone.
         /// </summary>
         void QueueShare(GossipStory s, string tellerId, string tellerLedger, GossipKnowledge listener)
         {
             if (!Recorded(s)) return;
-            listener.ledger = NewLedgerId();
+            string text = StoryText(s, listener.detail, listener.spice);
+            string via = listener.detail == 0 ? tellerLedger ?? "" : "";
+            listener.ledger = NewLedgerId("gossip", tellerId, listener.npcId, text, via);
             ledgerShares.Add(new GossipShare
             {
-                eventId = listener.ledger, tellerId = tellerId, listenerId = listener.npcId, viaEventId = listener.detail == 0 ? tellerLedger ?? "" : "",
-                text = StoryText(s, listener.detail, listener.spice), subjectId = Subject(s, listener.detail), valence = Config.StoryKind(s.kind)?.valence ?? 0
+                eventId = listener.ledger, tellerId = tellerId, listenerId = listener.npcId, viaEventId = via, text = text,
+                subjectId = Subject(s, listener.detail), topicId = Topic(s), valence = Believes(listener) ? Config.StoryKind(s.kind)?.valence ?? 0 : 0
             });
         }
 
@@ -672,7 +740,7 @@ namespace FratRow.Game
             if (!p.raided && p.fun >= G.legendaryFun && p.peakGuests >= p.capacity * 0.5f)
                 candidates.Add(new KeyValuePair<string, float>("party_legendary", 30 + (p.fun - 60) * 1.5f + p.notablePopularity / 5f));
             else if (!p.raided && (p.fun < G.flopFun || p.peakGuests < p.capacity * 0.25f))
-                candidates.Add(new KeyValuePair<string, float>("party_flop", 30 + Math.Max(0, 50 - p.fun) * 0.8f));
+                candidates.Add(new KeyValuePair<string, float>("party_flop", 30 + Math.Max(0, 50 - p.fun) * 0.8f + (p.peakGuests < p.capacity * 0.25f ? 15 : 0)));
             var star = guests.Select(RosterNpc).Where(d => d != null && d.popularity >= Config.scoring.notablePopularity)
                 .OrderByDescending(d => d.popularity).ThenBy(d => d.id, StringComparer.Ordinal).FirstOrDefault();
             if (star != null) { candidates.Add(new KeyValuePair<string, float>("celebrity_sighting", star.popularity * G.notableSightingFactor)); starId = star.id; }
@@ -687,8 +755,9 @@ namespace FratRow.Game
             {
                 var h = House(rp.houseId);
                 var entry = week.entries.Find(e => e.houseId == rp.houseId);
-                if (h == null || h.suspended || entry == null) continue;
-                var attendees = State.npcs.Where(n => n.destination == h.id).Select(n => n.npcId).ToList();
+                // entry.suspended is party-time; h.suspended may already be next week's sanction.
+                if (h == null || entry == null || entry.suspended) continue;
+                var attendees = State.npcs.Where(n => WeekendDestination(n) == h.id).Select(n => n.npcId).ToList();
                 var candidates = new List<KeyValuePair<string, float>>();
                 string starId = "";
                 if (rp.raided) candidates.Add(new KeyValuePair<string, float>("party_raided", Config.StoryKind("party_raided").severity - 5));
@@ -723,7 +792,7 @@ namespace FratRow.Game
                     if (kind == null || kind == byPop) { kind = byPop; severity = Math.Max(severity, popSeverity); }
                 }
                 if (kind == null) continue;
-                var knowers = GossipHubs().Concat(h.npcMembers).Concat(State.npcs.Where(n => n.destination == h.id).Select(n => n.npcId));
+                var knowers = GossipHubs().Concat(h.npcMembers).Concat(State.npcs.Where(n => WeekendDestination(n) == h.id).Select(n => n.npcId));
                 Seed(kind, severity, knowers, h.id, location: "campus");
             }
         }
@@ -800,11 +869,20 @@ namespace FratRow.Game
             s.exposed = true;
             s.retired = true;
             s.heat = 0;
-            foreach (var k in KnowersOf(s.id)) { k.belief *= G.exposeBeliefFactor; k.spreader = false; }
+            var knowers = KnowersOf(s.id);
+            foreach (var k in knowers) { k.belief *= G.exposeBeliefFactor; k.spreader = false; }
             gossipVersion++;
+            // Everyone who heard the lie learns it was one: a valence-0 record on the same topic replaces it in NPC memory.
+            var told = knowers.Where(k => k.ledger != "").Select(k => k.npcId).ToList();
+            if (told.Count > 0)
+            {
+                string debunk = "That rumor that " + HouseName(s.houseId) + " " + s.detail + " turned out to be made up.";
+                QueueObservation(NewLedgerId("gossip_debunked", s.id.ToString(), string.Join(",", told)), "gossip_debunked", null, null, debunk,
+                    location, told, s, 0);
+            }
             var by = House(byHouseId);
-            var knowers = GossipHubs().Concat(by?.npcMembers ?? new List<string>()).Concat(NpcsAt(location)).ToList();
-            var story = Seed("smear_exposed", G.exposedSeverity, knowers, culpritHouse, culpritPlayer, otherHouseId: s.houseId, detail: s.detail,
+            var witnesses = GossipHubs().Concat(by?.npcMembers ?? new List<string>()).Concat(NpcsAt(location)).ToList();
+            var story = Seed("smear_exposed", G.exposedSeverity, witnesses, culpritHouse, culpritPlayer, otherHouseId: s.houseId, detail: s.detail,
                 location: location, force: true);
             if (culpritHouse == Config.playerHouseId)
                 News("gossip", (by?.name ?? "Someone") + " traced the rumor that " + HouseName(s.houseId) + " " + s.detail + " back to " +

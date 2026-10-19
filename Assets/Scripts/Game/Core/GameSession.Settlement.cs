@@ -26,6 +26,7 @@ namespace FratRow.Game
             var p = State.party;
             var player = PlayerHouse;
             var standingBefore = Ranked().Select(h => h.id).ToList();
+            SnapshotWeekendDestinations();
             State.storiesThisWeek = 0; // the gossip week runs Sunday to Saturday
             State.gossipWeekStart = DayIndex;
             ScoreRivalParties();
@@ -147,6 +148,7 @@ namespace FratRow.Game
                 player.id, isPublic: true);
             // 9. Gossip: Saturday's stories are seeded and Sunday brunch spreads them (design/gdd/campus-gossip.md §3.5).
             GossipWeekend(standingBefore, week, missed);
+            weekendDestinations = null;
             Emit(GameEventKind.WeekSettled, "week " + (State.week + 1), player.id, value: playerRank);
         }
 

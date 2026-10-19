@@ -77,12 +77,19 @@ namespace FratRow.Game
             this.deferGossipWrites = deferGossipWrites;
         }
 
-        /// <summary>Blocks until every deferred gossip write is in the journal; rethrows a failed write.</summary>
+        /// <summary>Last deferred gossip write failure since <see cref="WaitForGossipWrites"/> ("" if none). Never thrown on the host thread.</summary>
+        public string LastGossipWriteError { get { lock (writeLock) return lastWriteError; } }
+        string lastWriteError = "";
+
+        /// <summary>Blocks until every deferred gossip write is in the journal; throws (once) if any of them failed since the last call.</summary>
         public void WaitForGossipWrites()
         {
             Task pending;
             lock (writeLock) pending = gossipWrites;
             pending.GetAwaiter().GetResult();
+            string error;
+            lock (writeLock) { error = lastWriteError; lastWriteError = ""; }
+            if (error != "") throw new InvalidOperationException("Deferred gossip write failed: " + error);
         }
 
         // Read-only view of the committed state; no copy (the bridge never mutates it).
@@ -210,11 +217,11 @@ namespace FratRow.Game
             }
             lock (writeLock)
             {
-                if (gossipWrites.IsFaulted) gossipWrites.GetAwaiter().GetResult(); // surface a failed write on the host thread
-                gossipWrites = gossipWrites.ContinueWith(previous =>
+                // Ordered chain; a failed write is recorded, never thrown on the host thread, and does not stop later writes.
+                gossipWrites = gossipWrites.ContinueWith(_ =>
                 {
-                    previous.GetAwaiter().GetResult(); // keep order; a failure stops later writes
-                    world.RecordGossip(seen, told);
+                    try { world.RecordGossip(seen, told); }
+                    catch (Exception e) { lock (writeLock) lastWriteError = e.GetType().Name + ": " + e.Message; }
                 }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
             }
         }

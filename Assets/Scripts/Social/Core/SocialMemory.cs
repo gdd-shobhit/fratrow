@@ -1,9 +1,28 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace FratRow.Social
 {
+    /// <summary>
+    /// A ledger event as the model sees it: the original event fields only, in their original order. Gossip bookkeeping (subject, valence,
+    /// topic) stays out of the prompt so it never spends the context budget of every memory; it is rendered as prose where it matters.
+    /// </summary>
+    [Serializable] public sealed class MemoryEventView
+    {
+        public string eventId, kind, source, actorId, targetId, fraternityId, location, text, relatedEventId;
+        public int day;
+        public long utcTicks;
+        public List<string> witnesses = new List<string>();
+
+        public static MemoryEventView Of(SocialEvent e) => new MemoryEventView
+        {
+            eventId = e.eventId, kind = e.kind, source = e.source, actorId = e.actorId, targetId = e.targetId, fraternityId = e.fraternityId,
+            location = e.location, text = e.text, relatedEventId = e.relatedEventId, day = e.day, utcTicks = e.utcTicks, witnesses = e.witnesses
+        };
+    }
+
     public static class SocialMemory
     {
         public const int MaxPromptCharacters = 10500;
@@ -65,7 +84,7 @@ namespace FratRow.Social
             int used = text.Length + c.SystemPrompt.Length;
             foreach (var e in memories)
             {
-                string encoded = codec.Encode(e);
+                string encoded = codec.Encode(MemoryEventView.Of(e));
                 if (used + encoded.Length + 10 > MaxPromptCharacters - 2200) continue;
                 used += encoded.Length + 10; selected.Add(e); c.EvidenceIds.Add(e.eventId);
                 if (ExternalCause(e)) c.GrievanceCandidateIds.Add(e.eventId);
@@ -73,7 +92,7 @@ namespace FratRow.Social
             // Choose important receipts before spending the budget, then present actual chronology.
             // Reversing a salience sort can put Ashley's reaction before the speech that caused it.
             memories = selected.OrderBy(e => e.utcTicks).ToList();
-            foreach (var e in memories) text.AppendLine("MEMORY " + codec.Encode(e));
+            foreach (var e in memories) text.AppendLine("MEMORY " + codec.Encode(MemoryEventView.Of(e)));
             foreach (var player in s.players.Where(p => p.playerId == turn.playerId || memories.Any(e => e.actorId == p.playerId || e.targetId == p.playerId ||
                 (e.source == "rumor" && SocialWorld.GossipOrigin(s, e)?.actorId == p.playerId)))
                 .OrderBy(p => p.playerId == turn.playerId ? 0 : 1).Take(4))
@@ -85,7 +104,7 @@ namespace FratRow.Social
             }
             c.EvidenceIds.Add(observed.eventId);
             c.GrievanceCandidateIds.Add(observed.eventId);
-            text.AppendLine("CURRENT_RECEIVED_SPEECH " + codec.Encode(observed));
+            text.AppendLine("CURRENT_RECEIVED_SPEECH " + codec.Encode(MemoryEventView.Of(observed)));
             if (repairError != null) text.AppendLine("VALIDATION_ERROR " + codec.Encode(repairError));
             text.AppendLine("Return a compact decision now. Short evidence list, max 2 effects, interpretation under 160 characters, reply under 300 characters.");
             if (text.Length + c.SystemPrompt.Length > MaxPromptCharacters) throw new InvalidOperationException("Context budget exceeded");

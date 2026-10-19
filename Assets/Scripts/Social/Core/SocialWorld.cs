@@ -256,7 +256,8 @@ namespace FratRow.Social
         /// Host-only: gossip observations, then gossip shares, in ONE transaction. Observations are world events (like
         /// <see cref="Observe"/>, unknown witnesses dropped); shares follow <see cref="ShareGossip"/> rules and may link to an
         /// observation recorded earlier in the same call. Caller-assigned ids are kept; an id that already exists is not recorded
-        /// again (a replay after reload is idempotent). Returns (observation ids, share ids), "" where skipped. Never throws for bad input.
+        /// again (a replay after reload is idempotent). Gossip records do not bump NPC revisions, so they never invalidate an
+        /// in-flight conversation. Returns (observation ids, share ids), "" where skipped. Never throws for bad input.
         /// </summary>
         public KeyValuePair<List<string>, List<string>> RecordGossip(IEnumerable<GossipObservation> observations, IEnumerable<GossipShare> shares)
         {
@@ -279,7 +280,10 @@ namespace FratRow.Social
                     if (o == null || string.IsNullOrEmpty(o.kind) || witnesses.Count == 0 || text.Length == 0 || (o.eventId?.Length ?? 0) > 64) { observed.Add(""); continue; }
                     var e = AddEvent(s, o.kind, "world", o.actorId, o.targetId, o.location ?? "campus", text.Length <= 400 ? text : text.Substring(0, 400), witnesses,
                         string.IsNullOrEmpty(o.eventId) ? null : o.eventId);
-                    foreach (var w in witnesses) Npc(s, w).revision++;
+                    e.subjectId = o.subjectId ?? "";
+                    e.valence = Math.Sign(o.valence);
+                    e.topicId = o.topicId ?? "";
+                    // No revision bump: hearsay arriving mid-turn must not invalidate an in-flight conversation.
                     byId[e.eventId] = e;
                     observed.Add(e.eventId);
                 }
@@ -299,8 +303,8 @@ namespace FratRow.Social
                     e.relatedEventId = via?.eventId;
                     e.subjectId = share.subjectId ?? "";
                     e.valence = Math.Sign(share.valence);
+                    e.topicId = share.topicId ?? "";
                     byId[e.eventId] = e;
-                    listener.revision++;
                     ids.Add(e.eventId);
                 }
             });

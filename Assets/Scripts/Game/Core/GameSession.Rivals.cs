@@ -95,7 +95,8 @@ namespace FratRow.Game
             string teller = rival.npcMembers.OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault();
             string tellerName = teller == null ? "A " + rival.name + " brother" : (RosterNpc(teller)?.displayName ?? teller) + " from " + rival.name;
             var ids = listeners.Select(n => n.npcId).ToList();
-            string seen = social.Observe("rumor_about_house", rival.name, target.name, tellerName + " told you that " + target.name + " " + claim.text + ".", "Quad", ids);
+            // Only smears about the players become NPC memory (as before); rival-vs-rival ones stay game-side (ADR-0002 §4).
+            string seen = target.isPlayer ? social.Observe("rumor_about_house", rival.name, target.name, tellerName + " told you that " + target.name + " " + claim.text + ".", "Quad", ids) : null;
             Seed("smear", G.smearSeverity, ids, target.id, origin: "house:" + rival.id, fabricated: !ClaimTrue(claim, target), detail: claim.text,
                 socialEventId: seen, location: "Quad", heardFrom: teller ?? "house:" + rival.id,
                 beliefFor: id => HearsayBelief("smear", target.id, false, 0.8f, id, G.tieTogether));

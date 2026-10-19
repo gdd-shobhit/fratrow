@@ -58,16 +58,25 @@ ADR-0001 (Unity-free game core). This extends `ISocialBridge`, which ADR-0001 in
    at the start of every round and at the end of every `Tick`, `Apply` and `OnConversationCommitted`, through one
    `ISocialBridge.RecordGossip(observations, shares)` → `SocialWorld.RecordGossip` transaction. Pending records never outlive a tick
    or action, so a game save never misses them.
-2. **Core-assigned ids.** Each record gets a 32-hex id from `GameRng(seed, "gossip-ledger:" + campaignId, ++ledgerSeq)`. The core sets
-   `knowledge.ledger` immediately. `RecordGossip` skips an id that already exists, so replaying the same batch after a crash or reload
-   records nothing new.
-3. **Deferrable.** `RecordGossip` returns nothing. `SocialWorldBridge(world, deferGossipWrites: true)` runs writes on an ordered
-   continuation chain. A failed write rethrows on the next call or on `WaitForGossipWrites()`, so failures are never silent. The
-   default stays synchronous, so tests and the harness are deterministic.
+2. **Core-assigned ids.** Each record gets a 32-hex id: the first 16 bytes of SHA-256 over campaign, seed, `++ledgerSeq` and the
+   record's content. The core sets `knowledge.ledger` immediately. `RecordGossip` skips an id that already exists, so replaying the
+   same batch after a crash or reload records nothing new, and a replay that diverged gets new ids instead of colliding.
+3. **Deferrable, never fatal.** `RecordGossip` returns nothing. `SocialWorldBridge(world, deferGossipWrites: true)` runs writes on an
+   ordered continuation chain. A failed write is recorded (`LastGossipWriteError`), never thrown on the host thread, and does not stop
+   later writes; `WaitForGossipWrites()` throws once if any failed. The core's flush swaps its queues out first and catches failures
+   (`GossipLedgerFailures`, `LastGossipLedgerError`), so a broken journal costs NPC memories, never the game loop. The default stays
+   synchronous, so tests and the harness are deterministic.
 4. **Scope.** By default only stories that involve the players become NPC memory records. Rival-only stories still change opinions
    game-side. `gossip.ledgerAllStories` writes everything.
 5. **Zero-copy reads.** `ISocialStore.ReadShared()` returns the committed state object. Commits publish a new object and never
    mutate a published one, so readers can hold it across threads. The game bridge's per-tick snapshot uses it.
+6. **Memory follows belief.** Every gossip record carries its story `topicId`, a subject and a valence (0 when the NPC doesn't believe
+   it). A second teller who tips an NPC into believing, a successful denial and an exposure each write a new record on the topic; the
+   deterministic provider uses the latest record per topic and ignores records older than 3 social weeks.
+   The bookkeeping fields stay out of model prompts (`MemoryEventView`): an earlier build serialized them into every memory line,
+   costing ~40 characters per memory of context budget, which the social suite's budget test caught.
+7. **No revision bumps.** Gossip records do not bump NPC revisions. Hearsay arriving while a turn is generating does not invalidate it
+   (with a slow model and dozens of listeners per round it would otherwise interrupt live conversations).
 
 ## Consequences
 
@@ -82,15 +91,19 @@ ADR-0001 (Unity-free game core). This extends `ISocialBridge`, which ADR-0001 in
 **Negative / risks**
 - The journal still grows with every transaction: 746 MB per semester with gossip off, 1.1 GB with it on. Compaction remains the top
   infrastructure follow-up (ADR-0001's v1 limitation, now quantified).
-- In deferred mode a crash can lose the last few gossip records. NPCs then simply don't remember that retelling. The game state
-  still says they know it. That is acceptable for flavour memory, and records are recreated if the same ticks replay.
+- In deferred mode a crash can lose the last few gossip records. NPCs then simply don't remember that retelling, while the game state
+  still says they know it. That is acceptable for flavour memory; an identical replay recreates them.
+- Deferred does not mean the host never waits: the host's own synchronous social writes (`Observe`, `EndParty`, `SetStandings`,
+  party-tick `ObserveEntrance`/`MarkArrived`) still take the store lock and wait if a background gossip write holds it. Gossip's own
+  round no longer blocks the frame.
+- In deferred mode a conversation can start before the latest receipts land, so its context (and the deterministic provider's
+  hearsay) can differ by timing. Keep synchronous mode wherever reproducibility matters (tests, the harness, replays).
 - `ReadShared()` callers must not mutate. Only the game bridge uses it, and it is read-only by construction.
-- A replay after reload that diverges (different player input) reuses ids with different content. The first version wins in NPC
-  memory.
+- After a reload, NPCs keep memories from the discarded timeline (as with all social memory); new records never overwrite them.
 
 ## GDD Requirements Addressed
 
-`design/gdd/campus-gossip.md` §3.9 (NPC memory) and acceptance criteria 6, 13, 18, 19 and 20.
+`design/gdd/campus-gossip.md` §3.9 (NPC memory) and acceptance criteria 6, 13, 18, 19, 20, 25 and 26.
 
 ## Alternatives Considered
 

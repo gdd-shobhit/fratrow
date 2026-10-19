@@ -84,6 +84,8 @@ namespace FratRow.Game
         /// <summary>Phone contact unlocked for the players' house (text channel allowed).</summary>
         public bool contactUnlocked;
         public bool attendedPlayersParty;
+        /// <summary>Denials made to this NPC on <see cref="deniedDay"/> by anyone in the crew (cap: gossip.denyPerNpcPerDay).</summary>
+        public int deniedDay = -1, deniesToday;
     }
 
     [Serializable] public sealed class GuestState
@@ -274,6 +276,8 @@ namespace FratRow.Game
         public int storiesThisWeek;
         /// <summary>DayIndex the current gossip week started (per-kind weekly caps count from here).</summary>
         public int gossipWeekStart;
+        /// <summary>"playerId/requestId" of committed turns already turned into gossip (bounded): a replayed commit seeds nothing.</summary>
+        public List<string> gossipTurns = new List<string>();
 
         /// <summary>Restores empty collections after JsonUtility/System.Text.Json decoding.</summary>
         public void Normalize()
@@ -306,6 +310,7 @@ namespace FratRow.Game
             foreach (var w in history) { if (w.entries == null) w.entries = new List<WeekEntry>(); if (w.namedGuests == null) w.namedGuests = new List<string>(); }
             if (stories == null) stories = new List<GossipStory>();
             if (gossip == null) gossip = new List<GossipKnowledge>();
+            if (gossipTurns == null) gossipTurns = new List<string>();
             foreach (var st in stories) if (st.tracedBy == null) st.tracedBy = new List<string>();
             foreach (var k in gossip) if (k.tellers == null) k.tellers = new List<string>();
         }

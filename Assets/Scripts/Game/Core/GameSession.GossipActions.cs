@@ -40,9 +40,12 @@ namespace FratRow.Game
                 .Where(x => x.s != null && !(npc.memberOf != "" && npc.memberOf == x.s.houseId && Config.StoryKind(x.s.kind)?.valence < 0))
                 .OrderBy(x => x.s.retired).ThenByDescending(x => x.s.heat).ThenByDescending(x => x.s.id).Take(3).ToList();
             if (heard.Count == 0) return ActionResult.Ok(def.displayName + " hasn't heard anything worth repeating.");
-            return ActionResult.Ok(def.displayName + ": " + string.Join(" ", heard.Select(x => "[#" + x.s.id + "] " + StoryText(x.s, x.k.detail, x.k.spice) +
+            // Each story capped so three of them fit the 512-byte replicated reply.
+            return ActionResult.Ok(def.displayName + ": " + string.Join(" ", heard.Select(x => "[#" + x.s.id + "] " + Short(StoryText(x.s, x.k.detail, x.k.spice), 150) +
                 (x.k.belief < 0.4f ? " (not sure it's true)" : ""))));
         }
+
+        static string Short(string text, int max) => text.Length <= max ? text : text.Substring(0, max - 1).TrimEnd() + "…";
 
         /// <summary>
         /// <c>deny_rumor</c> target=NPC item=story id. Only for bad stories about the players' house or a brother. Denying to someone who
@@ -56,28 +59,39 @@ namespace FratRow.Game
             if (s == null) return ActionResult.Fail("invalid_target", "Which rumor? Ask around first.");
             if (s.houseId != Config.playerHouseId && Player(s.playerId) == null) return ActionResult.Fail("invalid_target", "That one isn't about us.");
             if ((Config.StoryKind(s.kind)?.valence ?? 0) > 0) return ActionResult.Fail("invalid_target", "Why would you deny that?");
-            string key = ActionIds.DenyRumor + ":" + def.id;
-            if (CounterValue(p.daily, key) >= G.denyPerNpcPerDay) return ActionResult.Fail("cap_reached", "You already argued with " + def.displayName + " today.");
-            CounterAdd(p.daily, key);
+            // One denial per NPC per day for the whole crew: four brothers can't take turns wearing someone down.
+            var npc = Npc(def.id);
+            if (npc.deniedDay != DayIndex) { npc.deniedDay = DayIndex; npc.deniesToday = 0; }
+            if (npc.deniesToday >= G.denyPerNpcPerDay) return ActionResult.Fail("cap_reached", def.displayName + " already heard your side today.");
+            npc.deniesToday++;
             var k = Know(def.id, s.id);
-            // The NPC remembers being told it isn't true (one queued record, flushed with the action).
-            string denial = NewLedgerId();
-            QueueObservation(denial, "denial", p.playerId, def.id, p.displayName + " insisted to you that this is not true: " + StoryText(s, 0, 0), channel,
-                new List<string> { def.id });
+            int valence = Config.StoryKind(s.kind)?.valence ?? 0;
+            // The NPC remembers being told it isn't true. The record also says whether they still hold it against anyone.
+            string claim = StoryText(s, 0, 0);
+            string denial = NewLedgerId("denial", p.playerId, def.id, claim);
+            var heard = new List<string> { def.id };
+            string text = p.displayName + " insisted to you that this is not true: " + claim;
             if (k == null)
             {
                 // They only have the denier's word, not the original record: secondhand detail, never a full-detail link.
                 AddKnowledge(new GossipKnowledge { storyId = s.id, npcId = def.id, heardFrom = "player:" + p.playerId, tellers = { "player:" + p.playerId },
                     detail = 1, belief = G.denyBackfireBelief, learnedDay = DayIndex, ledger = denial });
-                if (s.retired && !s.exposed && DayIndex - s.createdDay < 7 * Math.Max(1, G.memoryWeeks)) { s.retired = false; s.heat = Math.Max(s.heat, G.retireHeat * 2); }
+                QueueObservation(denial, "denial", p.playerId, def.id, text, channel, heard, s, 0);
+                if (s.retired && !s.exposed && DayIndex - s.createdDay < 7 * Math.Max(1, G.memoryWeeks) && State.stories.Count(x => !x.retired) < G.maxActiveStories)
+                { s.retired = false; s.heat = Math.Max(s.heat, G.retireHeat * 2); }
                 return ActionResult.Ok(def.displayName + " hadn't heard that one... until now. Now they're curious.");
             }
-            if (k.heardFrom == "witness") return ActionResult.Ok(def.displayName + " was there. Nobody's buying the denial.");
+            if (k.heardFrom == "witness")
+            {
+                QueueObservation(denial, "denial", p.playerId, def.id, text, channel, heard, s, valence);
+                return ActionResult.Ok(def.displayName + " was there. Nobody's buying the denial.");
+            }
             float credibility = Clamp(0.35f + social.RegardForPlayers(def.id) / 200f + (social.KnowsPlayer(def.id, p.playerId) ? 0.1f : 0f), 0.1f, 1f);
             float power = G.denyPower * credibility * (s.fabricated ? 1.3f : G.denyTrueFactor);
             k.belief = Clamp(k.belief * (1 - power), 0, 1);
             if (!s.fabricated) k.spice = 0; // "It wasn't THAT bad."
             if (k.belief < G.spreadMinBelief) k.spreader = false;
+            QueueObservation(denial, "denial", p.playerId, def.id, text, channel, heard, s, Believes(k) ? valence : 0);
             gossipVersion++;
             return ActionResult.Ok(k.belief < G.beliefThreshold ? def.displayName + " buys it. Mostly." : def.displayName + " doesn't look convinced.");
         }
@@ -130,6 +144,8 @@ namespace FratRow.Game
 
         // ---------- Who said what (design §3.3, §4.1) ----------
 
+        const int MaxRememberedTurns = 512;
+
         /// <summary>
         /// After a committed conversation turn: a turn that really changed something (a grievance, a big trust drop, a withdrawn RSVP)
         /// becomes a story the NPC and any bystanders tell; charming a notable NPC into coming becomes a good one. Ordinary talk never does.
@@ -139,9 +155,16 @@ namespace FratRow.Game
             if (!G.enabled || def == null) return;
             var impact = social.TurnImpact(p.playerId, requestId);
             if (!impact.known) return;
+            // A replayed or retried commit returns the same stored result; it must not seed (or refresh) anything again.
+            string turnKey = p.playerId + "/" + (requestId ?? "");
+            if (State.gossipTurns.Contains(turnKey)) return;
+            State.gossipTurns.Add(turnKey);
+            while (State.gossipTurns.Count > MaxRememberedTurns) State.gossipTurns.RemoveAt(0);
+            // Bystanders only while the NPC is still with the player: after a slow reply the scene may be gone.
             bool inPerson = impact.channel == "in_person";
-            string location = inPerson ? p.location : "text";
-            var bystanders = inPerson ? NpcsAt(p.location).Where(x => x != def.id).ToList() : new List<string>();
+            bool together = inPerson && !string.IsNullOrEmpty(p.location) && NpcLocation(def.id) == p.location;
+            string location = together ? p.location : impact.channel ?? "text";
+            var bystanders = together ? NpcsAt(p.location).Where(x => x != def.id).ToList() : new List<string>();
             bool withdrew = (impact.previousCommitment == "accepted" || impact.previousCommitment == "conditional") && impact.commitment == "declined";
             float bad = (impact.grievance ? G.saidGrievance : 0) + (impact.trust <= -5 ? G.saidTrustDrop : 0) +
                 (impact.regard < 0 ? G.saidRegardDrop : 0) + (withdrew ? G.saidWithdrew : 0);

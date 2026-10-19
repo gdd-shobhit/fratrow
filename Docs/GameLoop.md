@@ -103,7 +103,7 @@ typing `LOCAL` or the host's IP into the Join field.
   tests. They cover RSVP arrivals, conditional entrance promises, witnesses entering memory, raids and their
   mitigation over 30 seeds, insults creating grievances and withdrawn RSVPs, Bid Day, probation and suspension, roles, busts and detention, police parking, save/load
   determinism, the fallback provider on all 64 NPCs, rival standings in NPC context, rival sabotage, and semester rollover. It
-  also runs the 22 campus-gossip tests (gossip GDD §8). Add `-- --gossip` to run only those.
+  also runs the 27 campus-gossip tests (gossip GDD §8). Add `-- --gossip` to run only those.
 - **Gossip cost:** `... -- --profile-gossip --weeks 6 --seed 61` plays the same bot semester with gossip off and on. It reports wall
   time, social transactions, state and journal size, time spent in gossip writes and reads, and one round's host-frame cost,
   synchronous vs deferred.
