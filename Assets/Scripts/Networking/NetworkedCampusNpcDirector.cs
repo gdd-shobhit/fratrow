@@ -271,6 +271,27 @@ namespace Systems.Campus
         /// they are spawned there as party guests. NPCs unknown to the session (e.g. extra authored NamedNpcSO assets) keep
         /// their SO schedule on weekdays and are hidden otherwise. Writes only changed entries.
         /// </summary>
+        /// <summary>
+        /// Cached NPC definition for state index <paramref name="i"/>. If the cached asset was destroyed (e.g. by an
+        /// unused-asset sweep during a scene load), re-resolve it by id instead of silently hiding the NPC.
+        /// </summary>
+        NamedNpcSO ResolveData(int i)
+        {
+            NamedNpcSO data = i < _npcDataByIndex.Count ? _npcDataByIndex[i] : null;
+            if (data != null || i >= _states.Count)
+            {
+                return data;
+            }
+
+            data = NamedNpcDatabase.GetById(_states[i].NpcId.ToString());
+            if (data != null && i < _npcDataByIndex.Count)
+            {
+                _npcDataByIndex[i] = data;
+            }
+
+            return data;
+        }
+
         void ApplyCampaignLocationsServer(NetworkedCampaign campaign)
         {
             var session = campaign.Session;
@@ -283,7 +304,7 @@ namespace Systems.Campus
 
             for (int i = 0; i < _states.Count; i++)
             {
-                NamedNpcSO data = i < _npcDataByIndex.Count ? _npcDataByIndex[i] : null;
+                NamedNpcSO data = ResolveData(i);
                 if (data == null)
                 {
                     continue;
@@ -338,7 +359,7 @@ namespace Systems.Campus
             for (int i = 0; i < _states.Count; i++)
             {
                 var state = _states[i];
-                NamedNpcSO data = i < _npcDataByIndex.Count ? _npcDataByIndex[i] : null;
+                NamedNpcSO data = ResolveData(i);
                 if (data == null)
                 {
                     continue;

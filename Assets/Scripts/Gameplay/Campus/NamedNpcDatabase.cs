@@ -69,7 +69,8 @@ namespace Systems.Campus
 
         public static void EnsureInitialized()
         {
-            if (_initialized)
+            // Self-heal: runtime-created NPC assets destroyed by an unused-asset sweep are rebuilt (same ids).
+            if (_initialized && !_npcs.Exists(n => n == null))
             {
                 return;
             }
@@ -164,6 +165,9 @@ namespace Systems.Campus
             params ScheduleEntry[] schedule)
         {
             var n = ScriptableObject.CreateInstance<NamedNpcSO>();
+            // Runtime-only asset referenced from a static list: without this flag, the unused-asset sweep that runs on
+            // every Single scene load (menu → lobby → game) destroys it and every NPC disappears.
+            n.hideFlags = HideFlags.DontUnloadUnusedAsset;
             n.name = id;
             n.npcId = id;
             n.displayName = id;
@@ -237,6 +241,7 @@ namespace Systems.Campus
         {
             string display = string.IsNullOrWhiteSpace(r.displayName) ? r.id : r.displayName;
             var n = ScriptableObject.CreateInstance<NamedNpcSO>();
+            n.hideFlags = HideFlags.DontUnloadUnusedAsset; // survive scene loads (see Make)
             n.name = r.id;
             n.npcId = r.id;
             n.displayName = display;

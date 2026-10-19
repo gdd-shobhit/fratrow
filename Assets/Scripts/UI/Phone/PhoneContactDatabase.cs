@@ -36,7 +36,9 @@ namespace Systems.Phone
 
         public static void EnsureInitialized()
         {
-            if (_initialized)
+            // Self-heal: runtime-created contacts/templates destroyed by an unused-asset sweep are rebuilt.
+            // Contact ids are deterministic (DeterministicId), so phone state keyed by id survives a rebuild.
+            if (_initialized && !_contacts.Exists(c => c == null) && !_templates.Exists(t => t == null))
             {
                 return;
             }
@@ -126,6 +128,8 @@ namespace Systems.Phone
         static ContactSO MakeContact(string name, GuestClass guestClass, ContactGender gender, bool unlocked = true)
         {
             var c = ScriptableObject.CreateInstance<ContactSO>();
+            // Runtime-only asset held in a static list: keep it alive across Single scene loads (unused-asset sweep).
+            c.hideFlags = HideFlags.DontUnloadUnusedAsset;
             c.name = name;
             c.displayName = name;
             c.linkedGuestClass = guestClass;
@@ -138,6 +142,7 @@ namespace Systems.Phone
         static MessageTemplateSO MakeTemplate(string name, MessageTemplateKind kind, string body, bool invite, float bonus, string reply, float affinity = 0f)
         {
             var t = ScriptableObject.CreateInstance<MessageTemplateSO>();
+            t.hideFlags = HideFlags.DontUnloadUnusedAsset; // survive scene loads (see MakeContact)
             t.name = name;
             t.kind = kind;
             t.body = body;
