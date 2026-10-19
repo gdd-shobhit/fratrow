@@ -108,12 +108,18 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
                 if (store.Read().campaignId != id) throw new InvalidDataException("Campaign ID does not match its save directory");
                 World = new SocialWorld(store);
                 RegisterRoster();
-                service = new SocialConversationService(World, codec, CreateProvider(), this,
-                    TimeSpan.FromSeconds(double.Parse(Option("--social-timeout", "15"), System.Globalization.CultureInfo.InvariantCulture)), requireGroundedProposal: true);
+                var provider = CreateProvider(out bool persona);
+                // Persona replies carry model-written words, so only the grounded composer's exact-text check is relaxed;
+                // decisions, evidence, effects and commitments are validated the same way.
+                service = new SocialConversationService(World, codec, provider, this,
+                    TimeSpan.FromSeconds(double.Parse(Option("--social-timeout", "15"), System.Globalization.CultureInfo.InvariantCulture)), requireGroundedProposal: !persona);
                 campaignId.Value = id;
                 localParty = World.EnsurePlannedParty(20);
                 featureEnabled.Value = true;
                 Debug.Log("[Social] Host campaign opened: " + id + ". Provider: " + ProviderName + ".");
+                if (provider is HeuristicSocialModelProvider)
+                    Debug.LogWarning("[Social] NPC replies are canned keyword templates (no language model). For model replies use " +
+                        "FratRow > Social Brains > Enable development experiment (CUDA fallback), or launch with --social-brains --social-llama-server <llama-server.exe>.");
             }
             catch (Exception e) { Debug.LogError("[Social] Startup failed: " + e); featureEnabled.Value = false; }
         }
@@ -144,8 +150,20 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
         }
     }
 
-    ISocialModelProvider CreateProvider()
+    /// <summary>"persona" (default: the model voices each reply in character) or "grounded" (host-composed template lines).
+    /// Only applies when a language model is enabled. <c>--social-reply-mode</c> overrides the editor preference.</summary>
+    public static string ReplyMode()
     {
+        string mode = Option("--social-reply-mode");
+#if UNITY_EDITOR
+        if (mode == null) mode = UnityEditor.EditorPrefs.GetString("FratRow.Social.ReplyMode", "persona");
+#endif
+        return mode == "grounded" ? "grounded" : "persona";
+    }
+
+    ISocialModelProvider CreateProvider(out bool persona)
+    {
+        persona = false;
         if (ShouldUseModel())
         {
             try
@@ -160,13 +178,18 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
                 if (llamaServer == null) llamaServer = UnityEditor.EditorPrefs.GetString("FratRow.Social.LlamaServer", "");
 #endif
                 bool compact = Environment.GetCommandLineArgs().Contains("--social-compact-inference");
+                bool voiced = ReplyMode() == "persona";
                 if (string.IsNullOrEmpty(llamaServer))
                 {
-                    ProviderName = "RunAnywhere CPU (" + Path.GetFileName(path) + ")";
-                    return new NativeSocialModelProvider(codec, path, hash) { CompactFormat = compact };
+                    ProviderName = "RunAnywhere CPU (" + Path.GetFileName(path) + ", " + ReplyMode() + " replies)";
+                    var native = new NativeSocialModelProvider(codec, path, hash) { CompactFormat = compact, PersonaReplies = voiced };
+                    persona = voiced;
+                    return native;
                 }
-                ProviderName = "llama.cpp CUDA (" + Path.GetFileName(path) + ")";
-                return new LlamaServerModelProvider(codec, llamaServer, path, hash) { CompactFormat = compact };
+                ProviderName = "llama.cpp CUDA (" + Path.GetFileName(path) + ", " + ReplyMode() + " replies)";
+                var llama = new LlamaServerModelProvider(codec, llamaServer, path, hash) { CompactFormat = compact, PersonaReplies = voiced };
+                persona = voiced;
+                return llama;
             }
             catch (Exception e) { Debug.LogWarning("[Social] Model provider unavailable, using heuristic replies: " + e.Message); }
         }

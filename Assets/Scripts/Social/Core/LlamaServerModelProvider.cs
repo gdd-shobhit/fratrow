@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -22,7 +23,14 @@ namespace FratRow.Social
         public int Seed { get; set; }
         public bool CompactFormat { get; set; }
         public bool GroundedReplies { get; set; } = true;
+        /// <summary>Free speech: the model speaks in character, then a constrained pass labels the social state of that reply
+        /// (see <see cref="PersonaSocialTurn"/>). Takes precedence over <see cref="GroundedReplies"/>; the service must not require grounded proposals.</summary>
+        public bool PersonaReplies { get; set; }
         public bool UseRequestSeed { get; set; } = true;
+        /// <summary>Persona turns whose RSVP label was corrected to match the reply's explicit wording.</summary>
+        public int RsvpOverrides { get; private set; }
+        /// <summary>Persona replies regenerated because they copied an earlier line.</summary>
+        public int VoiceRetries { get; private set; }
         readonly SemaphoreSlim worker = new SemaphoreSlim(1, 1);
         readonly HttpClient http = new HttpClient(new HttpClientHandler { UseProxy = false });
         readonly object lifecycle = new object();
@@ -112,6 +120,13 @@ namespace FratRow.Social
             public int max_tokens = 384;
             public float temperature = 0.4f;
             public float top_p = 0.9f;
+            public float repeat_penalty = 1f;
+            /// <summary>DRY ("don't repeat yourself") sampler; 0 disables it. Allowed length 2, window = the whole 4,096-token
+            /// context (the pinned server rejects the -1 "context size" shorthand).</summary>
+            public float dry_multiplier;
+            public float dry_base = 1.75f;
+            public int dry_allowed_length = 2;
+            public int dry_penalty_last_n = 4096;
             public int seed;
             public bool cache_prompt = false;
             public TemplateOptions chat_template_kwargs = new TemplateOptions();
@@ -131,6 +146,34 @@ namespace FratRow.Social
                 var loadWatch = Stopwatch.StartNew();
                 await EnsureStarted(cancellation).ConfigureAwait(false);
                 if (cold) LoadMilliseconds = Math.Max(0, loadWatch.Elapsed.TotalMilliseconds - ChecksumMilliseconds);
+                if (PersonaReplies)
+                {
+                    var persona = new PersonaSocialTurn(context);
+                    int seed = UseRequestSeed ? Seed ^ context.SamplingSeed : Seed;
+                    string reply = null, problem = null;
+                    for (int attempt = 0; attempt < 2 && reply == null; attempt++)
+                    {
+                        var messages = new[] { new Message { role = "system", content = persona.VoiceSystem(retry: attempt > 0) } }
+                            .Concat(persona.VoiceHistory().Select(m => new Message { role = m.Key, content = m.Value })).ToArray();
+                        LastRawReply = await CompleteMessagesAsync(messages, PersonaSocialTurn.VoiceGrammar, cancellation, PersonaSocialTurn.VoiceTemperature,
+                            unchecked(seed + 7919 * attempt), PersonaSocialTurn.VoiceTokens, allowTruncation: true, topP: PersonaSocialTurn.VoiceTopP,
+                            repeatPenalty: PersonaSocialTurn.VoiceRepeatPenalty, dry: PersonaSocialTurn.VoiceDry).ConfigureAwait(false);
+                        try
+                        {
+                            string cleaned = PersonaSocialTurn.Clean(LastRawReply, persona.NpcName, persona.SpeakerName);
+                            if (attempt == 0 && persona.Repeats(cleaned)) { VoiceRetries++; problem = "Reply repeated an earlier line"; continue; }
+                            reply = cleaned;
+                        }
+                        catch (ArgumentException e) { problem = e.Message; }
+                    }
+                    if (reply == null) throw new ArgumentException("Voiced reply unusable: " + problem);
+                    LastRawDecision = await CompleteAsync(persona.StateSystem, persona.StatePrompt(reply), persona.StateGrammar, cancellation,
+                        PersonaSocialTurn.StateTemperature, seed).ConfigureAwait(false);
+                    var voiced = persona.Decode(LastRawDecision, reply, codec);
+                    if (persona.Override != null) { RsvpOverrides++; LastRawCheck = "rsvp label " + persona.Override; }
+                    LastRawOutput = codec.Encode(voiced);
+                    return voiced;
+                }
                 if (GroundedReplies)
                 {
                     var grounded = new GroundedSocialTurn(context);
@@ -163,11 +206,16 @@ namespace FratRow.Social
             }
             finally { worker.Release(); }
         }
-        async Task<string> CompleteAsync(string systemPrompt, string prompt, string grammar, CancellationToken cancellation, float temperature = 0.4f, int? samplingSeed = null)
+        Task<string> CompleteAsync(string systemPrompt, string prompt, string grammar, CancellationToken cancellation, float temperature = 0.4f, int? samplingSeed = null) =>
+            // A single system + user exchange; persona voice turns use CompleteMessagesAsync with the chat history.
+            CompleteMessagesAsync(new[] { new Message { role = "system", content = systemPrompt }, new Message { content = prompt } },
+                grammar, cancellation, temperature, samplingSeed ?? Seed);
+        async Task<string> CompleteMessagesAsync(Message[] messages, string grammar, CancellationToken cancellation, float temperature, int samplingSeed,
+            int maxTokens = 384, bool allowTruncation = false, float topP = 0.9f, float repeatPenalty = 1f, float dry = 0f)
         {
                 ModelPasses++;
-                var request = new CompletionRequest { seed = samplingSeed ?? Seed, temperature = temperature, grammar = grammar, messages = new[] {
-                    new Message { role = "system", content = systemPrompt }, new Message { content = prompt } } };
+                var request = new CompletionRequest { seed = samplingSeed, temperature = temperature, grammar = grammar, messages = messages,
+                    max_tokens = maxTokens, top_p = topP, repeat_penalty = repeatPenalty, dry_multiplier = dry };
                 using (var body = new StringContent(codec.Encode(request), Encoding.UTF8, "application/json"))
                 {
                     var generationWatch = Stopwatch.StartNew();
@@ -180,7 +228,7 @@ namespace FratRow.Social
                     if (result?.choices == null || result.choices.Length != 1) throw new ArgumentException("Missing completion");
                     int inputTokens = result.usage?.prompt_tokens ?? 0, outputTokens = result.usage?.completion_tokens ?? 0;
                     PromptTokens += inputTokens; OutputTokens += outputTokens;
-                    if (result.choices[0].finish_reason != "stop") throw new ArgumentException("Truncated model output");
+                    if (result.choices[0].finish_reason != "stop" && !(allowTruncation && result.choices[0].finish_reason == "length")) throw new ArgumentException("Truncated model output");
                     if (inputTokens + outputTokens > 4096) throw new ArgumentException("Context exceeded");
                     return result.choices[0].message.content;
                     }
