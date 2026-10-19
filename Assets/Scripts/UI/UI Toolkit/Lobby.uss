@@ -1,0 +1,346 @@
+/* =====================================================================
+   Lobby (LobbyUI). Builds on HUD.uss: .hud-panel, .hud-eyebrow, meters,
+   chips, .frat-identity-* and the phase-banner shape, so the lobby reads
+   like the in-game HUD. Same palette: panel rgba(12,14,22,0.72), border
+   rgba(255,255,255,0.35), text rgb(245,245,250), muted rgb(170,180,200),
+   accent gold rgb(255,210,90), party pink rgb(255,120,210).
+   Layout is percent-based; px sizes scale via PanelSettings (1920x1080 ref).
+   The centre of the screen stays clear for the 3D player previews.
+   Control overrides are prefixed with .lobby-root so they outrank the
+   default runtime theme's :hover/:focus/:enabled rules.
+   ===================================================================== */
+
+.lobby-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ---------- Banner (top centre) ---------- */
+
+.lobby-banner-title {
+    color: rgb(255, 120, 210);
+    letter-spacing: 2px;
+}
+
+.lobby-session-code {
+    font-size: 26px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: rgb(255, 220, 120);
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(255, 210, 90, 0.5);
+    border-radius: 6px;
+    padding: 2px 12px;
+}
+
+.lobby-ready-count {
+    margin-left: 0;
+}
+
+.lobby-sep--small {
+    font-size: 14px;
+}
+
+/* ---------- Columns ---------- */
+
+.lobby-left-column {
+    position: absolute;
+    left: 1.5%;
+    top: 3%;
+    width: 22%;
+}
+
+.lobby-right-column {
+    position: absolute;
+    right: 1.5%;
+    top: 3%;
+    width: 23%;
+}
+
+/* ---------- Fraternity (host names it, everyone else reads it) ---------- */
+
+.lobby-frat {
+    min-height: 0;
+}
+
+.lobby-frat-name {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.lobby-frat-name--unset {
+    color: rgb(170, 180, 200);
+    -unity-font-style: italic;
+}
+
+.lobby-hint {
+    margin-top: 6px;
+}
+
+/* ---------- Players ---------- */
+
+.lobby-player-list {
+    margin-top: 4px;
+}
+
+.lobby-player-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.lobby-player-row--local {
+    background-color: rgba(255, 210, 90, 0.18);
+    border-left-width: 3px;
+    border-left-color: rgb(255, 210, 90);
+}
+
+.lobby-player-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.lobby-player-row--local .lobby-player-name {
+    color: rgb(255, 230, 150);
+}
+
+.lobby-player-class {
+    font-size: 13px;
+    color: rgb(210, 218, 235);
+    margin-left: 6px;
+}
+
+.lobby-player-row .hud-chip {
+    margin: 0 0 0 6px;
+}
+
+.lobby-chip--host {
+    color: rgb(255, 220, 120);
+    border-color: rgba(255, 210, 90, 0.6);
+}
+
+/* ---------- You: name + class fields ---------- */
+
+.lobby-field-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+
+.lobby-field-caption {
+    width: 22%;
+    -unity-font-style: bold;
+}
+
+.lobby-root .lobby-field,
+.lobby-root .lobby-dropdown {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0;
+}
+
+.lobby-root .lobby-field .unity-base-text-field__input,
+.lobby-root .lobby-dropdown .unity-base-popup-field__input {
+    min-height: 36px;
+    padding: 4px 10px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+}
+
+.lobby-root .lobby-field:hover:enabled .unity-base-text-field__input,
+.lobby-root .lobby-dropdown:hover:enabled .unity-base-popup-field__input {
+    background-color: rgba(55, 58, 70, 0.5);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.lobby-root .lobby-field:focus .unity-base-text-field__input,
+.lobby-root .lobby-field .unity-base-text-field__input:focus,
+.lobby-root .lobby-dropdown:focus .unity-base-popup-field__input {
+    border-color: rgb(255, 210, 90);
+}
+
+.lobby-root .lobby-field .unity-base-text-field__input--placeholder {
+    color: rgb(130, 140, 160);
+    -unity-font-style: italic;
+}
+
+.lobby-root .lobby-dropdown .unity-base-popup-field__text {
+    color: rgb(245, 245, 250);
+}
+
+.lobby-root .lobby-dropdown .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: rgb(210, 218, 235);
+}
+
+/* The frat name is the house's headline, so its field reads like .frat-identity-name. */
+.lobby-root .lobby-field--frat .unity-base-text-field__input {
+    min-height: 44px;
+    font-size: 22px;
+    margin-top: 4px;
+}
+
+/* ---------- Class stats ---------- */
+
+.lobby-meter__fill--cash {
+    background-color: rgb(255, 220, 120);
+}
+
+/* ---------- Look: fit / body cyclers ---------- */
+
+.lobby-cycler {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.lobby-cycler-text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-items: center;
+    margin: 0 8px;
+}
+
+.lobby-cycler-value {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(245, 245, 250);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.lobby-root .lobby-cycler-arrow {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0 0 4px 0;
+    font-size: 28px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(245, 245, 250);
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+}
+
+.lobby-root .lobby-cycler-arrow:hover:enabled {
+    color: rgb(255, 230, 150);
+    background-color: rgba(255, 210, 90, 0.18);
+    border-color: rgba(255, 210, 90, 0.75);
+}
+
+.lobby-root .lobby-cycler-arrow:hover:active:enabled {
+    background-color: rgba(255, 210, 90, 0.32);
+}
+
+.lobby-root .lobby-cycler-arrow:focus {
+    border-color: rgb(255, 210, 90);
+}
+
+/* ---------- Action bar (bottom centre) ---------- */
+
+.lobby-action-bar {
+    position: absolute;
+    bottom: 4%;
+    left: 50%;
+    translate: -50% 0;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: rgba(12, 14, 22, 0.72);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+}
+
+.lobby-root .lobby-button {
+    min-width: 190px;
+    height: 52px;
+    margin: 0 6px;
+    padding: 0 24px;
+    font-size: 20px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(210, 218, 235);
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+}
+
+.lobby-root .lobby-button:hover:enabled {
+    color: rgb(245, 245, 250);
+    background-color: rgba(55, 58, 70, 0.6);
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+.lobby-root .lobby-button:hover:active:enabled {
+    background-color: rgba(88, 94, 112, 0.7);
+}
+
+.lobby-root .lobby-button:focus {
+    border-color: rgb(255, 210, 90);
+}
+
+.lobby-root .lobby-button:disabled {
+    opacity: 0.45;
+}
+
+/* Ready: gold, like the HUD accent; turns green once you're ready. */
+.lobby-root .lobby-button--primary {
+    color: rgb(255, 230, 150);
+    background-color: rgba(255, 210, 90, 0.16);
+    border-color: rgba(255, 210, 90, 0.7);
+}
+
+.lobby-root .lobby-button--primary:hover:enabled {
+    color: rgb(255, 240, 190);
+    background-color: rgba(255, 210, 90, 0.28);
+    border-color: rgb(255, 210, 90);
+}
+
+.lobby-root .lobby-button--ready-on {
+    color: rgb(200, 255, 215);
+    background-color: rgba(110, 220, 140, 0.18);
+    border-color: rgba(110, 220, 140, 0.75);
+}
+
+.lobby-root .lobby-button--ready-on:hover:enabled {
+    color: rgb(220, 255, 230);
+    background-color: rgba(110, 220, 140, 0.3);
+    border-color: rgb(110, 220, 140);
+}
+
+/* Start Game (host only): party pink, the game's "go" colour. */
+.lobby-root .lobby-button--start {
+    color: rgb(255, 205, 240);
+    background-color: rgba(255, 120, 210, 0.18);
+    border-color: rgba(255, 120, 210, 0.75);
+}
+
+.lobby-root .lobby-button--start:hover:enabled {
+    color: rgb(255, 225, 248);
+    background-color: rgba(255, 120, 210, 0.32);
+    border-color: rgb(255, 120, 210);
+}

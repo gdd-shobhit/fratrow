@@ -293,8 +293,10 @@ public sealed class NetworkedCampaign : NetworkBehaviour
             saveStore = new GameSaveStore(Path.Combine(social.CampaignDirectory, "game"), codec);
             var state = saveStore.Load() ?? GameSession.NewCampaign(config, roster, social.CampaignId, UnityEngine.Random.Range(1, int.MaxValue));
             Session = new GameSession(config, roster, state, new SocialWorldBridge(social.World));
-            if (NetworkedGameManager.Instance != null && !string.IsNullOrWhiteSpace(NetworkedGameManager.Instance.FratName) && state.history.Count == 0)
-                Session.PlayerHouse.name = NetworkedGameManager.Instance.FratName;
+            // The host names the house in the lobby, and that wins over the config or saved name (blank keeps it). The lobby
+            // pre-fills the host's last name, so continuing a campaign doesn't rename it by accident.
+            if (NetworkedGameManager.Instance != null)
+                Session.RenamePlayerHouse(NetworkedGameManager.Instance.FratName);
             foreach (var npc in Session.State.npcs)
                 if (NetworkedContactRoster.Instance != null && NetworkedContactRoster.Instance.IsUnlocked(npc.npcId)) npc.contactUnlocked = true;
             Debug.Log("[Campaign] Started " + social.CampaignId + ": semester " + state.semester + " week " + (state.week + 1) + " " + state.phase +

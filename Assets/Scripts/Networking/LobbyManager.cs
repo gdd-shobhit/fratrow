@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -23,9 +24,19 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
+    /// <summary>Lobby capacity (matches the session size the main menu creates).</summary>
+    public const int MaxPlayers = 4;
+
+    /// <summary>PlayerPrefs key for the host's last fraternity name, so a continuing crew keeps its name.</summary>
+    public const string FratNamePrefKey = "FratName";
+
     // Lobby state
     private Dictionary<ulong, LobbyPlayerData> _players = new Dictionary<ulong, LobbyPlayerData>();
     private LobbyRPCs _lobbyRPCs;
+
+    // Host-named fraternity. Server-write only, so clients can never rename it; late joiners receive it on spawn.
+    private readonly NetworkVariable<FixedString64Bytes> _fratName = new NetworkVariable<FixedString64Bytes>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // Events
     /// <summary>Fired when LobbySystems spawns on the client (Main Menu flow). Subscribe to load Lobby scene.</summary>
@@ -38,6 +49,8 @@ public class LobbyManager : NetworkBehaviour
     public event System.Action<ulong, string> OnPlayerNameChanged;
     public event System.Action<ulong, int> OnPlayerMeshChanged;
     public event System.Action<ulong, int> OnPlayerMaterialChanged;
+    /// <summary>Fired on every peer when the host renames the fraternity (empty string = not named yet).</summary>
+    public event System.Action<string> OnFratNameChanged;
 
     // Other properties
     [SerializeField] private List<Mesh> playerMeshVisualList;
@@ -52,6 +65,9 @@ public class LobbyManager : NetworkBehaviour
     public IReadOnlyDictionary<ulong, LobbyPlayerData> Players => _players;
     public int PlayerCount => _players.Count;
     public int ReadyPlayerCount => _players.Values.Count(p => p.IsReady);
+
+    /// <summary>The fraternity name the host chose, or "" if they haven't named it.</summary>
+    public string FratName => _fratName.Value.ToString();
 
     private void Awake()
     {
@@ -93,9 +109,11 @@ public class LobbyManager : NetworkBehaviour
                 _lobbyRPCs = gameObject.AddComponent<LobbyRPCs>();
             }
         }
+        _fratName.OnValueChanged += HandleFratNameChanged;
         if (IsServer)
         {
             RegisterServerPlayer();
+            RequestSetFratName(UnityEngine.PlayerPrefs.GetString(FratNamePrefKey, ""));
         }
         else if (IsClient)
         {
@@ -133,7 +151,13 @@ public class LobbyManager : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
+        _fratName.OnValueChanged -= HandleFratNameChanged;
         _players.Clear();
+    }
+
+    private void HandleFratNameChanged(FixedString64Bytes previous, FixedString64Bytes current)
+    {
+        OnFratNameChanged?.Invoke(current.ToString());
     }
 
     /// <summary>
@@ -283,7 +307,7 @@ public class LobbyManager : NetworkBehaviour
     {
         if (!IsServer) return false;
         if (_players.Count < 1) return false; // At least 1 player needed
-        if (_players.Count > 4) return false; // Max 4 players
+        if (_players.Count > MaxPlayers) return false;
 
         // All players must be ready
         return _players.Values.All(p => p.IsReady);
@@ -307,6 +331,14 @@ public class LobbyManager : NetworkBehaviour
         }
 
         Debug.Log("[LobbyManager] Starting game... Loading game scene for all clients.");
+
+        // Hand the host's frat name to the campaign, which names the player house from NetworkedGameManager.FratName.
+        Debug.Log($"[LobbyManager] Fraternity: \"{FratName}\"");
+        var gameManager = NetworkedGameManager.Instance;
+        if (gameManager != null)
+        {
+            gameManager.SetFratNameServer(FratName);
+        }
 
         // Load game scene for all clients
         NetworkManager.Singleton.SceneManager.LoadScene(GAME_SCENE_NAME, LoadSceneMode.Single);
@@ -546,6 +578,26 @@ public class LobbyManager : NetworkBehaviour
         {
             _lobbyRPCs.SetMaterialIndexRPC(nm.LocalClientId, materialIndex);
         }
+    }
+
+    /// <summary>
+    /// Name the fraternity. Host-only: the name is a server-write NetworkVariable, so a client call is ignored.
+    /// Empty clears it (the campaign then keeps its default/saved house name).
+    /// </summary>
+    public void RequestSetFratName(string fratName)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[LobbyManager] Only the host can name the fraternity!");
+            return;
+        }
+
+        string clean = FratRow.Game.HouseNames.Sanitize(fratName);
+        if (clean == FratName) return;
+
+        var value = new FixedString64Bytes();
+        if (clean.Length > 0) value.CopyFromTruncated(clean);
+        _fratName.Value = value; // called per keystroke from the lobby field, so no logging here
     }
 
     /// <summary>

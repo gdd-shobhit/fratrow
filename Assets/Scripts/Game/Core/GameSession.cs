@@ -221,6 +221,16 @@ namespace FratRow.Game
             p.atEntrance = atEntrance;
         }
 
+        /// <summary>
+        /// Host: apply the name chosen in the lobby (sanitized; blank keeps the current name). Houses are keyed by id, so a
+        /// rename is safe mid-campaign. Example: <c>session.RenamePlayerHouse("Alpha Beta Gamma")</c>.
+        /// </summary>
+        public void RenamePlayerHouse(string name)
+        {
+            string clean = HouseNames.Sanitize(name);
+            if (clean.Length > 0) PlayerHouse.name = clean;
+        }
+
         /// <summary>Mirror of the phone contact unlock owned by the Unity contact roster.</summary>
         public void SetContactUnlocked(string npcId, bool unlocked)
         {

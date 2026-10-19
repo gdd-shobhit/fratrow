@@ -81,6 +81,12 @@ Default rivals: **Kappa Sigma Psi "The Yacht Club"** (prestige, rich, cautious),
 favourite). Each house has a home `locationId` on campus: `PartyHouse` for players, plus
 `House_Kappa`, `House_Theta` and `House_Lambda`.
 
+**Naming the players' house.** The host names it in the lobby (FRATERNITY field, at most 32 characters,
+trimmed, control characters turned into spaces; `HouseNames.Sanitize`). Only the host can edit it, and everyone in the lobby sees the name as it is
+typed. When the game starts, the name replaces the config or saved house name. This is safe mid-campaign
+because houses are keyed by `id`. An empty name keeps the existing one. The host's last name is pre-filled
+next time, so continuing a campaign does not rename the house by accident.
+
 ### 3.3 Players and roles
 
 Every connected player is a brother in the players' house, identified by a durable host-issued `playerId`
