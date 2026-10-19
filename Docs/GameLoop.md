@@ -51,11 +51,14 @@ reply comes from the social backend. Yarn Spinner has been removed: no scripted 
 1. **GameManager.prefab** needs `NetworkedCampaign` alongside the existing campus and social components.
    **FratRow → Social Brains → Bake and validate network components** adds it and removes the duplicate
    `NetworkedPhoneInvites` from PartyManager.
-2. **Campus locations.** Place `CampusLocation` objects with ids `House_Kappa`, `House_Theta` and `House_Lambda` at the
-   rival houses in `Game.unity`, next to the existing `PartyHouse`, `Shop`, `Quad`, `Gym`, `Library` and `Dorm`. Any id that
-   is missing gets a fallback object near the origin, and a warning is logged. Players count as "at" a location within
-   14 m (`NetworkedCampaign.locationRadius`).
-3. **PartyManager → Guest Spawn Location** is the party entrance. "Meet me at the door" means standing within 4 m of it.
+2. **Campus locations.** `Game.unity` has all nine `CampusLocation` markers under `CampusLocations`, on the Terrain:
+   `PartyHouse` at the spawn and party door, `Shop` beside the shopkeeper, `House_Theta` at the blue house, `Quad`, `Library`
+   and `Gym` east of the party house, `Dorm` and `House_Kappa` to the north, and `House_Lambda` to the south-west. Move a
+   marker to move everyone who goes there. Any id that is missing gets a fallback object near the origin, and a warning
+   is logged. Players count as "at" a location within 14 m (`NetworkedCampaign.locationRadius`).
+3. **Party entrance.** PartyManager persists from the menu, so it resolves the Game scene's `GuestSpawnLocation`
+   object at runtime (falling back to the `PartyHouse` marker). Guests spawn there. "Meet me at the door" means standing
+   within 4 m of it.
 4. The **HUD** (`GameplayUIManager` + `HUDVisualTree.uxml`) binds to `NetworkedCampaign` automatically.
 
 ## Starting a session (menu → lobby → game)

@@ -54,7 +54,30 @@ public class NetworkedPartyManager : NetworkBehaviour
     public bool IsPartyOver => NetworkManager.ServerTime.Time >= _networkedParty.PartyEndTime;
     public float PartyDurationMinutes => partyDurationMinutes;
     public NetworkedParty NetworkedParty { get => _networkedParty; set => _networkedParty = value; }
-    public Vector3 EntrancePosition => guestSpawnLocation != null ? guestSpawnLocation.position : transform.position;
+    public Vector3 EntrancePosition => Entrance != null ? Entrance.position : transform.position;
+
+    const string GuestSpawnObjectName = "GuestSpawnLocation";
+
+    /// <summary>
+    /// The party entrance (guest spawn point and "meet me at the door" spot). PartyManager persists from the menu
+    /// (DontDestroyOnLoad), so it cannot reference the Game scene's GuestSpawnLocation; resolve it from the campus
+    /// scene when unset, falling back to the PartyHouse campus location.
+    /// </summary>
+    Transform Entrance
+    {
+        get
+        {
+            if (guestSpawnLocation == null && CampusScene.IsActive)
+            {
+                var marker = GameObject.Find(GuestSpawnObjectName);
+                if (marker != null) guestSpawnLocation = marker.transform;
+                else if (CampusLocationRegistry.Instance != null && CampusLocationRegistry.Instance.TryGet("PartyHouse", out var house)) guestSpawnLocation = house.transform;
+            }
+
+            return guestSpawnLocation;
+        }
+    }
+
     private void Awake()
     {
         // If instance already exists and it's not this, destroy this
@@ -295,7 +318,8 @@ public class NetworkedPartyManager : NetworkBehaviour
         if (guestSO.prefab == null || guestSO.prefab.GetComponent<NetworkedNPCGuest>() == null || guestSO.prefab.GetComponent<NPCGuest>() == null)
         { Debug.LogError("Guest prefab must have NPCGuest and NetworkedNPCGuest baked before spawn"); return false; }
 
-        GameObject guestObject = NetworkObject.Instantiate(guestSO.prefab, guestSpawnLocation);
+        // Spawn at the entrance as a root object: a NetworkObject must not sit under a non-networked scene transform.
+        GameObject guestObject = NetworkObject.Instantiate(guestSO.prefab, EntrancePosition, Entrance != null ? Entrance.rotation : Quaternion.identity);
 
         NPCGuest npcGuest = guestObject.GetComponent<NPCGuest>();
 
