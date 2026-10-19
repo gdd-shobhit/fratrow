@@ -36,6 +36,8 @@ namespace Systems.Talk
             public const string NotComing = "(Not coming)";
             public const string Undecided = "(Hasn't decided)";
             public const string Busy = "{0} is busy talking to someone else. Try again in a moment.";
+            public const string Slurring = "(You're slurring.)";
+            public const string Wasted = "(You're wasted.)";
         }
 
         public static NpcTalkPanel Instance { get; private set; }
@@ -49,6 +51,8 @@ namespace Systems.Talk
         TextField input;
         NamedNpcSO npc;
         bool waiting;
+        /// <summary>What the player actually said this turn (the host's rewrite when drunk), kept above the NPC's reply.</summary>
+        string spokenLine;
         NetworkedCampaign subscribed;
         readonly List<PlayerInput> pausedInputs = new List<PlayerInput>();
 
@@ -110,6 +114,7 @@ namespace Systems.Talk
             if (target == null || !Bind()) return;
             npc = target;
             waiting = false;
+            spokenLine = null;
             if (speaker != null) speaker.text = target.displayName;
             body.text = string.Format(Text.Approach, target.displayName);
             BuildOptions();
@@ -170,6 +175,7 @@ namespace Systems.Talk
             else if (action == ActionIds.AskNumber) { NetworkedContactRoster.Instance?.RequestUnlock(npc.npcId); BuildOptions(); return; }
             else return;
             waiting = true;
+            spokenLine = null;
             body.text = Text.Waiting;
         }
 
@@ -183,6 +189,7 @@ namespace Systems.Talk
             campaign.RequestTalk(npc.npcId, text);
             input.value = "";
             waiting = true;
+            spokenLine = null;
             body.text = "“" + text + "”\n" + Text.Waiting;
         }
 
@@ -192,6 +199,7 @@ namespace Systems.Talk
             if (campaign == null) return;
             campaign.OnActionResult += HandleActionResult;
             campaign.OnConversation += HandleConversation;
+            campaign.OnSpeech += HandleSpeech;
         }
 
         void Unsubscribe()
@@ -199,6 +207,7 @@ namespace Systems.Talk
             if (subscribed == null) return;
             subscribed.OnActionResult -= HandleActionResult;
             subscribed.OnConversation -= HandleConversation;
+            subscribed.OnSpeech -= HandleSpeech;
             subscribed = null;
         }
 
@@ -217,6 +226,18 @@ namespace Systems.Talk
             }
         }
 
+        /// <summary>
+        /// Replaces what the player typed with what actually came out (the host rewrites drunk speech before the NPC hears it,
+        /// design/gdd/drunk-mechanic.md). Sent before the NPC's reply on the same reliable channel.
+        /// </summary>
+        void HandleSpeech(string npcId, string spoken, string condition)
+        {
+            if (!IsOpen || !waiting || npcId != npc.npcId || string.IsNullOrEmpty(spoken)) return;
+            string tag = condition == SpeakerConditions.Wasted ? Text.Wasted : condition == SpeakerConditions.Drunk ? Text.Slurring : "";
+            spokenLine = "“" + spoken + "”" + (tag.Length > 0 ? "\n" + tag : "");
+            body.text = spokenLine + "\n" + Text.Waiting;
+        }
+
         void HandleConversation(string npcId, ConversationResult result)
         {
             if (!IsOpen || npcId != npc.npcId) return;
@@ -225,7 +246,7 @@ namespace Systems.Talk
             {
                 string tag = result.commitment == "accepted" ? Text.Coming : result.commitment == "conditional" ? Text.Conditional :
                     result.commitment == "declined" ? Text.NotComing : result.commitment == "deferred" ? Text.Undecided : "";
-                body.text = result.reply + (tag.Length > 0 ? "\n" + tag : "");
+                body.text = (spokenLine != null ? spokenLine + "\n\n" : "") + result.reply + (tag.Length > 0 ? "\n" + tag : "");
             }
             else body.text = result.status == "busy" ? string.Format(Text.Busy, npc.displayName) : (result.error ?? result.status);
         }

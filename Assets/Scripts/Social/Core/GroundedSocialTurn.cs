@@ -101,6 +101,8 @@ namespace FratRow.Social
         {
             ValidateActs(c, p); var g = p.grounded;
             var pieces = new List<string> { Opening(c.Voice?.tone ?? "casual", g.attitude, g.phrasing) };
+            string aside = DrunkAside(c.SpeakerCondition, g.phrasing);
+            if (aside != "") pieces.Add(aside);
             // When a housemate follows a known grievance, explicitly preserve the offender's identity
             // even if the model chooses another topic. This clause states provenance, not forgiveness.
             var other = c.GroundedMemories.FirstOrDefault(m => m.actorId != c.PlayerId);
@@ -109,8 +111,20 @@ namespace FratRow.Social
             string topic = Topic(c, g.topic, g.phrasing); if (topic != "") pieces.Add(topic);
             string rsvp = Attendance(p.decision, c.Voice?.tone ?? "casual", g.phrasing); if (rsvp != "") pieces.Add(rsvp);
             string reply = string.Join(" ", pieces);
+            // The drunk aside is flavour: drop it rather than exceed the reply budget.
+            if (reply.Length > 300 && aside != "") { pieces.Remove(aside); reply = string.Join(" ", pieces); }
             if (reply.Length > 300) throw new ArgumentException("Grounded reply exceeds budget");
             return reply;
+        }
+        /// <summary>What the NPC says on noticing a drunk speaker (host-observed condition, design/gdd/drunk-mechanic.md).</summary>
+        static string DrunkAside(string condition, int variant)
+        {
+            switch (condition)
+            {
+                case SpeakerConditions.Drunk: return variant == 0 ? "Someone's had a few." : "You're a little drunk, huh?";
+                case SpeakerConditions.Wasted: return variant == 0 ? "Wow, you are wasted." : "You're completely hammered.";
+                default: return "";
+            }
         }
         static string Topic(ModelContext c, string topic, int variant)
         {

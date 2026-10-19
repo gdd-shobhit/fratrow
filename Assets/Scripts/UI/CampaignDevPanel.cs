@@ -172,7 +172,8 @@ public sealed class CampaignDevPanel : MonoBehaviour
             localReady = b.Ready;
             string location = b.Location.ToString();
             GUILayout.Label("You: " + b.Name.ToString() + " · role " + b.Role.ToString() + " · location " + (location.Length > 0 ? location : "(none)") +
-                            " · ready " + b.Ready + (b.DetainedRemaining > 0f ? " · DETAINED " + Mathf.CeilToInt(b.DetainedRemaining) + "s" : ""), _wrap);
+                            " · ready " + b.Ready + (b.DetainedRemaining > 0f ? " · DETAINED " + Mathf.CeilToInt(b.DetainedRemaining) + "s" : "") +
+                            " · drunk " + Mathf.RoundToInt(b.Drunk * 100f) + "% (tier " + b.DrunkTier + ")", _wrap);
         }
         else GUILayout.Label("You: not bound to a brother yet (location unknown).", _wrap);
         for (int i = 0; i < c.Houses.Count; i++)
@@ -182,6 +183,14 @@ public sealed class CampaignDevPanel : MonoBehaviour
             GUILayout.Label("House: $" + house.Cash + " · pop " + house.Popularity.ToString("0.0") + " · heat " + house.Heat.ToString("0") + " · dean " +
                             house.Dean.ToString("0") + " · cup " + house.CupPoints + " · rank " + house.Rank + " · police alert " + h.PoliceAlert, _wrap);
         }
+
+        GUILayout.Label("Drinks (at the house, any phase; G / right shoulder in game):");
+        GUILayout.BeginHorizontal();
+        Button(c, ActionIds.Drink, "Drink");
+        if (GUILayout.Button("Keg")) Send(c, ActionIds.Drink, item: "keg");
+        if (GUILayout.Button("Liquor")) Send(c, ActionIds.Drink, item: "liquor");
+        if (GUILayout.Button("Soda")) Send(c, ActionIds.Drink, item: "soda_snacks");
+        GUILayout.EndHorizontal();
 
         _showAll = GUILayout.Toggle(_showAll, "Show every phase's actions (to test wrong_phase)");
         if (phase == Phase.Weekday || _showAll) DrawWeekday(c, localReady);

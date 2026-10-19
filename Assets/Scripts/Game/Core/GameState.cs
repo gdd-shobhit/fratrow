@@ -63,6 +63,10 @@ namespace FratRow.Game
         public int record;
         public float rep;
         public int studyThisWeek;
+        /// <summary>Intoxication, same units as <see cref="GuestState.drunk"/> (design/gdd/drunk-mechanic.md). Sobers up over time.</summary>
+        public float drunk;
+        /// <summary>Simulated time before which the next drink is refused (pacing).</summary>
+        public double nextDrinkAt;
         public List<Counter> daily = new List<Counter>();
         public List<Counter> weekly = new List<Counter>();
     }

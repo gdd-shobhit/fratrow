@@ -310,6 +310,8 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
         {
             if (!CampaignDriven) RefreshStanding();
             request = codec.Decode<ConversationRequest>(requestJson);
+            // Speaker condition is host-observed (NetworkedCampaign); a client may not claim one.
+            if (request != null) request.speakerCondition = SpeakerConditions.Sober;
             if (CampaignDriven) request.partyId = CurrentPartyId ?? "";
             key = player + "/" + request.requestId;
             if (cancellations.TryGetValue(key, out var existing)) result = await service.SubmitAsync(player, request, existing.Token);

@@ -16,6 +16,8 @@ namespace FratRow.Game
         public const string ServeDrinks = "serve_drinks", CardCheck = "card_check", Dj = "dj", TurnDownMusic = "turn_down_music";
         public const string BreakUpFight = "break_up_fight", HelpGuest = "help_guest", FixDamage = "fix_damage", KickOut = "kick_out";
         public const string BeerRun = "beer_run", TalkToPolice = "talk_to_police";
+        // Any phase but semester end, at the house (item = optional drink id)
+        public const string Drink = "drink";
     }
 
     /// <summary>
@@ -48,6 +50,9 @@ namespace FratRow.Game
         public string conversationText = "";
         public string conversationChannel = "";
         public string socialPartyId = "";
+        /// <summary>For talk-type actions: the speaker's visible <see cref="FratRow.Social.SpeakerConditions"/> value.
+        /// <see cref="conversationText"/> is already what they actually said (drunk speech rewritten).</summary>
+        public string speakerCondition = "";
 
         public static ActionResult Ok(string message = "") => new ActionResult { ok = true, code = "ok", message = message };
         public static ActionResult Fail(string code, string message) => new ActionResult { ok = false, code = code, message = message };

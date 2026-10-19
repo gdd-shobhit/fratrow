@@ -138,7 +138,8 @@ sealed class GameFixture : IDisposable
     {
         var r = Session.Apply(new PlayerAction { playerId = P(i), action = action, target = npcId, text = text });
         if (!r.ok) return new ConversationResult { status = "rejected", error = r.code + ": " + r.message };
-        var request = new ConversationRequest { requestId = SocialWorld.Id(), npcId = npcId, text = r.conversationText, channel = r.conversationChannel, partyId = r.socialPartyId };
+        var request = new ConversationRequest { requestId = SocialWorld.Id(), npcId = npcId, text = r.conversationText, channel = r.conversationChannel, partyId = r.socialPartyId,
+            speakerCondition = r.speakerCondition };
         var result = await Service.SubmitAsync(P(i), request);
         Session.OnConversationCommitted(P(i), npcId, action, result);
         Conversations.Add((P(i), npcId, action, r.conversationText, result));

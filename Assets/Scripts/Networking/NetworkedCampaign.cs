@@ -16,7 +16,8 @@ using UnityEngine;
 /// </summary>
 public struct CampaignHudState : INetworkSerializable, IEquatable<CampaignHudState>
 {
-    public const byte CurrentVersion = 1;
+    /// <summary>Campaign replication schema. 2: <see cref="BrotherNetState"/> carries Drunk / DrunkTier.</summary>
+    public const byte CurrentVersion = 2;
     public byte Version;
     public byte Phase, Day, PoliceAlert, ReadyCount, PlayerCount;
     public short Semester, Week, SemesterWeeks;
@@ -86,17 +87,23 @@ public struct BrotherNetState : INetworkSerializable, IEquatable<BrotherNetState
     public bool Ready, Connected;
     public float DetainedRemaining, Rep;
     public short Record, StudyThisWeek;
+    /// <summary>Intoxication as a 0..1 share of the drunk cap (host-authoritative; design/gdd/drunk-mechanic.md).</summary>
+    public float Drunk;
+    /// <summary>Visible condition: 0 sober, 1 tipsy, 2 drunk, 3 wasted (<see cref="GameSession.ConditionTier"/>).</summary>
+    public byte DrunkTier;
 
     public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
     {
         s.SerializeValue(ref ClientId); s.SerializeValue(ref PlayerId); s.SerializeValue(ref Name); s.SerializeValue(ref Role); s.SerializeValue(ref Location);
         s.SerializeValue(ref Ready); s.SerializeValue(ref Connected); s.SerializeValue(ref DetainedRemaining); s.SerializeValue(ref Rep);
-        s.SerializeValue(ref Record); s.SerializeValue(ref StudyThisWeek);
+        s.SerializeValue(ref Record); s.SerializeValue(ref StudyThisWeek); s.SerializeValue(ref Drunk); s.SerializeValue(ref DrunkTier);
     }
 
+    /// <summary>Drunk sobers continuously; the 1% tolerance re-sends it about every 10 s per drunk brother, not every poll.</summary>
     public bool Equals(BrotherNetState o) =>
         ClientId == o.ClientId && PlayerId.Equals(o.PlayerId) && Name.Equals(o.Name) && Role.Equals(o.Role) && Location.Equals(o.Location) && Ready == o.Ready &&
-        Connected == o.Connected && Math.Abs(DetainedRemaining - o.DetainedRemaining) < 1f && Math.Abs(Rep - o.Rep) < 0.05f && Record == o.Record && StudyThisWeek == o.StudyThisWeek;
+        Connected == o.Connected && Math.Abs(DetainedRemaining - o.DetainedRemaining) < 1f && Math.Abs(Rep - o.Rep) < 0.05f && Record == o.Record && StudyThisWeek == o.StudyThisWeek &&
+        Math.Abs(Drunk - o.Drunk) < 0.01f && DrunkTier == o.DrunkTier;
 }
 
 /// <summary>Police unit between two campus locations (clients interpolate positions).</summary>
@@ -195,6 +202,11 @@ public sealed class NetworkedCampaign : NetworkBehaviour
     public event Action<ActionResultNet> OnActionResult;
     /// <summary>NPC reply to the local player's talk/invite/rush (npcId, result).</summary>
     public event Action<string, ConversationResult> OnConversation;
+    /// <summary>
+    /// What the local player actually said to an NPC, sent as soon as the host accepts the turn (npcId, spoken line, speaker
+    /// condition). When drunk this is the host's rewrite of what they typed; the NPC hears exactly this line.
+    /// </summary>
+    public event Action<string, string, string> OnSpeech;
 
     readonly List<GameEvent> drained = new List<GameEvent>();
     readonly Dictionary<ulong, string> clientPlayers = new Dictionary<ulong, string>();
@@ -523,7 +535,8 @@ public sealed class NetworkedCampaign : NetworkBehaviour
         {
             ClientId = ClientFor(pl.playerId), PlayerId = Fixed64(pl.playerId), Name = Fixed64(pl.displayName),
             Role = Fixed32(pl.role), Location = Fixed32(pl.location), Ready = pl.ready, Connected = pl.connected,
-            DetainedRemaining = (float)Math.Max(0, pl.detainedUntil - s.time), Rep = pl.rep, Record = (short)pl.record, StudyThisWeek = (short)pl.studyThisWeek
+            DetainedRemaining = (float)Math.Max(0, pl.detainedUntil - s.time), Rep = pl.rep, Record = (short)pl.record, StudyThisWeek = (short)pl.studyThisWeek,
+            Drunk = Session.Drunk01(pl), DrunkTier = GameSession.ConditionTier(Session.DrunkCondition(pl))
         }).ToList());
         Sync(patrols, s.patrols.Select(x => new PatrolNetState
         {
@@ -611,13 +624,17 @@ public sealed class NetworkedCampaign : NetworkBehaviour
         var start = Session.Apply(new PlayerAction { playerId = playerId, action = action, target = npcId, text = text });
         if (!start.ok) { Reply(sender, action, start); return; }
         Reply(sender, action, start);
+        // The rewrite happened in the core on the host; the speaker sees what actually came out before the NPC answers.
+        if (NetworkManager.ConnectedClients.ContainsKey(sender))
+            SpeechClientRpc(Fixed64(npcId), start.conversationText, Fixed32(start.speakerCondition), RpcTarget.Single(sender, RpcTargetUse.Temp));
         var social = NetworkedSocialConversation.Instance;
         ConversationResult result;
         try
         {
             result = await social.SubmitAsPlayerAsync(playerId, new ConversationRequest
             {
-                requestId = SocialWorld.Id(), npcId = npcId, text = start.conversationText, channel = start.conversationChannel, partyId = start.socialPartyId
+                requestId = SocialWorld.Id(), npcId = npcId, text = start.conversationText, channel = start.conversationChannel, partyId = start.socialPartyId,
+                speakerCondition = start.speakerCondition
             }, start.conversationChannel == "in_person");
         }
         catch (Exception e) { result = new ConversationResult { status = "rejected", error = e.Message }; }
@@ -641,6 +658,11 @@ public sealed class NetworkedCampaign : NetworkBehaviour
     [Rpc(SendTo.SpecifiedInParams)]
     void ConversationClientRpc(FixedString64Bytes npcId, string resultJson, RpcParams rpc = default) =>
         OnConversation?.Invoke(npcId.ToString(), codec.Decode<ConversationResult>(resultJson));
+
+    /// <summary>Reliable, targeted at the speaker only, once per accepted talk turn (≤ 800 chars).</summary>
+    [Rpc(SendTo.SpecifiedInParams)]
+    void SpeechClientRpc(FixedString64Bytes npcId, string spoken, FixedString32Bytes condition, RpcParams rpc = default) =>
+        OnSpeech?.Invoke(npcId.ToString(), spoken ?? "", condition.ToString());
 
     // ---------------- Host hooks used by existing systems ----------------
 

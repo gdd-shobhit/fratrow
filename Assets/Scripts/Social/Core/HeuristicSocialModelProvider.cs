@@ -78,6 +78,7 @@ namespace FratRow.Social
             if (insult) score -= 0.5;
             if (ownGrievance != null && !apology) score -= 0.25;
             if (commitment?.state == "deferred") score += 0.05;
+            score += DrunkBias(tone, c.SpeakerCondition);
 
             var allowedDecisions = GroundedSocialTurn.Decisions(c).ToList();
             var allowedTopics = GroundedSocialTurn.Topics(c).ToList();
@@ -138,6 +139,16 @@ namespace FratRow.Social
 
         static double ToneBias(string tone) =>
             tone == "bubbly" ? 0.08 : tone == "laid-back" ? 0.05 : tone == "playful" ? 0.03 : tone == "reserved" || tone == "dry" ? -0.05 : 0;
+
+        /// <summary>How this voice takes a drunk speaker: party animals roll with "drunk", reserved students are put off, nobody loves "wasted".</summary>
+        static double DrunkBias(string tone, string condition)
+        {
+            if (!SpeakerConditions.IsNoticeable(condition)) return 0;
+            bool wasted = condition == SpeakerConditions.Wasted;
+            if (tone == "bubbly" || tone == "playful" || tone == "laid-back") return wasted ? -0.04 : 0.03;
+            if (tone == "reserved" || tone == "dry") return wasted ? -0.18 : -0.08;
+            return wasted ? -0.1 : -0.03;
+        }
 
         static SocialProposal Build(ModelContext c, string decision, string attitude, string reason, string topic, int phrasing,
             string trust, string regard, string grievance, string resolve)

@@ -202,13 +202,17 @@ namespace StarterAssets
             }
         }
 
+        /// <summary>
+        /// One press = one drink request. The host validates it (at the house, stash, pacing) and owns the drunk level
+        /// (design/gdd/drunk-mechanic.md); the animation is local feedback only.
+        /// </summary>
         private void DrinkCheck()
         {
-            if (_input.drink)
-            {
-                _animator.SetTrigger("Drink");
-                _animator.ResetTrigger("Drink");
-            }
+            if (!_input.drink) return;
+            _input.drink = false;
+            if (_animator != null) _animator.SetTrigger("Drink");
+            if (NetworkedCampaign.Instance != null && NetworkedCampaign.Instance.IsCampaignActive)
+                NetworkedCampaign.Instance.RequestAction(FratRow.Game.ActionIds.Drink);
         }
 
         private void LateUpdate()
