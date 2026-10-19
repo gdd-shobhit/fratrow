@@ -121,7 +121,9 @@ sealed class GameFixture : IDisposable
             }
         else foreach (var p in Session.State.players) Players.Add(new PlayerCredential { playerId = p.playerId });
         Provider = provider ?? new HeuristicSocialModelProvider(Store.Read, seed);
-        Service = new SocialConversationService(World, Codec, Provider, Access, TimeSpan.FromSeconds(120), requireGroundedProposal: true);
+        // Persona replies carry model-written words; every other provider must stay grounded (mirrors NetworkedSocialConversation).
+        bool persona = Provider is LlamaServerModelProvider llama && llama.PersonaReplies;
+        Service = new SocialConversationService(World, Codec, Provider, Access, TimeSpan.FromSeconds(120), requireGroundedProposal: !persona);
         Session.DrainEvents(Events);
     }
 

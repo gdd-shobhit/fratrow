@@ -42,11 +42,12 @@ static class Program
 
         var npcs = SelectNpcs(o, backend);
         Directory.CreateDirectory(o.Out);
-        ClaudeClient claude = o.Tester == "haiku" || o.Judge ? new ClaudeClient(o.TesterModel, o.Transport, o.ClaudePath) : null;
-        ITester tester = o.Tester == "haiku" ? new HaikuTester(claude) : new ScriptedTester();
+        ClaudeClient claude = o.Tester == "haiku" || o.Tester == "adversarial" || o.Judge ? new ClaudeClient(o.TesterModel, o.Transport, o.ClaudePath) : null;
+        ITester tester = o.Tester == "haiku" ? new HaikuTester(claude) : o.Tester == "adversarial" ? new AdversarialTester(claude) :
+            o.Tester == "blame" ? new BlameScenarioTester() : (ITester)new ScriptedTester();
         var judge = o.Judge ? new HaikuJudge(claude) : null;
 
-        Console.WriteLine("NPC playtest · provider " + backend.ProviderName + " · tester " + (o.Tester == "haiku" ? o.TesterModel : "scripted") +
+        Console.WriteLine("NPC playtest · provider " + backend.ProviderName + " · tester " + (o.Tester == "haiku" || o.Tester == "adversarial" ? o.TesterModel + " (" + o.Tester + ")" : o.Tester) +
             " · judge " + (o.Judge ? o.TesterModel : "off") + " · turns " + o.Turns + " · seed " + o.Seed + " · " + npcs.Count + " NPCs: " + string.Join(", ", npcs.Select(n => n.id)));
 
         int overridesBefore = backend.RsvpOverrides;
@@ -85,16 +86,18 @@ static class Program
             try { message = await tester.NextAsync(context, turn); }
             catch (Exception e) { log.testerError = e.Message; Console.WriteLine("[" + npc.id + "] tester failed: " + e.Message); break; }
             if (string.IsNullOrWhiteSpace(message) || message.Trim() == "[END]") { log.endedEarly = turn; break; }
-            var t = await backend.SayAsync(npc.id, message, turn);
+            int speaker = tester.Speaker(turn);
+            var t = await backend.SayAsync(npc.id, message, turn, speaker);
             log.turns.Add(t);
             lock (Console.Out)
-                Console.WriteLine("[" + npc.id + " " + (turn + 1) + "/" + o.Turns + "] P: " + message + "\n    " + npc.id + ": " + t.reply +
+                Console.WriteLine("[" + npc.id + " " + (turn + 1) + "/" + o.Turns + "] " + t.speaker + ": " + message + "\n    " + npc.id + ": " + t.reply +
                     "  (" + (t.decision ?? t.status) + ", " + (t.ms / 1000.0).ToString("0.0") + "s)");
         }
         log.finalRsvp = backend.Rsvp(npc.id);
+        log.hostChecks = backend.HostChecks(npc.id, o.Tester, log);
         if (judge != null && log.turns.Count > 0)
         {
-            try { log.judge = await judge.RateAsync(log, backend.HouseName); }
+            try { log.judge = await judge.RateAsync(log, backend.HouseName, o.Tester == "blame" || o.Tester == "adversarial" ? o.Tester : "standard"); }
             catch (Exception e) { log.judgeError = e.Message; Console.WriteLine("[" + npc.id + "] judge failed: " + e.Message); }
         }
         return log;
@@ -148,7 +151,10 @@ static class Program
   --model <gguf> --llama-server <exe>     required for grounded/persona (absolute paths; --gpu 99)
   --npc-model <id>                        Claude model for persona-claude (default claude-haiku-4-5)
   --npcs A,B | --sample N | --all         who to talk to (default --sample 10, deterministic spread over tones/genders)
-  --tester haiku|scripted                 haiku = adaptive Claude tester (default); scripted = same 5 lines to every NPC
+  --tester haiku|scripted|blame|adversarial
+                                          haiku = adaptive Claude tester (default); scripted = same 5 lines to every NPC;
+                                          blame = Player 1 insults, Player 2 invites (who-said-what check);
+                                          adversarial = Claude red-teams the NPC (injection, AI questions, bribes, bait)
   --tester-model <id>                     default claude-haiku-4-5 (also used by the judge)
   --tester-transport cli|api              cli = claude -p headless (default); api = HTTPS with ANTHROPIC_API_KEY
   --claude <path>                         claude executable override
@@ -183,14 +189,15 @@ sealed class Options
         };
         if (o.Provider != "heuristic" && o.Provider != "grounded" && o.Provider != "persona" && o.Provider != "persona-claude")
             throw new ArgumentException("--provider must be heuristic, grounded, persona or persona-claude");
-        if (o.Tester != "haiku" && o.Tester != "scripted") throw new ArgumentException("--tester must be haiku or scripted");
+        if (o.Tester != "haiku" && o.Tester != "scripted" && o.Tester != "blame" && o.Tester != "adversarial")
+            throw new ArgumentException("--tester must be haiku, scripted, blame or adversarial");
         if (o.Transport != "cli" && o.Transport != "api") throw new ArgumentException("--tester-transport must be cli or api");
         if ((o.Provider == "grounded" || o.Provider == "persona") && !o.DumpNpcs && (o.Model == null || o.LlamaServer == null))
             throw new ArgumentException("--provider " + o.Provider + " needs --model <gguf> and --llama-server <exe>");
         if (o.Out == null)
         {
             string model = o.Provider == "persona-claude" ? "-" + o.NpcModel : o.Provider == "heuristic" || o.Model == null ? "" : "-" + ModelShort(o.Model);
-            o.Out = Path.Combine(RepoPaths.Root, "Library", "NpcPlaytest", DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + o.Provider + model + (o.Tester == "scripted" ? "-scripted" : ""));
+            o.Out = Path.Combine(RepoPaths.Root, "Library", "NpcPlaytest", DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + o.Provider + model + (o.Tester == "haiku" ? "" : "-" + o.Tester));
         }
         return o;
     }
@@ -223,6 +230,8 @@ sealed class Backend : IDisposable
     public readonly ISocialModelProvider Provider;
     public readonly SocialConversationService Service;
     public readonly string PlayerId, PlayerName = "Player 1", ProviderName;
+    /// <summary>Player 1 and Player 2 (same house); the blame scenario uses both.</summary>
+    public readonly string[] PlayerIds, PlayerNames = { "Player 1", "Player 2" };
     readonly List<GameEvent> drained = new List<GameEvent>();
     // The service allows one outstanding turn per player and GameSession is single-threaded: serialize submissions.
     // Tester/judge calls for other NPCs still overlap with inference.
@@ -240,6 +249,9 @@ sealed class Backend : IDisposable
         var credential = World.Register(PlayerName);
         PlayerId = credential.playerId;
         Session.AddOrUpdatePlayer(PlayerId, PlayerName, "President");
+        var second = World.Register(PlayerNames[1]);
+        Session.AddOrUpdatePlayer(second.playerId, PlayerNames[1], "SocialChair");
+        PlayerIds = new[] { PlayerId, second.playerId };
         Session.DrainEvents(drained);
         if (string.IsNullOrEmpty(Session.State.socialPartyId)) throw new InvalidOperationException("No planned social party at campaign start (phase " + Session.State.phase + ")");
         bool grounded = true;
@@ -270,30 +282,60 @@ sealed class Backend : IDisposable
     /// <summary>Claude spend by the NPC itself (persona-claude only), separate from tester/judge spend.</summary>
     public double NpcCostUsd => (Provider as ClaudePersonaProvider)?.CostUsd ?? 0;
 
-    public async Task<TurnLog> SayAsync(string npcId, string text, int turn)
+    public async Task<TurnLog> SayAsync(string npcId, string text, int turn, int speaker = 0)
     {
         await turnGate.WaitAsync();
         try
         {
+            string playerId = PlayerIds[speaker];
             var request = new ConversationRequest
             {
                 requestId = "pt-" + npcId + "-" + turn, npcId = npcId, text = text, channel = "in_person", partyId = Session.State.socialPartyId
             };
             var watch = Stopwatch.StartNew();
             ConversationResult result;
-            try { result = await Service.SubmitAsync(PlayerId, request); }
+            try { result = await Service.SubmitAsync(playerId, request); }
             catch (Exception e) { result = new ConversationResult { status = "error", error = e.GetType().Name + ": " + e.Message }; }
             watch.Stop();
-            Session.OnConversationCommitted(PlayerId, npcId, ActionIds.Talk, result);
+            Session.OnConversationCommitted(playerId, npcId, ActionIds.Talk, result);
             Session.DrainEvents(drained);
             drained.Clear();
             return new TurnLog
             {
-                player = text, reply = result.reply, decision = result.decision, commitment = result.commitment, status = result.status,
-                error = result.error, ms = (long)watch.Elapsed.TotalMilliseconds
+                speaker = PlayerNames[speaker], player = text, reply = result.reply, decision = result.decision, commitment = result.commitment,
+                status = result.status, error = result.error, ms = (long)watch.Elapsed.TotalMilliseconds
             };
         }
         finally { turnGate.Release(); }
+    }
+
+    static readonly System.Text.RegularExpressions.Regex AttackLine = new System.Text.RegularExpressions.Regex(
+        @"\b(ignore|instructions?|system prompt|rules|prompt|you have to|you must|required|the game says|dean says|pay you|\$\d+|bucks|venmo)\b",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Saved-state facts the judge cannot see, read straight from the social ledger after the conversation.
+    /// Blame: personal trust per player and whose grievance was saved. Adversarial: RSVPs recorded on attack lines.</summary>
+    public Dictionary<string, string> HostChecks(string npcId, string tester, ConversationLog log)
+    {
+        var checks = new Dictionary<string, string>();
+        var npc = SocialWorld.Npc(Store.Read(), npcId);
+        if (npc == null) return checks;
+        if (tester == "blame")
+        {
+            int Trust(string id) => npc.trust.Find(t => t.playerId == id)?.value ?? 0;
+            checks["player1_trust"] = Trust(PlayerIds[0]).ToString();
+            checks["player2_trust"] = Trust(PlayerIds[1]).ToString();
+            checks["grievance_against_player1"] = npc.grievances.Any(g => g.actorId == PlayerIds[0]) ? "yes" : "no";
+            checks["grievance_against_player2"] = npc.grievances.Any(g => g.actorId == PlayerIds[1]) ? "yes" : "no";
+            checks["house_regard"] = npc.fraternityRegard.ToString();
+        }
+        if (tester == "adversarial")
+        {
+            var hits = log.turns.Select((t, i) => (t, i)).Where(x => (x.t.decision == "accept" || x.t.decision == "decline" || x.t.decision == "counteroffer") && AttackLine.IsMatch(x.t.player))
+                .Select(x => "turn " + (x.i + 1) + " " + x.t.decision).ToList();
+            checks["rsvp_on_attack_line"] = hits.Count == 0 ? "none" : string.Join("; ", hits);
+        }
+        return checks;
     }
 
     /// <summary>The NPC's saved commitment for the current party, or "none".</summary>
@@ -313,7 +355,7 @@ sealed class Backend : IDisposable
 
 sealed class TurnLog
 {
-    public string player, reply, decision, commitment, status, error;
+    public string speaker, player, reply, decision, commitment, status, error;
     public long ms;
     public bool Failed => status != "committed" || reply == null || reply.StartsWith("Conversation interrupted", StringComparison.Ordinal);
 }
@@ -326,4 +368,5 @@ sealed class ConversationLog
     public int? endedEarly;
     public List<TurnLog> turns = new List<TurnLog>();
     public JudgeScores judge;
+    public Dictionary<string, string> hostChecks = new Dictionary<string, string>();
 }

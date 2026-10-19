@@ -17,6 +17,12 @@ sealed class Metrics
     public bool judgeEnabled;
     public Dictionary<string, int> decisions = new Dictionary<string, int>();
     public Dictionary<string, double> judgeMeans = new Dictionary<string, double>();
+    /// <summary>Scenario judge checks: name → (conversations where true, conversations where the judge answered it).</summary>
+    public Dictionary<string, int[]> judgeChecks = new Dictionary<string, int[]>();
+    /// <summary>Blame scenario, from saved state: conversations where Player 2's trust went negative / a grievance names Player 2 / one names Player 1.</summary>
+    public int blameStateChecked, player2TrustNegative, grievanceAgainstPlayer2, grievanceAgainstPlayer1;
+    /// <summary>Adversarial scenario, from saved state: conversations with an RSVP recorded on an attack line.</summary>
+    public int adversarialChecked, rsvpOnAttackLine;
     public List<NpcMetrics> perNpc = new List<NpcMetrics>();
 
     public sealed class NpcMetrics
@@ -117,6 +123,25 @@ sealed class Metrics
             m.judgeMeans["coherence"] = judged.Average(j => j.coherence);
             m.judgeMeans["overall"] = m.judgeMeans.Values.Average();
         }
+        foreach (var j in judged)
+            foreach (var c in j.checks)
+            {
+                if (!m.judgeChecks.TryGetValue(c.Key, out var counts)) m.judgeChecks[c.Key] = counts = new int[2];
+                if (c.Value) counts[0]++;
+                counts[1]++;
+            }
+        foreach (var l in logs)
+        {
+            var h = l.hostChecks ?? new Dictionary<string, string>();
+            if (h.TryGetValue("player2_trust", out var p2))
+            {
+                m.blameStateChecked++;
+                if (int.TryParse(p2, out int v) && v < 0) m.player2TrustNegative++;
+                if (h.TryGetValue("grievance_against_player2", out var g2) && g2 == "yes") m.grievanceAgainstPlayer2++;
+                if (h.TryGetValue("grievance_against_player1", out var g1) && g1 == "yes") m.grievanceAgainstPlayer1++;
+            }
+            if (h.TryGetValue("rsvp_on_attack_line", out var hit)) { m.adversarialChecked++; if (hit != "none") m.rsvpOnAttackLine++; }
+        }
         return m;
     }
 }
@@ -163,19 +188,22 @@ static class Report
             md.AppendLine();
             foreach (var t in l.turns)
             {
-                md.AppendLine("- **Player:** " + t.player);
+                md.AppendLine("- **" + (t.speaker ?? "Player") + ":** " + t.player);
                 md.AppendLine("  **" + l.npc + ":** " + (t.reply ?? "_(no reply)_") + " _(" + (t.Failed ? "FAILED " + (t.error ?? t.status) : t.decision) +
                     (t.commitment != null ? ", RSVP " + t.commitment : "") + ", " + F(t.ms / 1000.0, "0.0") + " s)_");
             }
             if (l.testerError != null) md.AppendLine("- _Tester error: " + l.testerError + "_");
             md.AppendLine();
             md.AppendLine("Final RSVP: " + l.finalRsvp);
+            if (l.hostChecks != null && l.hostChecks.Count > 0)
+                md.AppendLine("Saved state: " + string.Join(", ", l.hostChecks.Select(h => h.Key + "=" + h.Value)));
             if (l.judge != null)
             {
                 var j = l.judge;
                 md.AppendLine();
                 md.AppendLine("Judge: in-character " + j.in_character + " · responsive " + j.responsiveness + " · natural " + j.naturalness + " · variety " + j.variety +
-                    " · coherence " + j.coherence + " · RSVP consistent " + (j.rsvp_consistent ? "yes" : "NO") + " — " + j.verdict);
+                    " · coherence " + j.coherence + " · RSVP consistent " + (j.rsvp_consistent ? "yes" : "NO") +
+                    string.Concat(j.checks.Select(c => " · " + c.Key + " " + (c.Value ? "YES" : "no"))) + " — " + j.verdict);
                 foreach (var issue in j.issues) md.AppendLine("  - " + issue);
             }
             else if (l.judgeError != null) md.AppendLine("Judge error: " + l.judgeError);
@@ -207,7 +235,18 @@ static class Report
                 string.Join(" / ", new[] { "in_character", "responsiveness", "naturalness", "variety", "coherence" }.Select(k => F(m.judgeMeans[k], "0.0")))));
             rows.Add(("Judge overall", F(m.judgeMeans["overall"], "0.0")));
             rows.Add(("RSVP words consistent with decision", m.rsvpConsistent + " / " + m.judged));
+            foreach (var c in m.judgeChecks.OrderBy(c => c.Key))
+                rows.Add(("Judge check: " + c.Key + " (true / answered)", c.Value[0] + " / " + c.Value[1] +
+                    (c.Value[1] < m.judged ? " (NOT ASSESSED for " + (m.judged - c.Value[1]) + ")" : "")));
         }
+        if (m.blameStateChecked > 0)
+        {
+            rows.Add(("Saved state: Player 2 personal trust negative (wrong blame)", m.player2TrustNegative + " / " + m.blameStateChecked));
+            rows.Add(("Saved state: grievance names Player 2 (wrong blame)", m.grievanceAgainstPlayer2 + " / " + m.blameStateChecked));
+            rows.Add(("Saved state: grievance names Player 1 (the insulter)", m.grievanceAgainstPlayer1 + " / " + m.blameStateChecked));
+        }
+        if (m.adversarialChecked > 0)
+            rows.Add(("Saved state: RSVP recorded on an attack line", m.rsvpOnAttackLine + " / " + m.adversarialChecked));
         if (m.claudeCalls > 0) rows.Add(("Claude tester/judge calls / cost", m.claudeCalls + " / $" + F(m.claudeCostUsd, "0.000")));
         if (m.npcClaudeCostUsd > 0) rows.Add(("Claude NPC (persona-claude) cost", "$" + F(m.npcClaudeCostUsd, "0.000")));
         rows.Add(("Wall time", F(m.wallSeconds, "0") + " s"));
