@@ -44,8 +44,8 @@
 ExportedObj/
 .consulo/
 *.csproj
-!Tests/SocialHarness/SocialHarness.csproj
-!Tests/GameLoopHarness/GameLoopHarness.csproj
+# Headless test harnesses under Tests/ are hand-written, not Unity-generated: keep every one of them.
+!Tests/*/*.csproj
 *.unityproj
 *.sln
 *.suo
