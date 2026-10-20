@@ -15,7 +15,7 @@ using FratRow.Social;
 /// <code>
 /// dotnet run --project Tests/NpcPlaytest -- --provider heuristic --tester scripted --sample 6 --no-judge
 /// dotnet run --project Tests/NpcPlaytest -- --provider persona --model D:/fratrow/Library/SocialModels/Qwen_Qwen3.5-2B-Q4_K_M.gguf
-///     --llama-server D:/fratrow/Library/SocialNative/llama-cuda/llama-server.exe --sample 10
+///     --sample 10   (llama.cpp build auto-picked from Library/SocialNative; or --llama-server / --native-root)
 /// </code>
 /// </summary>
 static class Program
@@ -148,7 +148,10 @@ static class Program
   --provider heuristic|grounded|persona|persona-claude
                                           social provider (default heuristic = what the game uses without --social-brains);
                                           persona-claude = persona prompts voiced by --npc-model (reference ceiling)
-  --model <gguf> --llama-server <exe>     required for grounded/persona (absolute paths; --gpu 99)
+  --model <gguf>                          required for grounded/persona (absolute path)
+  --llama-server <exe> | --native-root <dir>
+                                          llama.cpp build; default: best installed under Library/SocialNative
+                                          (CUDA on NVIDIA, else Vulkan, else CPU); --gpu N overrides offloaded layers
   --npc-model <id>                        Claude model for persona-claude (default claude-haiku-4-5)
   --npcs A,B | --sample N | --all         who to talk to (default --sample 10, deterministic spread over tones/genders)
   --tester haiku|scripted|blame|adversarial
@@ -168,8 +171,9 @@ static class Program
 
 sealed class Options
 {
-    public string Provider = "heuristic", Model, LlamaServer, Tester = "haiku", TesterModel = "claude-haiku-4-5", NpcModel = "claude-haiku-4-5", Transport = "cli", ClaudePath, Out;
-    public int Gpu = 99, Sample = 10, Turns = Program.MaxTurns, Parallel = 3, Seed = 7;
+    public string Provider = "heuristic", Model, LlamaServer, Tester = "haiku", TesterModel = "claude-haiku-4-5", NpcModel = "claude-haiku-4-5", Transport = "cli", ClaudePath, Out, NativeRoot;
+    public int? Gpu;
+    public int Sample = 10, Turns = Program.MaxTurns, Parallel = 3, Seed = 7;
     public bool All, Judge = true, DumpNpcs;
     public List<string> Npcs;
 
@@ -179,10 +183,10 @@ sealed class Options
         int Int(string name, int fallback) => Arg(name) is string v ? int.Parse(v) : fallback;
         var o = new Options
         {
-            Provider = Arg("--provider") ?? "heuristic", Model = Arg("--model"), LlamaServer = Arg("--llama-server"),
+            Provider = Arg("--provider") ?? "heuristic", Model = Arg("--model"), LlamaServer = Arg("--llama-server"), NativeRoot = Arg("--native-root"),
             Tester = Arg("--tester") ?? "haiku", TesterModel = Arg("--tester-model") ?? "claude-haiku-4-5", NpcModel = Arg("--npc-model") ?? "claude-haiku-4-5",
             Transport = Arg("--tester-transport") ?? "cli", ClaudePath = Arg("--claude"), Out = Arg("--out"),
-            Gpu = Int("--gpu", 99), Sample = Int("--sample", 10), Turns = Math.Min(Program.MaxTurns, Math.Max(1, Int("--turns", Program.MaxTurns))),
+            Gpu = Arg("--gpu") is string gpu ? int.Parse(gpu) : (int?)null, Sample = Int("--sample", 10), Turns = Math.Min(Program.MaxTurns, Math.Max(1, Int("--turns", Program.MaxTurns))),
             Parallel = Math.Max(1, Int("--parallel", 3)), Seed = Int("--seed", 7),
             All = args.Contains("--all"), Judge = !args.Contains("--no-judge"), DumpNpcs = args.Contains("--dump-npcs"),
             Npcs = Arg("--npcs")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
@@ -192,8 +196,8 @@ sealed class Options
         if (o.Tester != "haiku" && o.Tester != "scripted" && o.Tester != "blame" && o.Tester != "adversarial")
             throw new ArgumentException("--tester must be haiku, scripted, blame or adversarial");
         if (o.Transport != "cli" && o.Transport != "api") throw new ArgumentException("--tester-transport must be cli or api");
-        if ((o.Provider == "grounded" || o.Provider == "persona") && !o.DumpNpcs && (o.Model == null || o.LlamaServer == null))
-            throw new ArgumentException("--provider " + o.Provider + " needs --model <gguf> and --llama-server <exe>");
+        if ((o.Provider == "grounded" || o.Provider == "persona") && !o.DumpNpcs && o.Model == null)
+            throw new ArgumentException("--provider " + o.Provider + " needs --model <gguf>");
         if (o.Out == null)
         {
             string model = o.Provider == "persona-claude" ? "-" + o.NpcModel : o.Provider == "heuristic" || o.Model == null ? "" : "-" + ModelShort(o.Model);
@@ -268,10 +272,13 @@ sealed class Backend : IDisposable
                 break;
             default:
                 string hash = SocialModelCatalog.HashFor(Path.GetFileName(o.Model));
-                var llama = new LlamaServerModelProvider(Codec, o.LlamaServer, o.Model, hash, o.Gpu);
+                var runtime = LlamaRuntimes.FromServerPath(o.LlamaServer) ??
+                    LlamaRuntimes.Resolve(o.NativeRoot ?? Path.Combine(RepoPaths.Root, "Library", "SocialNative"), LlamaRuntimes.CudaDriverPresent()) ??
+                    throw new FileNotFoundException("No llama.cpp build: pass --llama-server or --native-root, or run tools/social/bootstrap.ps1");
+                var llama = new LlamaServerModelProvider(Codec, runtime.ServerPath, o.Model, hash, o.Gpu ?? runtime.GpuLayers);
                 if (o.Provider == "persona") { llama.PersonaReplies = true; grounded = false; }
                 Provider = llama;
-                ProviderName = o.Provider + " llama.cpp " + Path.GetFileName(o.Model);
+                ProviderName = o.Provider + " " + runtime.Name + " " + Path.GetFileName(o.Model);
                 break;
         }
         Service = new SocialConversationService(World, Codec, Provider, new AlwaysHear(), TimeSpan.FromSeconds(120), requireGroundedProposal: grounded);

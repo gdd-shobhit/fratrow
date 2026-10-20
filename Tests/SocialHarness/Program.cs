@@ -84,7 +84,8 @@ static class Program
     static async Task<int> Main(string[] args)
     {
         if (args.Contains("--export-girls")) { Console.WriteLine(new JsonCodec().Encode(SocialCharacterCatalog.Girls())); return 0; }
-        if (args.Contains("--native")) return await NativeSmoke(args);
+        // --native is the old RunAnywhere smoke flag; it now runs the same llama.cpp smoke (ADR-0004).
+        if (args.Contains("--smoke") || args.Contains("--native")) return await Smoke(args);
         if (args.Contains("--probe"))
         {
             using var probe = new LlamaServerModelProvider(new JsonCodec(), Arg(args, "--llama-server"), Arg(args, "--model"), SocialModelCatalog.HashFor(Path.GetFileName(Arg(args, "--model"))));
@@ -145,6 +146,29 @@ static class Program
         {
             using var f = new Fixture(); using var service = new SocialConversationService(f.World, f.Codec, f.Provider, f.Access, requireGroundedProposal: true);
             Assert((await service.SubmitAsync(f.P1.playerId, f.Request())).status == "pending" && f.Store.Read().npcs[0].trust.Count == 0, "Ungrounded proposal bypassed required grounding");
+        });
+        await Test("llama.cpp runtime picks CUDA only when it can run, then Vulkan, then CPU, among installed builds", () =>
+        {
+            string root = Path.Combine("Game", "Library", "SocialNative");
+            var installed = new HashSet<string>();
+            bool Has(string path) => installed.Contains(path);
+            string Exe(LlamaBackend b) => Path.Combine(root, LlamaRuntimes.Folder(b), LlamaRuntimes.ServerExe);
+            Assert(LlamaRuntimes.Resolve(root, true, Has) == null, "A runtime was picked with nothing installed");
+            installed.Add(Exe(LlamaBackend.Cpu));
+            var cpu = LlamaRuntimes.Resolve(root, true, Has);
+            Assert(cpu.Backend == LlamaBackend.Cpu && cpu.GpuLayers == 0 && cpu.ServerPath == Exe(LlamaBackend.Cpu), "CPU-only install not used, or offloaded GPU layers");
+            installed.Add(Exe(LlamaBackend.Vulkan)); installed.Add(Exe(LlamaBackend.Cuda));
+            var nvidia = LlamaRuntimes.Resolve(root, true, Has);
+            Assert(nvidia.Backend == LlamaBackend.Cuda && nvidia.GpuLayers == 99, "CUDA-capable machine did not get the CUDA build");
+            Assert(LlamaRuntimes.Resolve(root, false, Has).Backend == LlamaBackend.Vulkan, "Machine without CUDA was given the CUDA build");
+            installed.Remove(Exe(LlamaBackend.Vulkan));
+            Assert(LlamaRuntimes.Resolve(root, false, Has).Backend == LlamaBackend.Cpu, "Missing Vulkan build did not fall back to CPU");
+            Assert(LlamaRuntimes.Installed(root, Has).SequenceEqual(new[] { LlamaBackend.Cuda, LlamaBackend.Cpu }), "Installed list wrong");
+            Assert(LlamaRuntimes.FromServerPath(Path.Combine("x", "llama-vulkan", "llama-server.exe")).Backend == LlamaBackend.Vulkan &&
+                LlamaRuntimes.FromServerPath(Path.Combine("x", "llama-cpu", "llama-server.exe")).GpuLayers == 0 &&
+                LlamaRuntimes.FromServerPath(Path.Combine("custom", "llama-server.exe")).GpuLayers == 99 && LlamaRuntimes.FromServerPath(null) == null,
+                "Explicit server path mapped to the wrong build");
+            return Task.CompletedTask;
         });
         await Test("heuristic speech cues match whole words, not fragments inside other words", () =>
         {
@@ -977,14 +1001,23 @@ static class Program
     }
     internal static string Arg(string[] args, string name, string fallback = null)
     { int i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback; }
-    static async Task<int> NativeSmoke(string[] args)
+    /// <summary>The llama.cpp build to use: <c>--llama-server</c>, else the best one installed under
+    /// <c>--native-root</c> (default <c>Library/SocialNative</c>). <c>--gpu</c> overrides the build's layer count.</summary>
+    internal static LlamaRuntime Runtime(string[] args)
+    {
+        var runtime = LlamaRuntimes.FromServerPath(Arg(args, "--llama-server")) ??
+            LlamaRuntimes.Resolve(Arg(args, "--native-root", Path.Combine("Library", "SocialNative")), LlamaRuntimes.CudaDriverPresent()) ??
+            throw new FileNotFoundException("No llama.cpp build: pass --llama-server or run tools/social/bootstrap.ps1");
+        if (Arg(args, "--gpu") != null) runtime.GpuLayers = int.Parse(Arg(args, "--gpu"));
+        return runtime;
+    }
+    static async Task<int> Smoke(string[] args)
     {
         using var f = new Fixture();
-        using ISocialModelProvider model = Arg(args, "--llama-server") != null
-            ? new LlamaServerModelProvider(f.Codec, Arg(args, "--llama-server"), Arg(args, "--model"), Arg(args, "--hash"), int.Parse(Arg(args, "--gpu", "99")))
-            : new NativeSocialModelProvider(f.Codec, Arg(args, "--model"), Arg(args, "--hash"), int.Parse(Arg(args, "--gpu", "0")));
-        if (model is NativeSocialModelProvider nativeFormat) nativeFormat.CompactFormat = args.Contains("--compact");
-        if (model is LlamaServerModelProvider llamaFormat) llamaFormat.CompactFormat = args.Contains("--compact");
+        var runtime = Runtime(args);
+        Console.WriteLine("Runtime: " + runtime.Name + " (" + runtime.ServerPath + ", " + runtime.GpuLayers + " GPU layers)");
+        using var model = new LlamaServerModelProvider(f.Codec, runtime.ServerPath, Arg(args, "--model"), Arg(args, "--hash") ?? SocialModelCatalog.HashFor(Path.GetFileName(Arg(args, "--model"))), runtime.GpuLayers)
+            { CompactFormat = args.Contains("--compact"), PersonaReplies = args.Contains("--persona") };
         var r = f.Request("Hi Ashley, I am Player Two. Would you like to come to our party?");
         f.Store.Transact(s => { var e = SocialWorld.AddEvent(s, "utterance", "speech", f.P2.playerId, "Ashley", "text", r.text, new List<string> { "Ashley" }); s.turns.Add(new TurnRecord { playerId = f.P2.playerId, request = r, observedEventId = e.eventId }); });
         var context = SocialMemory.Build(f.Store.Read(), f.Store.Read().turns[0], f.Codec);
@@ -996,15 +1029,12 @@ static class Program
         try
         {
             var result = await model.GenerateAsync(context, timeout.Token); SocialConversationService.ValidateProposal(result, context);
-            var native = model as NativeSocialModelProvider; var llama = model as LlamaServerModelProvider;
-            Console.WriteLine(f.Codec.Encode(new { status = "valid", run, cold = run == 0, seconds = timer.Elapsed.TotalSeconds,
-                checksumMilliseconds = native?.ChecksumMilliseconds ?? llama?.ChecksumMilliseconds,
-                loadMilliseconds = native?.LoadMilliseconds ?? llama?.LoadMilliseconds,
-                generationMilliseconds = native?.GenerationMilliseconds ?? llama?.GenerationMilliseconds,
-                promptTokens = native?.PromptTokens ?? llama?.PromptTokens, outputTokens = native?.OutputTokens ?? llama?.OutputTokens,
-                proposal = result, hostPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64, helperPeakWorkingSet = llama?.PeakWorkingSet, helperPrivateBytes = llama?.PrivateBytes }));
+            Console.WriteLine(f.Codec.Encode(new { status = "valid", runtime = runtime.Name, run, cold = run == 0, seconds = timer.Elapsed.TotalSeconds,
+                checksumMilliseconds = model.ChecksumMilliseconds, loadMilliseconds = model.LoadMilliseconds, generationMilliseconds = model.GenerationMilliseconds,
+                promptTokens = model.PromptTokens, outputTokens = model.OutputTokens, proposal = result,
+                hostPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64, helperPeakWorkingSet = model.PeakWorkingSet, helperPrivateBytes = model.PrivateBytes }));
         }
-        catch (Exception e) { Console.WriteLine(e); Console.WriteLine("RAW " + ((model as NativeSocialModelProvider)?.LastRawOutput ?? (model as LlamaServerModelProvider)?.LastRawOutput)); Console.WriteLine((model as LlamaServerModelProvider)?.Diagnostics); return 1; }
+        catch (Exception e) { Console.WriteLine(e); Console.WriteLine("RAW " + model.LastRawOutput); Console.WriteLine(model.Diagnostics); return 1; }
         }
         return 0;
     }

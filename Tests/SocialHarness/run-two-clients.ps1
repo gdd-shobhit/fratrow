@@ -8,7 +8,13 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $Player = (Resolve-Path -LiteralPath $Player).Path
 if (-not $Model) { $Model = Join-Path $repoRoot 'Library/SocialModels/Qwen_Qwen3.5-2B-Q4_K_M.gguf' }
-if (-not $LlamaServer) { $LlamaServer = Join-Path $repoRoot 'Library/SocialNative/llama-cuda/llama-server.exe' }
+if (-not $LlamaServer) {
+    # Same preference as LlamaRuntimes.Resolve: CUDA on NVIDIA, otherwise Vulkan, otherwise CPU (ADR-0004).
+    $nvidia = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'NVIDIA' }).Count -gt 0
+    $order = if ($nvidia) { 'llama-cuda', 'llama-vulkan', 'llama-cpu' } else { 'llama-vulkan', 'llama-cpu' }
+    $LlamaServer = $order | ForEach-Object { Join-Path $repoRoot "Library/SocialNative/$_/llama-server.exe" } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not $LlamaServer) { throw 'No llama.cpp build installed; run tools/social/bootstrap.ps1' }
+}
 $output = Join-Path $repoRoot ('Library/SocialMultiplayer/' + $Campaign)
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 function Quote-Arg([string]$Value) { if ($Value.Contains('"')) { throw 'Invalid path argument' }; '"' + $Value + '"' }

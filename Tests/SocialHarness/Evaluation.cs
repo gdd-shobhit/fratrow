@@ -35,7 +35,7 @@ sealed class BorrowedProvider : ISocialModelProvider
     {
         Attempts++; var timer = Stopwatch.StartNew();
         try { return await inner.GenerateAsync(c, token); }
-        finally { Seconds += timer.Elapsed.TotalSeconds; ModelPasses += (inner as NativeSocialModelProvider)?.ModelPasses ?? (inner as LlamaServerModelProvider)?.ModelPasses ?? 0; }
+        finally { Seconds += timer.Elapsed.TotalSeconds; ModelPasses += (inner as LlamaServerModelProvider)?.ModelPasses ?? 0; }
     }
     public void Dispose() { }
 }
@@ -47,17 +47,11 @@ static class Evaluation
         var codec = new JsonCodec();
         var fixtures = JsonSerializer.Deserialize<Episode[]>(File.ReadAllText(Program.Arg(args, "--fixtures", "Tests/SocialHarness/episodes.json")), new JsonSerializerOptions { IncludeFields = true });
         string path = Program.Arg(args, "--model"); string hash = SocialModelCatalog.HashFor(Path.GetFileName(path));
-        string executable = Program.Arg(args, "--llama-server");
-        using ISocialModelProvider provider = executable == null ? (ISocialModelProvider)new NativeSocialModelProvider(codec, path, hash)
-            : new LlamaServerModelProvider(codec, executable, path, hash, int.Parse(Program.Arg(args, "--gpu", "99")));
+        var runtime = Program.Runtime(args);
         bool compact = args.Contains("--compact");
         bool legacyFreeform = args.Contains("--legacy-freeform");
-        if (provider is NativeSocialModelProvider nativeFormat) nativeFormat.CompactFormat = compact;
-        if (provider is LlamaServerModelProvider llamaFormat) llamaFormat.CompactFormat = compact;
-        if (provider is NativeSocialModelProvider ng) ng.GroundedReplies = !legacyFreeform;
-        if (provider is LlamaServerModelProvider lg) lg.GroundedReplies = !legacyFreeform;
-        if (provider is NativeSocialModelProvider ns) ns.UseRequestSeed = false;
-        if (provider is LlamaServerModelProvider ls) ls.UseRequestSeed = false;
+        using var provider = new LlamaServerModelProvider(codec, runtime.ServerPath, path, hash, runtime.GpuLayers)
+            { CompactFormat = compact, GroundedReplies = !legacyFreeform, UseRequestSeed = false };
         bool fixedSeed = args.Contains("--fixed-seed");
         string output = Path.GetFullPath(Program.Arg(args, "--output", "Library/SocialEvaluation")); Directory.CreateDirectory(output);
         string[] personas = {
@@ -78,8 +72,7 @@ static class Evaluation
         for (int persona = 0; persona < personaCount; persona++)
         for (int repeat = 0; repeat < repeats; repeat++)
         {
-            if (provider is NativeSocialModelProvider np) np.Seed = 42 + repeat;
-            if (provider is LlamaServerModelProvider lp) lp.Seed = 42 + repeat;
+            provider.Seed = 42 + repeat;
             using var f = new Fixture();
             var profile = string.IsNullOrEmpty(episode.profileId) ? null : SocialCharacterCatalog.Get(episode.profileId);
             string npcId = profile?.npcId ?? defaultNpcId;
@@ -131,32 +124,31 @@ static class Evaluation
                     foreach (char ch in npcId + ":" + stepIndex) samplingSeed = unchecked(samplingSeed * 31 + ch);
                     samplingSeed &= int.MaxValue;
                 }
-                if (provider is NativeSocialModelProvider nativeSeed) nativeSeed.Seed = samplingSeed;
-                if (provider is LlamaServerModelProvider llamaSeed) llamaSeed.Seed = samplingSeed;
+                provider.Seed = samplingSeed;
                 var request = f.Request(step.text, npc: npcId); if (!step.invitation) request.partyId = null;
                 string player = step.player == 1 ? f.P1.playerId : f.P2.playerId;
                 borrowed.ResetMetrics();
                 var watch = Stopwatch.StartNew();
                 var result = await service.SubmitAsync(player, request); watch.Stop();
                 if (!cold) latencies.Add(watch.Elapsed.TotalSeconds);
-                var native = provider as NativeSocialModelProvider; var llama = provider as LlamaServerModelProvider;
+                var llama = provider;
                 results.WriteLine(codec.Encode(new {
                     episode.id, episode.category, episode.rubric, episode.profileId, npcId, voice, includeGameSetting, persona, repeat, step = stepIndex++, player = step.player, step.text,
                     cold, seconds = watch.Elapsed.TotalSeconds, result, snapshot = f.Store.Read(),
                     generationAttempts = borrowed.Attempts, providerSeconds = borrowed.Seconds,
                     otherProcessingSeconds = Math.Max(0, watch.Elapsed.TotalSeconds - borrowed.Seconds),
-                    promptTokens = native?.PromptTokens ?? llama?.PromptTokens, outputTokens = native?.OutputTokens ?? llama?.OutputTokens,
-                    raw = native?.LastRawOutput ?? llama?.LastRawOutput,
-                    rawDecision = native?.LastRawDecision ?? llama?.LastRawDecision, rawReply = native?.LastRawReply ?? llama?.LastRawReply,
-                    rawCheck = native?.LastRawCheck ?? llama?.LastRawCheck,
+                    promptTokens = llama.PromptTokens, outputTokens = llama.OutputTokens,
+                    raw = llama.LastRawOutput,
+                    rawDecision = llama.LastRawDecision, rawReply = llama.LastRawReply,
+                    rawCheck = llama.LastRawCheck,
                     modelPasses = borrowed.ModelPasses,
                     replySource = legacyFreeform ? "model-freeform" : "host-grounded-composer",
                     samplingSeed,
                     validationSource = legacyFreeform ? "model-audit-and-host-schema" : "deterministic-host-acts-and-composition",
-                    checksumMilliseconds = native?.ChecksumMilliseconds ?? llama?.ChecksumMilliseconds,
-                    loadMilliseconds = native?.LoadMilliseconds ?? llama?.LoadMilliseconds,
-                    generationMilliseconds = native?.GenerationMilliseconds ?? llama?.GenerationMilliseconds,
-                    helperPid = llama?.ProcessId, helperPeakWorkingSet = llama?.PeakWorkingSet, helperPrivateBytes = llama?.PrivateBytes,
+                    checksumMilliseconds = llama.ChecksumMilliseconds,
+                    loadMilliseconds = llama.LoadMilliseconds,
+                    generationMilliseconds = llama.GenerationMilliseconds,
+                    helperPid = llama.ProcessId, helperPeakWorkingSet = llama.PeakWorkingSet, helperPrivateBytes = llama.PrivateBytes,
                     hostPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
                     attributionCorrect = (bool?)null, sociallyAcceptable = (bool?)null, dialogueStateAgreement = (bool?)null
                 }));
@@ -197,7 +189,7 @@ static class Evaluation
         double Percentile(List<double> values) { values.Sort(); return values.Count == 0 ? 0 : values[(int)Math.Ceiling(values.Count * .95) - 1]; }
         double p95 = Percentile(latencies); double firstP95 = Percentile(pairedFirst); double secondP95 = Percentile(pairedSecond);
         File.WriteAllText(Path.Combine(output, "summary.json"), codec.Encode(new {
-            model = Path.GetFileName(path), hash, runtime = executable == null ? "RunAnywhere 0.20.39 CPU" : "llama.cpp b11718",
+            model = Path.GetFileName(path), hash, runtime = runtime.Name,
             npcId = defaultNpcId, characterProfiles = fixtures.Take(limit).Select(e => e.profileId).Where(id => id != null).Distinct().ToArray(),
             includeGameSetting, voiceGender = gender, compactFormat = compact, inferenceFormat = legacyFreeform ? "legacy-freeform" : "grounded-acts-v2",
             replySource = legacyFreeform ? "model-freeform" : "host-grounded-composer",

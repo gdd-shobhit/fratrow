@@ -1,5 +1,10 @@
 # Backend NPC social experiment
 
+> **Update, 19 October 2026: llama.cpp is the only local runtime** ([ADR-0004](architecture/adr-0004-llama-cpp-only-local-runtime.md)).
+> RunAnywhere and its native shim are removed. `tools/social/bootstrap.ps1` installs llama.cpp `b11718` builds (CUDA for NVIDIA,
+> Vulkan for any GPU, CPU as a last resort) and the host picks one automatically; see **Setup** and **Run the game backend
+> without phone UI**. Measured persona replies (2B, warm): CUDA 0.93 s, Vulkan 1.4 s, CPU 4.9 s.
+
 > **Update, 18 October 2026 (evening): persona replies and NPC playtests.** NPCs gave near-identical answers
 > because no model wrote the words: without a model the keyword heuristic picks canned phrases (judged 2.3/5, 75% of
 > replies duplicated verbatim across NPCs), and with a model the grounded composer still assembled template lines.
@@ -79,21 +84,27 @@ Social judgment remains a separate limitation: the model often repeats guest-lis
 
 ## Setup
 
-Use PowerShell 7, .NET 9 or newer, CMake, and Visual Studio 2026 C++ tools. The older installed MSVC 14.38 cannot link the RunAnywhere kit. Models and generated native binaries are ignored by Git.
+Use PowerShell 7 and .NET 9 or newer. No C++ toolchain is needed. Models and runtime binaries are ignored by Git.
 
 ```powershell
-pwsh -File Native/SocialBrain/bootstrap.ps1 -Models -CudaFallback
+pwsh -File tools/social/bootstrap.ps1 -Models            # -Runtime auto: CUDA build on NVIDIA, otherwise Vulkan
+pwsh -File tools/social/bootstrap.ps1 -Runtime all       # optional: all three builds (cuda, vulkan, cpu)
 dotnet run --project Tests/SocialHarness/SocialHarness.csproj
 ```
 
-The bootstrap verifies archive and model SHA256 values before use. It builds the C++ shim and installs the generated DLL under `Assets/Plugins/x86_64`. The importer enables it only for Windows x64 and the Windows editor. The independent core is `FratRow.Social`, with no Unity engine references.
+The bootstrap verifies every archive and model against a pinned SHA256 before use and extracts llama.cpp builds into
+`Library/SocialNative/llama-{cuda,vulkan,cpu}`. llama.cpp is the only local runtime ([ADR-0004](architecture/adr-0004-llama-cpp-only-local-runtime.md));
+the host picks a build with `LlamaRuntimes.Resolve`: CUDA when the GPU is NVIDIA and the CUDA driver is present, otherwise
+Vulkan, otherwise CPU. The independent core is `FratRow.Social`, with no Unity engine references.
+
+Measured persona replies, Qwen3.5 2B on this RTX 4080 machine, warm (`SocialHarness --smoke --persona`): CUDA 0.93 s,
+Vulkan 1.4 s, CPU 4.9 s. The first request takes 8–40 s, mostly the model checksum and load.
 
 Pinned components:
 
 | Component | Pin |
 | --- | --- |
-| RunAnywhere | `cpp-desktop-v0.20.39`, Windows x64 desktop kit |
-| Direct llama.cpp fallback | `b11718`, Windows CUDA 12.4 package and matching runtime |
+| llama.cpp | `b11718`: Windows CUDA 12.4 build plus its CUDA runtime, Vulkan build, CPU build |
 | Qwen | `bartowski/Qwen_Qwen3.5-2B-GGUF`, revision `7d26695454df6de5fbcce2e58681e62dae06ce43`, Q4_K_M |
 | MiniCPM | `openbmb/MiniCPM5-1B-GGUF`, revision `3d55fac80935ae6456986ad2384b5cbcc4d6c948`, Q4_K_M |
 
@@ -107,7 +118,7 @@ The host saves grievance actor, fraternity, knowledge type and immediate reporte
 
 An earlier, more aggressive single-letter-key experiment produced contradictory reply/decision pairs (a refusal in prose with `accept` in JSON). It was rejected. Neither the baseline nor the compact candidate has passed the social-quality gate; keep this experiment disabled outside development.
 
-RunAnywhere's [pinned license](https://raw.githubusercontent.com/RunanywhereAI/runanywhere-sdks/cpp-desktop-v0.20.39/LICENSE) has eligibility and attribution requirements. This is a local experiment, not a declaration that commercial redistribution is cleared. Review SDK and model terms before shipping a player containing them; include the required notices. No SDK sources or model weights are committed.
+llama.cpp is MIT-licensed; include its notice in anything shipped. Before shipping a player with the model, also check the Qwen model card's licence and, if the CUDA build ships, NVIDIA's redistribution terms for the CUDA runtime DLLs. This is a local development feature, not a declaration that redistribution is cleared. No runtime binaries or model weights are committed. (RunAnywhere, the former CPU runtime, was removed by ADR-0004; measurements that mention it below are historical.)
 
 ## Per-NPC identity and voice
 
@@ -203,7 +214,7 @@ The voice/status development results are in [SocialVoiceAndStatusReport-2026-10-
 
 Open Unity and use **FratRow → Social Brains → Bake and validate network components**. GameManager already contains the new network behaviour. All four guest archetypes have their guest/network components baked, including the Jock prefab variant; runtime spawning does not add network behaviours.
 
-For the measured GPU path, use **FratRow → Social Brains → Enable development experiment (CUDA fallback)**, then enter the existing lobby/game flow. It requires the downloaded fallback executable and saves the choice in editor preferences; an explicit `--social-llama-server` overrides that preference. The original **Enable development experiment** menu selects RunAnywhere CPU. Both select the downloaded Qwen model. Disable the scenario with the adjacent menu item. Native CPU generation can exceed the default 15-second operational deadline; use `--social-timeout 90` to inspect that configuration. Increasing the deadline does not change the four-second performance target. No inference is enabled outside this opt-in development scenario.
+Use **FratRow → Social Brains → Enable development experiment**, then enter the existing lobby/game flow. It selects the downloaded Qwen model and logs which llama.cpp build the next host session will launch. **FratRow → Social Brains → llama.cpp build** chooses Auto (the default: CUDA on NVIDIA, else Vulkan, else CPU) or forces CUDA, Vulkan or CPU; the choice is saved in editor preferences, and an explicit `--social-llama-server` overrides it. Disable the scenario with the adjacent menu item. The CPU build gets a 90-second reply deadline instead of 15 unless `--social-timeout` is given. No inference is enabled outside this opt-in development scenario.
 
 Build a development player using the editor or this method after activating a valid Unity license:
 
@@ -230,13 +241,13 @@ For manual testing, launch development players with:
 --social-outbox D:/fratrow/Library/SocialCommands/p1-out.json
 ```
 
-Use a distinct `--social-profile p2` and command paths for the second local process. To use GPU inference, additionally pass:
+Use a distinct `--social-profile p2` and command paths for the second local process. A development player looks for llama.cpp builds in `<player folder>/SocialNative/llama-{cuda,vulkan,cpu}` and picks one the same way as the editor; point it elsewhere with `--social-native-root D:/fratrow/Library/SocialNative`, or force one build with:
 
 ```text
---social-llama-server D:/fratrow/Library/SocialNative/llama-cuda/llama-server.exe
+--social-llama-server D:/fratrow/Library/SocialNative/llama-vulkan/llama-server.exe
 ```
 
-Without that flag a development player uses RunAnywhere; editor hosts use the chosen menu preference. The published RunAnywhere Windows kit contains CPU inference only; requesting GPU layers through that shim returns an explicit error. The direct fallback owns one loopback helper, one inference slot, a random API key, and a Windows job that kills the helper if the host crashes. It disables the web UI and external model downloads.
+Editor hosts use the menu choice. Every build owns one loopback helper, one inference slot, a random API key, and a Windows job that kills the helper if the host crashes. It disables the web UI and external model downloads.
 
 Write a complete JSON object atomically to the inbox. Example:
 
@@ -270,11 +281,10 @@ Run both real candidates against the frozen 20 scenario fixtures, three personas
 ```powershell
 dotnet run --project Tests/SocialHarness/SocialHarness.csproj -- --evaluate `
   --model D:/fratrow/Library/SocialModels/Qwen_Qwen3.5-2B-Q4_K_M.gguf `
-  --llama-server D:/fratrow/Library/SocialNative/llama-cuda/llama-server.exe `
   --output Library/SocialEvaluation/Qwen
 ```
 
-Repeat with `MiniCPM5-1B-Q4_K_M.gguf` and a distinct output directory. Omit `--llama-server` to evaluate RunAnywhere CPU; first copy the generated DLL next to the harness executable under `Library/SocialHarness/bin/net9.0`. `--deadline 90` permits inspecting slow CPU output. `--limit`, `--personas`, and `--repeats` permit smaller integration runs; those do not satisfy the complete matrix.
+The llama.cpp build is auto-picked from `Library/SocialNative`; pass `--llama-server <exe>` or `--native-root <dir>` to choose. Repeat with `MiniCPM5-1B-Q4_K_M.gguf` and a distinct output directory. `--deadline 90` permits inspecting slow CPU output. `--smoke [--persona]` runs a single quick generation on the chosen build. `--limit`, `--personas`, and `--repeats` permit smaller integration runs; those do not satisfy the complete matrix.
 
 The report retains exact replies, consequences, raw last model output, token counts, cold/warm timing, and host/helper memory. End-to-end seconds include reception journaling, all generation attempts, validation, and durable commit. The compact evaluator also records generation attempt count, total provider time (including cold loading), and remaining host time. Token counts aggregate planning/voice/audit within the last provider attempt, not across retries. Model-pass and attempt counts include retries. Each individual generation remains bounded to 4,096 context tokens. A run with zero paired samples cannot certify the paired latency target. Null human-grading fields are intentional. Use each fixture's rubric to grade attribution, social acceptability, and dialogue/commitment agreement. Targets are 95% critical attribution, 85% acceptable episodes, zero critical reply/state contradictions, and zero invalid canonical mutations. These fixtures were exposed during integration and are regression cases; create a fresh independently reviewed held-out set before claiming generalization.
 

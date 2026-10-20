@@ -50,7 +50,7 @@ namespace FratRow.Social
                 GrievanceIds = new HashSet<string>(source.GrievanceIds.Select(Alias)),
                 GrievanceCandidateIds = new HashSet<string>(source.GrievanceCandidateIds.Select(Alias))
             };
-            string grammar = NativeSocialModelProvider.GrammarFor(Context);
+            string grammar = SocialProposalGrammar.GrammarFor(Context);
             Grammar = grammar;
         }
         void Add(string id, string alias)

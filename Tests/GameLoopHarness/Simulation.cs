@@ -10,7 +10,8 @@ using FratRow.Social;
 
 /// <summary>
 /// <c>dotnet run --project Tests/GameLoopHarness -- --simulate [--weeks 6] [--players 4] [--seed 7] [--reckless]
-/// [--model path.gguf --llama-server llama-server.exe [--persona]] [--report Library/GameLoopHarness/report.md]</c>
+/// [--model path.gguf [--llama-server llama-server.exe | --native-root dir] [--persona]] [--report Library/GameLoopHarness/report.md]</c>
+/// Without --llama-server the best installed llama.cpp build under Library/SocialNative is used (CUDA, else Vulkan, else CPU).
 /// Plays a whole semester with bot brothers and prints/writes a week-by-week report.
 /// </summary>
 static class Simulation
@@ -28,11 +29,14 @@ static class Simulation
 
         ISocialModelProvider provider = null;
         string providerName = "heuristic (no model)";
-        if (model != null && server != null)
+        if (model != null)
         {
             bool persona = args.Contains("--persona");
-            provider = new LlamaServerModelProvider(new JsonCodec(), server, model, SocialModelCatalog.HashFor(Path.GetFileName(model))) { PersonaReplies = persona };
-            providerName = "llama.cpp " + Path.GetFileName(model) + (persona ? " (persona replies)" : " (grounded replies)");
+            var runtime = LlamaRuntimes.FromServerPath(server) ??
+                LlamaRuntimes.Resolve(Program.Arg(args, "--native-root") ?? Path.Combine(RepoPaths.Root, "Library", "SocialNative"), LlamaRuntimes.CudaDriverPresent()) ??
+                throw new FileNotFoundException("No llama.cpp build: pass --llama-server or --native-root, or run tools/social/bootstrap.ps1");
+            provider = new LlamaServerModelProvider(new JsonCodec(), runtime.ServerPath, model, SocialModelCatalog.HashFor(Path.GetFileName(model)), runtime.GpuLayers) { PersonaReplies = persona };
+            providerName = runtime.Name + " " + Path.GetFileName(model) + (persona ? " (persona replies)" : " (grounded replies)");
         }
         var watch = Stopwatch.StartNew();
         using var f = new GameFixture(seed: seed, players: players, provider: provider, tweak: c =>

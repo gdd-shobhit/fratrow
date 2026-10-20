@@ -7,30 +7,54 @@ using UnityEngine;
 
 public static class SocialBrainSetup
 {
+    const string LlamaServerKey = "FratRow.Social.LlamaServer";
+    const string BuildMenu = "FratRow/Social Brains/llama.cpp build/";
+
+    /// <summary>Turns the local model on for editor hosts. The llama.cpp build follows the "llama.cpp build" menu (Auto by default).</summary>
     [MenuItem("FratRow/Social Brains/Enable development experiment")]
     public static void Enable()
     {
-        EditorPrefs.DeleteKey("FratRow.Social.LlamaServer");
-        EnableScenario();
-        Debug.Log("RunAnywhere CPU selected. Use backend commands; CPU comparisons may need --social-timeout 90. Default deadline remains 15 seconds.");
-    }
-    [MenuItem("FratRow/Social Brains/Enable development experiment (CUDA fallback)")]
-    public static void EnableCuda()
-    {
-        string server = Path.GetFullPath("Library/SocialNative/llama-cuda/llama-server.exe");
-        if (!File.Exists(server)) throw new System.IO.FileNotFoundException("Run bootstrap.ps1 -CudaFallback first", server);
-        EditorPrefs.SetString("FratRow.Social.LlamaServer", server);
-        EnableScenario();
-        Debug.Log("Direct llama.cpp CUDA fallback selected for editor hosts. This is the runtime measured near two seconds; RunAnywhere remains available through the CPU enable menu.");
-    }
-    static void EnableScenario()
-    {
         EditorPrefs.SetBool("FratRow.Social.Enabled", true);
-        string path = Path.GetFullPath("Library/SocialModels/" + SocialModelCatalog.QwenFile);
-        if (File.Exists(path)) EditorPrefs.SetString("FratRow.Social.Model", path);
+        string model = Path.GetFullPath("Library/SocialModels/" + SocialModelCatalog.QwenFile);
+        if (File.Exists(model)) EditorPrefs.SetString("FratRow.Social.Model", model);
+        else Debug.LogWarning("[Social] Model missing at " + model + ". Run: pwsh -File tools/social/bootstrap.ps1 -Models");
+        var runtime = NetworkedSocialConversation.ChooseRuntime();
+        if (runtime == null) Debug.LogError("[Social] No llama.cpp build in " + NetworkedSocialConversation.NativeRoot() + ". Run: pwsh -File tools/social/bootstrap.ps1 -Models");
+        else Debug.Log("[Social] Local model enabled: " + runtime.Name + " (" + runtime.ServerPath + "). Applies to the next host session.");
     }
     [MenuItem("FratRow/Social Brains/Disable development experiment")]
     public static void Disable() => EditorPrefs.SetBool("FratRow.Social.Enabled", false);
+
+    [MenuItem(BuildMenu + "Auto (CUDA on NVIDIA, else Vulkan, else CPU)")]
+    static void BuildAuto() { EditorPrefs.DeleteKey(LlamaServerKey); LogBuild(); }
+    [MenuItem(BuildMenu + "Auto (CUDA on NVIDIA, else Vulkan, else CPU)", true)]
+    static bool BuildAutoCheck() { Menu.SetChecked(BuildMenu + "Auto (CUDA on NVIDIA, else Vulkan, else CPU)", !EditorPrefs.HasKey(LlamaServerKey)); return true; }
+    [MenuItem(BuildMenu + "CUDA (NVIDIA)")] static void BuildCuda() => Force(LlamaBackend.Cuda);
+    [MenuItem(BuildMenu + "CUDA (NVIDIA)", true)] static bool BuildCudaCheck() => Check(LlamaBackend.Cuda, "CUDA (NVIDIA)");
+    [MenuItem(BuildMenu + "Vulkan (any GPU)")] static void BuildVulkan() => Force(LlamaBackend.Vulkan);
+    [MenuItem(BuildMenu + "Vulkan (any GPU)", true)] static bool BuildVulkanCheck() => Check(LlamaBackend.Vulkan, "Vulkan (any GPU)");
+    [MenuItem(BuildMenu + "CPU (slow)")] static void BuildCpu() => Force(LlamaBackend.Cpu);
+    [MenuItem(BuildMenu + "CPU (slow)", true)] static bool BuildCpuCheck() => Check(LlamaBackend.Cpu, "CPU (slow)");
+
+    static string ServerFor(LlamaBackend backend) =>
+        Path.Combine(NetworkedSocialConversation.NativeRoot(), LlamaRuntimes.Folder(backend), LlamaRuntimes.ServerExe);
+    static void Force(LlamaBackend backend)
+    {
+        string server = ServerFor(backend);
+        if (!File.Exists(server)) { Debug.LogError("[Social] " + backend + " build not installed at " + server + ". Run: pwsh -File tools/social/bootstrap.ps1 -Runtime " + backend.ToString().ToLowerInvariant()); return; }
+        EditorPrefs.SetString(LlamaServerKey, server);
+        LogBuild();
+    }
+    static bool Check(LlamaBackend backend, string item)
+    {
+        Menu.SetChecked(BuildMenu + item, EditorPrefs.GetString(LlamaServerKey, "") == ServerFor(backend));
+        return File.Exists(ServerFor(backend));
+    }
+    static void LogBuild()
+    {
+        var runtime = NetworkedSocialConversation.ChooseRuntime();
+        Debug.Log(runtime == null ? "[Social] No llama.cpp build installed; run tools/social/bootstrap.ps1." : "[Social] llama.cpp build: " + runtime.Name + ". Applies to the next host session.");
+    }
 
     const string ReplyModeKey = "FratRow.Social.ReplyMode";
     [MenuItem("FratRow/Social Brains/Reply mode: persona (model speaks in character)")]
