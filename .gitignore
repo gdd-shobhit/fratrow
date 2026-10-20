@@ -107,3 +107,6 @@ InitTestScene*.unity*
 # LFS files
 *.hdr
 *.hdr.meta
+
+# Tripo AI raw downloads (big; LFS is disabled). Commit provenance.json, ref/ and the Blender-cleaned *_clean.glb
+ArtSource/AI/**/raw/

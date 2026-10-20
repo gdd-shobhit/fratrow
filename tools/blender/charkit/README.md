@@ -70,3 +70,19 @@ in `production/qa/evidence/`.
 - Keep the `src_face_set` attribute on the body: `skeleton.py` and `bind.py`
   read it.
 - Run `validate.run()` before exporting anything.
+
+## Generated items (Tripo and other image-to-3D tools)
+
+`ingest.py` turns a generated model into cosmetics that fit `SK_Human` like the
+hand-built ones; the generator's own rig is never used. Pipeline and decisions:
+`design/art/ai-asset-pipeline.md`; shared import/clean steps: `tools/blender/aikit/`.
+
+```python
+from charkit import ingest
+ingest.reference_sheet()                               # bare A-pose body, 4 views -> ArtSource/AI/_reference/
+ingest.prepare(r"ArtSource/AI/F_Top_X/raw/model.glb", "F_Top_X")   # fit + lean clean file, prints parts
+```
+
+Then copy `items/_generated_template.py`, name the parts, and pick
+`skinned_item` / `hair_item` / `rigid_item`. Test (headless, never saves the
+master): `blender -b ArtSource/Characters/SK_Human_Female.blend --python tools/blender/charkit/tests/test_ingest_generated.py`.
