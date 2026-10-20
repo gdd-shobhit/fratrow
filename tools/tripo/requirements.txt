@@ -1,0 +1,4 @@
+# Official Tripo SDK. 1.x talks to apiv3; 0.x stops working when Tripo shuts
+# down its v2 API on 2026-10-31. 1.x promises no breaking changes before 2.0.
+# No other packages are needed (aiohttp is optional; the SDK falls back to asyncio).
+tripo3d>=1.0.0,<2.0.0

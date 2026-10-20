@@ -193,6 +193,12 @@ VIEWS = {
     "side": Vector((1, 0, 0.05)),
     "back": Vector((0, 1, 0.05)),
     "three_quarter": Vector((0.7, -0.7, 0.25)),
+    # Level views for image-to-3D reference sheets (ingest.reference_sheet);
+    # left/right are the character's own sides.
+    "ref_front": Vector((0, -1, 0)),
+    "ref_left": Vector((1, 0, 0)),
+    "ref_back": Vector((0, 1, 0)),
+    "ref_right": Vector((-1, 0, 0)),
 }
 
 

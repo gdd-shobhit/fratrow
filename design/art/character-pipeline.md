@@ -187,6 +187,11 @@ features that vary in both directions get a pair.
   ("Y Bot"), *Without Skin*, *FBX for Unity*; import as Humanoid; they retarget
   onto every character. Do **not** upload our character to Mixamo's auto-rigger:
   it replaces `SK_Human` and drops finger weights, sockets and shape keys.
+- **No auto-rigger, any vendor** (Mixamo, Tripo, Meshy, AccuRIG) on a character
+  or cosmetic: same reason. Generated meshes are modelled and textured by the
+  generator and bound to `SK_Human` by charkit — see
+  `design/art/ai-asset-pipeline.md`, which also lists where a vendor rig is fine
+  (creatures, throwaway prototypes, animation-clip proxies).
 - Locomotion clips: *In Place* (the controller drives movement via `Speed`).
 - Existing Humanoid clips (CityPeople female locomotion/idle/dance, ithappy
   basic set) work immediately; M2 verifies with the CityPeople walk.
