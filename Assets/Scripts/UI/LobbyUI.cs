@@ -1,22 +1,32 @@
 using System.Collections;
+using System.Globalization;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
 /// Binds the Lobby UXML to LobbyManager and SessionManager.
-/// Shows session code, player list, and wires name/class/ready/start/leave.
+/// Shows session code, ready count, fraternity name, player list, and wires name/class/frat name/ready/start/leave.
+/// Styling comes from HUD.uss + Lobby.uss so the lobby matches the in-game HUD.
 /// </summary>
 public class LobbyUI : MonoBehaviour
 {
     private UIDocument _document;
     private Label _sessionCodeLabel;
+    private Label _readyCountLabel;
+    private Label _lobbyStatusLabel;
     private VisualElement _playerListRoot;
+    private Label _playerCountLabel;
     private TextField _playerNameField;
     private DropdownField _classDropdown;
     private Button _readyButton;
     private Button _startGameButton;
     private Button _leaveButton;
+
+    // Fraternity: the host gets a field, everyone else a read-only name
+    private TextField _fratNameField;
+    private Label _fratNameLabel;
+    private Label _fratNameHint;
 
     // Appearance cyclers
     private Button _skinLeftArrow;
@@ -26,10 +36,13 @@ public class LobbyUI : MonoBehaviour
     private Button _meshRightArrow;
     private Label _meshLabel;
 
-    // Stat sliders (read-only, show selected class stats)
-    private Slider _popularitySlider;
-    private Slider _troubleMakerSlider;
-    private Slider _cashSlider;
+    // Class stat meters (read-only, show selected class stats)
+    private VisualElement _popularityFill;
+    private Label _popularityValue;
+    private VisualElement _troubleMakerFill;
+    private Label _troubleMakerValue;
+    private VisualElement _cashFill;
+    private Label _cashValue;
 
     private void Awake()
     {
@@ -72,12 +85,19 @@ public class LobbyUI : MonoBehaviour
 
         var root = _document.rootVisualElement;
         _sessionCodeLabel = root.Q<Label>("SessionCode");
+        _readyCountLabel = root.Q<Label>("ReadyCount");
+        _lobbyStatusLabel = root.Q<Label>("LobbyStatus");
         _playerListRoot = root.Q("PlayerList");
+        _playerCountLabel = root.Q<Label>("PlayerCount");
         _playerNameField = root.Q<TextField>("PlayerNameField");
         _classDropdown = root.Q<DropdownField>("ClassDropdown");
         _readyButton = root.Q<Button>("ReadyButton");
         _startGameButton = root.Q<Button>("StartGameButton");
         _leaveButton = root.Q<Button>("LeaveButton");
+
+        _fratNameField = root.Q<TextField>("FratNameField");
+        _fratNameLabel = root.Q<Label>("FratNameLabel");
+        _fratNameHint = root.Q<Label>("FratNameHint");
 
         _skinLeftArrow = root.Q<Button>("SkinLeftArrow");
         _skinRightArrow = root.Q<Button>("SkinRightArrow");
@@ -86,9 +106,12 @@ public class LobbyUI : MonoBehaviour
         _meshRightArrow = root.Q<Button>("MeshRightArrow");
         _meshLabel = root.Q<Label>("MeshLabel");
 
-        _popularitySlider = root.Q<Slider>("Popularity");
-        _troubleMakerSlider = root.Q<Slider>("TroubleMaker");
-        _cashSlider = root.Q<Slider>("Cash");
+        _popularityFill = root.Q("PopularityFill");
+        _popularityValue = root.Q<Label>("PopularityValue");
+        _troubleMakerFill = root.Q("TroubleMakerFill");
+        _troubleMakerValue = root.Q<Label>("TroubleMakerValue");
+        _cashFill = root.Q("CashFill");
+        _cashValue = root.Q<Label>("CashValue");
 
         if (_sessionCodeLabel == null)
             Debug.LogWarning("[LobbyUI] SessionCode label not found. Is UIDocument Source set to LobbyVisualTree.uxml?");
@@ -149,6 +172,8 @@ public class LobbyUI : MonoBehaviour
             _playerNameField.RegisterValueChangedCallback(OnPlayerNameChanged);
         }
 
+        SetupFratName();
+
         if (_classDropdown != null)
         {
             RefreshClassDropdown();
@@ -172,7 +197,7 @@ public class LobbyUI : MonoBehaviour
             _meshRightArrow.clicked += OnMeshRightClicked;
 
         RefreshAppearanceLabels();
-        SetupStatSliders();
+        RefreshStatMeters();
     }
 
     /// <summary>
@@ -185,8 +210,9 @@ public class LobbyUI : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         RefreshPlayerList();
         RefreshClassDropdown();
-        RefreshStatSliders();
+        RefreshStatMeters();
         RefreshAppearanceLabels();
+        RefreshFratName();
     }
 
     private void OnDisable()
@@ -194,6 +220,8 @@ public class LobbyUI : MonoBehaviour
         UnsubscribeFromLobbyManager();
         if (_playerNameField != null)
             _playerNameField.UnregisterValueChangedCallback(OnPlayerNameChanged);
+        if (_fratNameField != null)
+            _fratNameField.UnregisterValueChangedCallback(OnFratNameEdited);
         if (_classDropdown != null)
             _classDropdown.UnregisterValueChangedCallback(OnClassChanged);
         if (_readyButton != null)
@@ -210,12 +238,6 @@ public class LobbyUI : MonoBehaviour
             _meshLeftArrow.clicked -= OnMeshLeftClicked;
         if (_meshRightArrow != null)
             _meshRightArrow.clicked -= OnMeshRightClicked;
-        if (_popularitySlider != null)
-            _popularitySlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
-        if (_troubleMakerSlider != null)
-            _troubleMakerSlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
-        if (_cashSlider != null)
-            _cashSlider.UnregisterValueChangedCallback(OnStatSliderValueChanged);
     }
 
     private void SubscribeToLobbyManager()
@@ -230,6 +252,7 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerReadyChanged += OnPlayerReadyChangedFromNetwork;
         lm.OnPlayerMeshChanged += OnPlayerMeshChangedFromNetwork;
         lm.OnPlayerMaterialChanged += OnPlayerMaterialChangedFromNetwork;
+        lm.OnFratNameChanged += OnFratNameChangedFromNetwork;
     }
 
     private void UnsubscribeFromLobbyManager()
@@ -243,13 +266,14 @@ public class LobbyUI : MonoBehaviour
         lm.OnPlayerReadyChanged -= OnPlayerReadyChangedFromNetwork;
         lm.OnPlayerMeshChanged -= OnPlayerMeshChangedFromNetwork;
         lm.OnPlayerMaterialChanged -= OnPlayerMaterialChangedFromNetwork;
+        lm.OnFratNameChanged -= OnFratNameChangedFromNetwork;
     }
 
     private void OnPlayerAdded(LobbyPlayerData data)
     {
         Debug.Log($"[LobbyUI] OnPlayerAdded event: {data.PlayerName} (clientId={data.NetworkId})");
         RefreshPlayerList();
-        RefreshStatSliders();
+        RefreshStatMeters();
         RefreshClassDropdown();
     }
     private void OnPlayerRemoved(ulong _) => RefreshPlayerList();
@@ -259,11 +283,12 @@ public class LobbyUI : MonoBehaviour
         RefreshPlayerList();
         if (IsLocalPlayer(clientId))
         {
-            RefreshStatSliders();
+            RefreshStatMeters();
             RefreshClassDropdown();
         }
     }
     private void OnPlayerReadyChangedFromNetwork(ulong _, bool __) => RefreshPlayerList();
+    private void OnFratNameChangedFromNetwork(string _) => RefreshFratName();
 
     private void OnPlayerMeshChangedFromNetwork(ulong clientId, int _)
     {
@@ -285,6 +310,18 @@ public class LobbyUI : MonoBehaviour
         return nm != null && nm.LocalClientId == clientId;
     }
 
+    private static bool IsHost()
+    {
+        var nm = NetworkManager.Singleton;
+        return nm != null && nm.IsHost;
+    }
+
+    private static void SetDisplay(VisualElement element, bool visible)
+    {
+        if (element != null)
+            element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
     private void RefreshAppearanceLabels()
     {
         if (LobbyManager.Instance == null) return;
@@ -299,13 +336,13 @@ public class LobbyUI : MonoBehaviour
         if (_skinLabel != null && materialList != null && materialList.Count > 0)
         {
             int idx = ((data.SelectedMaterialIndex % materialList.Count) + materialList.Count) % materialList.Count;
-            _skinLabel.text = materialList[idx] != null ? materialList[idx].name : $"Fit {idx + 1}";
+            _skinLabel.text = materialList[idx] != null ? materialList[idx].name : LobbyText.Fit + (idx + 1);
         }
 
         if (_meshLabel != null && meshList != null && meshList.Count > 0)
         {
             int idx = ((data.SelectedMeshIndex % meshList.Count) + meshList.Count) % meshList.Count;
-            _meshLabel.text = meshList[idx] != null ? meshList[idx].name : $"Body {idx + 1}";
+            _meshLabel.text = meshList[idx] != null ? meshList[idx].name : LobbyText.Body + (idx + 1);
         }
     }
 
@@ -363,9 +400,56 @@ public class LobbyUI : MonoBehaviour
     {
         if (_sessionCodeLabel == null) return;
         string code = SessionManager.Instance != null ? SessionManager.Instance.GetSessionCode() : "";
-        _sessionCodeLabel.text = string.IsNullOrEmpty(code) ? "----" : code;
+        _sessionCodeLabel.text = string.IsNullOrEmpty(code) ? LobbyText.NoSessionCode : code;
         if (!string.IsNullOrEmpty(code))
             Debug.Log($"[LobbyUI] Session code displayed in UI: {code}");
+    }
+
+    /// <summary>
+    /// The host types the name (saved for next time, like the player name); everyone else sees it read-only.
+    /// </summary>
+    private void SetupFratName()
+    {
+        bool host = IsHost();
+        SetDisplay(_fratNameField, host);
+        SetDisplay(_fratNameLabel, !host);
+        if (_fratNameHint != null)
+            _fratNameHint.text = host ? LobbyText.FratHintHost : LobbyText.FratHintClient;
+
+        if (host && _fratNameField != null)
+        {
+            _fratNameField.maxLength = FratRow.Game.HouseNames.MaxLength;
+            string current = LobbyManager.Instance != null ? LobbyManager.Instance.FratName : "";
+            if (string.IsNullOrEmpty(current))
+                current = PlayerPrefs.GetString(LobbyManager.FratNamePrefKey, "");
+            // Assign through value (not SetValueWithoutNotify): only a real change clears the field's placeholder styling,
+            // otherwise a pre-filled name renders grey/italic. Any echo is a no-op, the name is unchanged.
+            _fratNameField.value = current;
+            _fratNameField.RegisterValueChangedCallback(OnFratNameEdited);
+        }
+
+        RefreshFratName();
+    }
+
+    private void OnFratNameEdited(ChangeEvent<string> evt)
+    {
+        string name = FratRow.Game.HouseNames.Sanitize(evt.newValue);
+        PlayerPrefs.SetString(LobbyManager.FratNamePrefKey, name);
+        LobbyManager.Instance?.RequestSetFratName(name);
+    }
+
+    /// <summary>
+    /// Clients show the replicated name. The host's own field is never written back while they type
+    /// (sanitizing mid-edit would eat trailing spaces).
+    /// </summary>
+    private void RefreshFratName()
+    {
+        if (_fratNameLabel == null || IsHost()) return;
+
+        string name = LobbyManager.Instance != null ? LobbyManager.Instance.FratName : "";
+        bool named = !string.IsNullOrWhiteSpace(name);
+        _fratNameLabel.text = named ? name : LobbyText.UnnamedHouse;
+        _fratNameLabel.EnableInClassList("lobby-frat-name--unset", !named);
     }
 
     private void RefreshPlayerList()
@@ -386,16 +470,73 @@ public class LobbyUI : MonoBehaviour
 
         foreach (var kvp in lm.Players)
         {
-            var data = kvp.Value;
-            var row = new Label(FormatPlayerLine(data));
-            row.style.color = Color.white;
-            row.style.fontSize = 20;
-            row.style.marginBottom = 8;
-            row.style.unityTextAlign = TextAnchor.MiddleLeft;
-            _playerListRoot.Add(row);
+            _playerListRoot.Add(BuildPlayerRow(kvp.Value));
         }
 
+        if (count == 0)
+        {
+            var empty = new Label(LobbyText.WaitingForPlayers);
+            empty.AddToClassList("hud-muted");
+            _playerListRoot.Add(empty);
+        }
+
+        if (_playerCountLabel != null)
+            _playerCountLabel.text = count.ToString(CultureInfo.InvariantCulture) + "/" + LobbyManager.MaxPlayers.ToString(CultureInfo.InvariantCulture);
+
+        RefreshBanner();
         RefreshStartGameButton();
+    }
+
+    /// <summary>One roster row: name, HOST chip, class, ready chip. Your own row is highlighted like the HUD standings.</summary>
+    private static VisualElement BuildPlayerRow(LobbyPlayerData data)
+    {
+        var row = new VisualElement();
+        row.AddToClassList("lobby-player-row");
+        row.EnableInClassList("lobby-player-row--local", IsLocalPlayer(data.NetworkId));
+
+        var name = new Label(data.PlayerName);
+        name.AddToClassList("lobby-player-name");
+        row.Add(name);
+
+        if (data.IsHost)
+        {
+            var host = new Label(LobbyText.HostChip);
+            host.AddToClassList("hud-chip");
+            host.AddToClassList("lobby-chip--host");
+            row.Add(host);
+        }
+
+        var playerClass = new Label(data.SelectedClass.ToString());
+        playerClass.AddToClassList("lobby-player-class");
+        row.Add(playerClass);
+
+        var ready = new Label(data.IsReady ? LobbyText.ReadyChip : LobbyText.NotReadyChip);
+        ready.AddToClassList("hud-chip");
+        if (data.IsReady) ready.AddToClassList("hud-chip--good");
+        row.Add(ready);
+
+        return row;
+    }
+
+    /// <summary>Banner sub-row: "Ready 2/3" plus what the lobby is waiting on.</summary>
+    private void RefreshBanner()
+    {
+        var lm = LobbyManager.Instance;
+        int count = lm != null ? lm.PlayerCount : 0;
+        int ready = lm != null ? lm.ReadyPlayerCount : 0;
+
+        if (_readyCountLabel != null)
+            _readyCountLabel.text = LobbyText.ReadyCount + ready.ToString(CultureInfo.InvariantCulture) + "/" + count.ToString(CultureInfo.InvariantCulture);
+
+        if (_lobbyStatusLabel != null)
+        {
+            if (count == 0)
+                _lobbyStatusLabel.text = LobbyText.WaitingForPlayers;
+            else if (ready < count)
+                _lobbyStatusLabel.text = LobbyText.WaitingOnReady;
+            else
+                _lobbyStatusLabel.text = IsHost() ? LobbyText.AllReadyHost : LobbyText.AllReadyClient;
+        }
     }
 
     private void RefreshStartGameButton()
@@ -403,10 +544,7 @@ public class LobbyUI : MonoBehaviour
         RefreshReadyButton();
         if (_startGameButton == null) return;
 
-        var nm = NetworkManager.Singleton;
-        bool isHost = nm != null && nm.IsHost;
-
-        if (!isHost)
+        if (!IsHost())
         {
             _startGameButton.style.display = DisplayStyle.None;
             return;
@@ -417,43 +555,10 @@ public class LobbyUI : MonoBehaviour
         _startGameButton.SetEnabled(canStart);
     }
 
-    private static string FormatPlayerLine(LobbyPlayerData data)
-    {
-        string host = data.IsHost ? " (Host)" : "";
-        string ready = data.IsReady ? " [Ready]" : "";
-        return $"{data.PlayerName}{host} - {data.SelectedClass}{ready}";
-    }
-
-    private void SetupStatSliders()
-    {
-        if (_popularitySlider != null)
-        {
-            _popularitySlider.lowValue = 0f;
-            _popularitySlider.highValue = 100f;
-            _popularitySlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
-        }
-        if (_troubleMakerSlider != null)
-        {
-            _troubleMakerSlider.lowValue = -100f;
-            _troubleMakerSlider.highValue = 100f;
-            _troubleMakerSlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
-        }
-        if (_cashSlider != null)
-        {
-            _cashSlider.lowValue = 0f;
-            _cashSlider.highValue = 100f;
-            _cashSlider.RegisterValueChangedCallback(OnStatSliderValueChanged);
-        }
-        RefreshStatSliders();
-    }
-
-    private void OnStatSliderValueChanged(ChangeEvent<float> evt)
-    {
-        // Immediately revert any user change - sliders are read-only
-        RefreshStatSliders();
-    }
-
-    private void RefreshStatSliders()
+    /// <summary>
+    /// Fill each meter with the selected class's stat. Numbers are shown next to the bar, so the stat is never colour-only.
+    /// </summary>
+    private void RefreshStatMeters()
     {
         PlayerClass selectedClass = PlayerClass.President;
         if (LobbyManager.Instance != null && NetworkManager.Singleton != null &&
@@ -468,21 +573,17 @@ public class LobbyUI : MonoBehaviour
         if (!NetworkedGameManager.Instance.playerClassesDict.TryGetValue(selectedClass, out var classSO))
             return;
 
-        // Sliders use inverted="true" for visual design - invert value so 20 displays as 20, not 80
-        if (_popularitySlider != null)
-            _popularitySlider.SetValueWithoutNotify(InvertForSlider(classSO.popularity, 0f, 100f));
-        if (_troubleMakerSlider != null)
-            _troubleMakerSlider.SetValueWithoutNotify(InvertForSlider(classSO.troubleMaker, -100f, 100f));
-        if (_cashSlider != null)
-            _cashSlider.SetValueWithoutNotify(InvertForSlider(classSO.cashvalue, 0f, 100f));
+        SetMeter(_popularityFill, _popularityValue, classSO.popularity, 0f, 100f);
+        SetMeter(_troubleMakerFill, _troubleMakerValue, classSO.troubleMaker, -100f, 100f);
+        SetMeter(_cashFill, _cashValue, classSO.cashvalue, 0f, 100f);
     }
 
-    /// <summary>
-    /// Inverts value for display on inverted sliders: actual 20 should show visually as 20.
-    /// </summary>
-    private static float InvertForSlider(float actualValue, float lowValue, float highValue)
+    private static void SetMeter(VisualElement fill, Label value, float amount, float lowValue, float highValue)
     {
-        return highValue + lowValue - actualValue;
+        if (fill != null)
+            fill.style.width = Length.Percent(Mathf.InverseLerp(lowValue, highValue, amount) * 100f);
+        if (value != null)
+            value.text = Mathf.RoundToInt(amount).ToString(CultureInfo.InvariantCulture);
     }
 
     private void OnPlayerNameChanged(ChangeEvent<string> evt)
@@ -498,7 +599,7 @@ public class LobbyUI : MonoBehaviour
         if (System.Enum.TryParse<PlayerClass>(evt.newValue, out var pc))
         {
             LobbyManager.Instance?.RequestSetPlayerClass(pc);
-            RefreshStatSliders();
+            RefreshStatMeters();
             RefreshClassDropdown();
         }
     }
@@ -535,7 +636,9 @@ public class LobbyUI : MonoBehaviour
     private void RefreshReadyButton()
     {
         if (_readyButton == null) return;
-        _readyButton.text = IsLocalReady() ? "Unready" : "Ready";
+        bool ready = IsLocalReady();
+        _readyButton.text = ready ? LobbyText.Unready : LobbyText.Ready;
+        _readyButton.EnableInClassList("lobby-button--ready-on", ready);
     }
 
     private void OnStartGameClicked()
@@ -546,5 +649,29 @@ public class LobbyUI : MonoBehaviour
     private void OnLeaveClicked()
     {
         LobbyManager.Instance?.LeaveLobby();
+    }
+
+    /// <summary>
+    /// Every lobby string built in code, in one place (same convention as GameplayUI's HudText). The project has no
+    /// localization tables yet; when it adopts one, swap these for table lookups.
+    /// </summary>
+    static class LobbyText
+    {
+        public const string NoSessionCode = "----";
+        public const string Ready = "Ready";
+        public const string Unready = "Unready";
+        public const string ReadyCount = "Ready ";
+        public const string HostChip = "HOST";
+        public const string ReadyChip = "READY";
+        public const string NotReadyChip = "NOT READY";
+        public const string WaitingForPlayers = "Waiting for players...";
+        public const string WaitingOnReady = "Waiting for everyone to ready up";
+        public const string AllReadyHost = "Everyone's ready. Start when you are";
+        public const string AllReadyClient = "Everyone's ready. Waiting on the host";
+        public const string UnnamedHouse = "Unnamed house";
+        public const string FratHintHost = "Only you (the host) can name the house.";
+        public const string FratHintClient = "The host names the house.";
+        public const string Fit = "Fit ";
+        public const string Body = "Body ";
     }
 }

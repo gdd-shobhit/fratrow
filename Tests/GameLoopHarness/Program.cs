@@ -397,6 +397,36 @@ static class Program
             Assert(Projection(Make(store.Load())) == Projection(c), "Checksummed save round-trips");
         });
 
+        await Test("HouseNames_Sanitize_TrimsTurnsControlsIntoSpacesAndCapsLength", () =>
+        {
+            Assert(HouseNames.Sanitize(null) == "" && HouseNames.Sanitize(" \t\n ") == "", "Blank names sanitize to empty");
+            Assert(HouseNames.Sanitize("  Alpha\tBeta\nGamma  ") == "Alpha Beta Gamma", "Trimmed, control characters become spaces");
+            string longName = new string('x', HouseNames.MaxLength + 8);
+            Assert(HouseNames.Sanitize(longName).Length == HouseNames.MaxLength, "Capped at " + HouseNames.MaxLength + " characters");
+            string emojiAtCap = new string('a', HouseNames.MaxLength - 1) + "\U0001F37A";
+            Assert(HouseNames.Sanitize(emojiAtCap) == new string('a', HouseNames.MaxLength - 1), "A surrogate pair is never split at the cap");
+        });
+
+        await Test("RenamePlayerHouse_LobbyName_RenamesOnlyPlayersHouseAndBlankKeepsIt", () =>
+        {
+            var codec = new JsonCodec();
+            var config = Content.Config(codec);
+            var roster = Content.Roster(codec, expand: false);
+            var session = new GameSession(config, roster, GameSession.NewCampaign(config, roster, "rename", 5), new NullSocialBridge());
+            string id = session.PlayerHouse.id;
+            string rivals = string.Join("|", session.Rivals.Select(h => h.name));
+
+            session.RenamePlayerHouse("  Alpha Beta Gamma ");
+            Assert(session.PlayerHouse.name == "Alpha Beta Gamma" && session.PlayerHouse.id == id, "Lobby name applied, id unchanged");
+            Assert(string.Join("|", session.Rivals.Select(h => h.name)) == rivals, "Rival names untouched");
+
+            session.RenamePlayerHouse("   ");
+            Assert(session.PlayerHouse.name == "Alpha Beta Gamma", "A blank lobby name keeps the current name");
+
+            var restored = codec.Decode<GameState>(codec.Encode(session.State));
+            Assert(restored.houses.First(h => h.isPlayer).name == "Alpha Beta Gamma", "The name is saved with the campaign");
+        });
+
         await Test("HeuristicProvider_EveryNpcInvited_AllCommittedWithMixedRsvps", async () =>
         {
             using var f = new GameFixture(seed: 21, tweak: Fast);

@@ -1,0 +1,13 @@
+{
+  "_comment": "Lobby UI evidence: host and client views over a backdrop marking the 3D player slots. Run from the repo root: python tools/unity/uitk-snapshot/snapshot.py --batch tools/unity/uitk-snapshot/examples/lobby/lobby.batch.json",
+  "defaults": {
+    "uxml": "Assets/Scripts/UI/UI Toolkit/LobbyVisualTree.uxml",
+    "background": "backdrop.png",
+    "width": 1920,
+    "height": 1080
+  },
+  "shots": [
+    {"label": "host", "fixture": "host.fixture.json", "out": "../../../../../production/qa/evidence/lobby-host-2026-10-19.png"},
+    {"label": "client", "fixture": "client.fixture.json", "out": "../../../../../production/qa/evidence/lobby-client-2026-10-19.png"}
+  ]
+}

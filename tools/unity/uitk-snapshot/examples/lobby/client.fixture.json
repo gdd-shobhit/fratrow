@@ -1,0 +1,41 @@
+{
+  "ops": [
+    {"name": "SessionCode", "text": "K7QX2P"},
+    {"name": "ReadyCount", "text": "Ready 3/3"},
+    {"name": "LobbyStatus", "text": "Everyone's ready. Waiting on the host"},
+    {"name": "FratNameField", "display": "none"},
+    {"name": "FratNameLabel", "display": "flex", "text": "Alpha Beta Gamma"},
+    {"name": "FratNameHint", "text": "The host names the house."},
+    {"name": "PlayerCount", "text": "3/4"},
+    {"name": "PlayerList", "clear": true, "append": [
+      {"type": "VisualElement", "class": ["lobby-player-row"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Shobhit"},
+        {"type": "Label", "class": ["hud-chip", "lobby-chip--host"], "text": "HOST"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "President"},
+        {"type": "Label", "class": ["hud-chip", "hud-chip--good"], "text": "READY"}
+      ]},
+      {"type": "VisualElement", "class": ["lobby-player-row", "lobby-player-row--local"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Jordan"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "Chad"},
+        {"type": "Label", "class": ["hud-chip", "hud-chip--good"], "text": "READY"}
+      ]},
+      {"type": "VisualElement", "class": ["lobby-player-row"], "children": [
+        {"type": "Label", "class": ["lobby-player-name"], "text": "Sam"},
+        {"type": "Label", "class": ["lobby-player-class"], "text": "RichGuy"},
+        {"type": "Label", "class": ["hud-chip", "hud-chip--good"], "text": "READY"}
+      ]}
+    ]},
+    {"name": "PlayerNameField", "value": "Jordan"},
+    {"name": "ClassDropdown", "value": "Chad"},
+    {"name": "PopularityFill", "style": {"width": "45%"}},
+    {"name": "PopularityValue", "text": "45"},
+    {"name": "TroubleMakerFill", "style": {"width": "80%"}},
+    {"name": "TroubleMakerValue", "text": "60"},
+    {"name": "CashFill", "style": {"width": "30%"}},
+    {"name": "CashValue", "text": "30"},
+    {"name": "SkinLabel", "text": "Tank Top"},
+    {"name": "MeshLabel", "text": "Male Base"},
+    {"name": "ReadyButton", "text": "Unready", "addClass": ["lobby-button--ready-on"]},
+    {"name": "StartGameButton", "display": "none"}
+  ]
+}

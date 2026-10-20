@@ -38,10 +38,11 @@ public class NetworkedGameManager : NetworkBehaviour
 
     [SerializeField]
     public FraternityData fraternityLocal;
-    private string fratName = "Frat Test Name";
+    private const string PlaceholderFratName = "Frat Test Name";
+    private string fratName = PlaceholderFratName;
 
-    /// <summary>Default house name (a fresh campaign uses the config name unless this was customised).</summary>
-    public string FratName => fratName == "Frat Test Name" ? "" : fratName;
+    /// <summary>The house name the host chose in the lobby, or "" if they didn't (the campaign then keeps its config/saved name).</summary>
+    public string FratName => fratName == PlaceholderFratName ? "" : fratName;
     private static NetworkedGameManager _instance;
     public static NetworkedGameManager Instance
     {
@@ -166,6 +167,30 @@ public class NetworkedGameManager : NetworkBehaviour
         myFraternity.Value = data;
         SyncFraternityLocal(data);
         Debug.Log($"[Fraternity] Grade {FraternityGradeCalculator.ToLetter(data.grade)} rating {data.rating} (pop={data.popularity}, cash={data.cashValue}, members={data.memberCount})");
+        OnFraternityChanged?.Invoke(data);
+    }
+
+    /// <summary>
+    /// Server: take the fraternity name the host chose in the lobby (empty resets to the default). Called by
+    /// <see cref="LobbyManager.StartGame"/>; the campaign applies it to the player house when it starts.
+    /// </summary>
+    public void SetFratNameServer(string name)
+    {
+        fratName = string.IsNullOrWhiteSpace(name) ? PlaceholderFratName : name.Trim();
+        if (!IsSpawned || !IsServer)
+        {
+            return;
+        }
+
+        var data = myFraternity.Value;
+        if (data.fratName == fratName)
+        {
+            return;
+        }
+
+        data.fratName = fratName;
+        myFraternity.Value = data;
+        SyncFraternityLocal(data);
         OnFraternityChanged?.Invoke(data);
     }
 
