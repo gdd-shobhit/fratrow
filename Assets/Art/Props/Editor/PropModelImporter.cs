@@ -70,53 +70,77 @@ namespace FratRow.Art.Props.Editor
         /// <summary>Path of one texture map: &lt;folder&gt;/T_&lt;name&gt;_&lt;map&gt;.png.</summary>
         public static string TexturePath(string folder, string name, string map) => $"{folder}/T_{name}_{map}.png";
 
-        void OnPreprocessModel()
+        // No OnPreprocessModel / OnPreprocessTexture on purpose: Unity counts every
+        // postprocessor that hooks an importer type as a dependency of *every* asset
+        // of that type, so adding one re-imports all models or textures in the
+        // project. The rules are applied to prop files only, from
+        // OnPostprocessAllAssets, at the cost of one extra import of a new prop.
+
+        /// <summary>Applies the prop model rules; true when a setting changed (the FBX needs a re-import).</summary>
+        public static bool ApplyModelRules(ModelImporter importer)
         {
-            if (!TryGetPropName(assetPath, out _))
-                return;
-            var importer = (ModelImporter)assetImporter;
-            importer.globalScale = 1f;
-            importer.useFileScale = true;
-            importer.importNormals = ModelImporterNormals.Import;
-            importer.importBlendShapes = false;
-            importer.importVisibility = false;
-            importer.importCameras = false;
-            importer.importLights = false;
-            importer.importAnimation = false;
-            importer.importConstraints = false;
-            importer.animationType = ModelImporterAnimationType.None;
-            importer.avatarSetup = ModelImporterAvatarSetup.NoAvatar;
-            importer.addCollider = false;
-            importer.isReadable = false;
+            bool changed = false;
+            void Set<T>(T current, T wanted, System.Action<T> apply)
+            {
+                if (EqualityComparer<T>.Default.Equals(current, wanted))
+                    return;
+                apply(wanted);
+                changed = true;
+            }
+            Set(importer.globalScale, 1f, v => importer.globalScale = v);
+            Set(importer.useFileScale, true, v => importer.useFileScale = v);
+            Set(importer.importNormals, ModelImporterNormals.Import, v => importer.importNormals = v);
+            Set(importer.importBlendShapes, false, v => importer.importBlendShapes = v);
+            Set(importer.importVisibility, false, v => importer.importVisibility = v);
+            Set(importer.importCameras, false, v => importer.importCameras = v);
+            Set(importer.importLights, false, v => importer.importLights = v);
+            Set(importer.importAnimation, false, v => importer.importAnimation = v);
+            Set(importer.importConstraints, false, v => importer.importConstraints = v);
+            Set(importer.animationType, ModelImporterAnimationType.None, v => importer.animationType = v);
+            Set(importer.addCollider, false, v => importer.addCollider = v);
+            Set(importer.isReadable, false, v => importer.isReadable = v);
             // Remaps only apply to materials imported via the material description.
-            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
-            importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            Set(importer.materialImportMode, ModelImporterMaterialImportMode.ImportViaMaterialDescription,
+                v => importer.materialImportMode = v);
+            Set(importer.materialLocation, ModelImporterMaterialLocation.InPrefab, v => importer.materialLocation = v);
+            return changed;
         }
 
-        void OnPreprocessTexture()
+        /// <summary>Applies the texture rules for one propkit map; true when a setting changed.</summary>
+        public static bool ApplyTextureRules(TextureImporter importer, string map)
         {
-            if (!TryGetTextureMap(assetPath, out _, out string map))
-                return;
-            var importer = (TextureImporter)assetImporter;
+            bool changed = false;
+            void Set<T>(T current, T wanted, System.Action<T> apply)
+            {
+                if (EqualityComparer<T>.Default.Equals(current, wanted))
+                    return;
+                apply(wanted);
+                changed = true;
+            }
             switch (map)
             {
                 case "Normal":
-                    importer.textureType = TextureImporterType.NormalMap;
-                    importer.convertToNormalmap = false;
+                    Set(importer.textureType, TextureImporterType.NormalMap, v => importer.textureType = v);
+                    Set(importer.convertToNormalmap, false, v => importer.convertToNormalmap = v);
                     break;
                 case "MetallicSmoothness":
                 case "Occlusion":
-                    importer.textureType = TextureImporterType.Default;
-                    importer.sRGBTexture = false;
-                    importer.alphaSource = TextureImporterAlphaSource.FromInput;
-                    importer.alphaIsTransparency = false;
+                    Set(importer.textureType, TextureImporterType.Default, v => importer.textureType = v);
+                    Set(importer.sRGBTexture, false, v => importer.sRGBTexture = v);
+                    Set(importer.alphaSource, TextureImporterAlphaSource.FromInput, v => importer.alphaSource = v);
+                    Set(importer.alphaIsTransparency, false, v => importer.alphaIsTransparency = v);
                     break;
                 default:
-                    importer.textureType = TextureImporterType.Default;
-                    importer.sRGBTexture = true;
+                    Set(importer.textureType, TextureImporterType.Default, v => importer.textureType = v);
+                    Set(importer.sRGBTexture, true, v => importer.sRGBTexture = v);
                     break;
             }
+            return changed;
         }
+
+        static void ReimportLater(string path) =>
+            // Import settings must not change mid-import: re-import on the next editor tick.
+            EditorApplication.delayCall += () => AssetImporter.GetAtPath(path)?.SaveAndReimport();
 
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
@@ -124,9 +148,18 @@ namespace FratRow.Art.Props.Editor
             foreach (string path in imported)
             {
                 if (TryGetPropName(path, out string name))
-                    props[path] = name;
-                else if (TryGetTextureMap(path, out name, out _))
                 {
+                    if (AssetImporter.GetAtPath(path) is ModelImporter model && ApplyModelRules(model))
+                    {
+                        ReimportLater(path);   // materials and report follow on that import
+                        continue;
+                    }
+                    props[path] = name;
+                }
+                else if (TryGetTextureMap(path, out name, out string map))
+                {
+                    if (AssetImporter.GetAtPath(path) is TextureImporter texture && ApplyTextureRules(texture, map))
+                        ReimportLater(path);
                     string fbx = $"{Path.GetDirectoryName(path).Replace('\\', '/')}/SM_{name}.fbx";
                     if (AssetImporter.GetAtPath(fbx) is ModelImporter)
                         props[fbx] = name;

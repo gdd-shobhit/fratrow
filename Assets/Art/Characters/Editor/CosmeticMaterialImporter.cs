@@ -42,22 +42,40 @@ namespace FratRow.Art.Characters.Editor
             public string metallicSmoothnessMap;
         }
 
-        void OnPreprocessTexture()
-        {
-            if (!assetPath.StartsWith(CharacterModelImporter.Root))
-                return;
-            var importer = (TextureImporter)assetImporter;
-            if (assetPath.EndsWith(NormalSuffix, StringComparison.OrdinalIgnoreCase))
-                importer.textureType = TextureImporterType.NormalMap;
-            else if (assetPath.EndsWith(MetallicSmoothnessSuffix, StringComparison.OrdinalIgnoreCase))
-                importer.sRGBTexture = false;
-        }
-
+        // No OnPreprocessTexture on purpose: a postprocessor hooking an importer type
+        // becomes an import dependency of every asset of that type, so adding one
+        // re-imports every texture in the project. The two map types that need
+        // settings get them here, and only those files are re-imported.
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
-            foreach (string path in imported.Where(p => p.StartsWith(CharacterModelImporter.Root)
-                                                        && p.EndsWith(CharacterModelImporter.SidecarSuffix)))
-                Apply(path);
+            foreach (string path in imported.Where(p => p.StartsWith(CharacterModelImporter.Root)))
+            {
+                if (HasSuffix(path, CharacterModelImporter.SidecarSuffix))
+                    Apply(path);
+                else if (AssetImporter.GetAtPath(path) is TextureImporter texture && ApplyTextureRules(path, texture))
+                    EditorApplication.delayCall += () => AssetImporter.GetAtPath(path)?.SaveAndReimport();
+            }
+        }
+
+        static bool HasSuffix(string path, string suffix) => path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Normal maps import as normal maps and metallic/smoothness maps as linear;
+        /// true when a setting changed (the texture needs a re-import).
+        /// </summary>
+        public static bool ApplyTextureRules(string path, TextureImporter importer)
+        {
+            if (HasSuffix(path, NormalSuffix) && importer.textureType != TextureImporterType.NormalMap)
+            {
+                importer.textureType = TextureImporterType.NormalMap;
+                return true;
+            }
+            if (HasSuffix(path, MetallicSmoothnessSuffix) && importer.sRGBTexture)
+            {
+                importer.sRGBTexture = false;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

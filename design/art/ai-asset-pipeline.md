@@ -143,6 +143,13 @@ in `SM_<Name>.prop.json` → `ArtSource/AI/<Name>/<Name>_clean.glb`. Unity's
 | `Assets/Art/Characters/Editor/CosmeticMaterialImporter.cs` | For sidecar materials that name a `baseMap`: creates/updates `M_<Item>.mat` (URP Lit, white base colour so `CharacterAppearance` tints still multiply), remaps the item FBX's material to it; `T_*_Normal.png` → normal map, `T_*_MetallicSmoothness.png` → linear |
 | `Assets/Art/Props/Editor/PropModelImporter.cs` | Prop FBX rules and materials |
 
+Neither importer uses `OnPreprocessModel` / `OnPreprocessTexture`: a
+postprocessor hooking an importer type becomes an import dependency of every
+asset of that type, so adding one would re-import every model or texture in the
+project. They set import options on their own files from
+`OnPostprocessAllAssets` and re-import just those (one extra import per new
+asset).
+
 Textured cosmetics are not recolourable yet (`recolorable: false`): tinting a
 baked albedo muddies it. Recolourable generated items need a greyscale albedo
 plus a colour-region mask (later).
