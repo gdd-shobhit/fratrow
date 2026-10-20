@@ -196,10 +196,16 @@ VIEWS = {
 }
 
 
-def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=None, focus=None):
+STAMP_METADATA = ("use_stamp_date", "use_stamp_time", "use_stamp_render_time", "use_stamp_memory",
+                  "use_stamp_hostname", "use_stamp_filename", "use_stamp_frame", "use_stamp_frame_range")
+
+
+def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=None, focus=None,
+           color_type="MATERIAL"):
     """Workbench render of the character from each view to <out_dir>/<name>_<view>.png.
 
-    focus=(centre, extent) frames a close-up instead of the whole character.
+    focus=(centre, extent) frames a close-up instead of the whole character;
+    color_type="TEXTURE" shows image textures (face and eyes).
     """
     scene = bpy.context.scene
     objects = objects or [o for o in bpy.data.collections[C.COLLECTION].all_objects if o.type == "MESH"]
@@ -224,6 +230,10 @@ def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=No
     scene.collection.objects.link(cam)
     saved = (scene.camera, scene.render.engine, scene.render.resolution_x, scene.render.resolution_y,
              scene.render.filepath, scene.render.film_transparent)
+    # No date/time metadata in the PNGs: unchanged renders stay byte-identical in git.
+    stamps = {a: getattr(scene.render, a) for a in STAMP_METADATA if hasattr(scene.render, a)}
+    for attr in stamps:
+        setattr(scene.render, attr, False)
     try:
         scene.camera = cam
         try:
@@ -232,7 +242,7 @@ def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=No
             pass
         shading = scene.display.shading
         shading.light = "STUDIO"
-        shading.color_type = "MATERIAL"
+        shading.color_type = color_type
         shading.show_cavity = True
         scene.render.resolution_x = scene.render.resolution_y = size
         scene.render.film_transparent = False
@@ -250,5 +260,7 @@ def render(name, out_dir, views=("front", "three_quarter"), size=900, objects=No
     finally:
         (scene.camera, scene.render.engine, scene.render.resolution_x, scene.render.resolution_y,
          scene.render.filepath, scene.render.film_transparent) = saved
+        for attr, value in stamps.items():
+            setattr(scene.render, attr, value)
         bpy.data.objects.remove(cam, do_unlink=True)
         bpy.data.cameras.remove(cam_data)

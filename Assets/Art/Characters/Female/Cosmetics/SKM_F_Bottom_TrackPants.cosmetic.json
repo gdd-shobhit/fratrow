@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "SKM_F_Bottom_TrackPants",
+  "model": "SKM_F_Bottom_TrackPants.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Bottom",
+  "kind": "skinned",
+  "hiddenBodyVertices": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/O//rw8wAPL7+/7////////////V1///////DwAAAAAAAAAAAAAAAHxtGykCSgAAFwAAAAAAAAAAAAAAAAAAAADR/v//ABAoMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC//79eAIDp++/9/fv/////////X3/9/////w8AAAAAAAAAAAAAAAD+RZsoAQAEAAAAAAAAAAAAAAAAAAAAgOj//x8AEo4UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+  "hiddenBodyVertexCount": 481,
+  "materials": [
+    {
+      "name": "M_Bottom_TrackPants",
+      "color": [
+        0.86,
+        0.13,
+        0.15
+      ],
+      "recolorable": true
+    },
+    {
+      "name": "M_Bottom_TrackPants_Stripe",
+      "color": [
+        0.97,
+        0.97,
+        0.97
+      ],
+      "recolorable": true
+    }
+  ]
+}

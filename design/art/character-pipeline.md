@@ -1,12 +1,13 @@
 # Character Pipeline — Modular Humanoid (Female first)
 
-> Status: **M3 done 2026-10-18** — cosmetic pipeline end to end: the blonde's
-> off-shoulder crop top (skinned) and gold hoops (rigid) built in Blender,
-> imported as CosmeticItems, worn through `CharacterAppearance` with skin
-> masking, synced body sliders and tints; walk verified on Base and Curvy.
+> Status: **M4 built 2026-10-18, Unity check pending** — the characters1 trio
+> (blonde, redhead, black bob) as recipes on the shared base: 14 cosmetics,
+> painted faces and irises, per-character sliders/height/skin/colours, generated
+> Unity prefabs (`Prefabs/CH_F_*.prefab`) dressed by `CharacterAppearance`.
+> Blender evidence done; the Unity batch check (`/charkit-verify`) has not run yet.
 > Evidence in `production/qa/evidence/m1-female-base/`, `.../m2-unity-humanoid/`,
-> `.../m3-cosmetic-pipeline/` · next: M4 the characters1 trio ·
-> Branch: `feat/female-base-character`
+> `.../m3-cosmetic-pipeline/`, `.../m4-trio/` · next: characters2 backlog,
+> spring bones, player/NPC adoption · Branch: `feat/female-trio-m4`
 > Inspo: `characters1.png` (first three girls), `characters2.png` (cosmetic backlog).
 
 ## Goal
@@ -108,9 +109,14 @@ Region assignment is derived from the base mesh's sculpt face sets by
 
 ## Building a cosmetic
 
-One module per item in `tools/blender/charkit/items/` (copy
-`f_top_offshoulder_crop.py` for garments, `f_ear_hoop_small.py` for rigid
-accessories). A garment is built from the master body:
+One module per item in `tools/blender/charkit/items/`. Start from the closest
+existing item: garments use `_garment.shell` → shaping → `_garment.finalize`
+(e.g. `f_top_cami_crop.py`, `f_bottom_track_pants.py`; `f_top_offshoulder_crop.py`
+is the same steps written out by hand), hair uses `_hair.cap` (scalp grown from
+the head, scalloped or blunt bangs from the cap edge, tubes for tails/strands),
+shoes use `_footwear.build` (foot hull shrink-wrapped, flat sole), rigid
+accessories copy `f_ear_hoop_small.py`. `/charkit-item` walks through it. A
+garment is built from the master body:
 
 1. **Shell** — copy the body regions it covers (`body_bmesh`), then cut clean
    hems/necklines/cuffs with planes (`cut`); cutting along the low-poly body's
@@ -140,13 +146,55 @@ socket. Check every item with `review.mask_preview` and `review.preview_variants
 | Type | Role |
 |---|---|
 | `CosmeticItem` (ScriptableObject) | One wearable: slot, skinned/rigid, model, skin mask, socket attachments, default colours. Generated from the sidecar by `CharacterModelImporter` — rebuild in Blender rather than editing. |
-| `CharacterAppearance` (component on the character) | `Apply()`: spawns items and re-binds skinned ones to the character's bones by name, parents rigid ones to sockets, syncs body sliders onto the body and every item, hides masked skin (body mesh copy cached per item combination, one submesh), tints skin and items via property blocks. |
-| `BodyMask` | Pure mask logic (decode, union, triangle filter, cache key); covered by `Assets/Tests/EditMode/Characters/BodyMaskTests.cs`. |
+| `CharacterRecipe` (ScriptableObject) | One character's look: height, skin colour, sliders, face/eye textures, worn items (`WornItem` = item + colour per material slot). Generated from `<id>.recipe.json` by `CharacterRecipeImporter`. |
+| `CharacterAppearance` (component on the character) | `Load(recipe)` copies a recipe (done on Start when `Recipe` is set); `Wear()` adds items. `Apply()`: resolves slot conflicts, spawns items and re-binds skinned ones to the character's bones by name, parents rigid ones to sockets, syncs body sliders onto the body, eyes and every item, hides masked skin (body mesh copy cached per item combination, one submesh), tints skin and items and sets the face/iris textures via property blocks, scales the character to its height. |
+| `CosmeticSlots` | One item per slot, FullBody takes Top + Bottom, the later item wins. |
+| `BodyMask` | Pure mask logic (decode, union, triangle filter, cache key). |
 
-Skin uses the shared `Assets/Art/Characters/Materials/M_Skin.mat` (URP Lit),
-tinted per character. **Tools → FratRow → Characters → Run Dressed Check (M3)**
-dresses the base with the crop top and hoops on the Base and Curvy presets and
-writes walk filmstrips to `production/qa/evidence/m3-cosmetic-pipeline/`.
+Logic is covered by `Assets/Tests/EditMode/Characters/` (`BodyMaskTests`,
+`CosmeticSlotsTests`, `CharacterAppearanceTests`). Skin uses the shared
+`Assets/Art/Characters/Materials/M_Skin.mat` (URP Lit), tinted per character.
+Checks (*Tools → FratRow → Characters*): **Run Dressed Check (M3)** — crop top
+and hoops on Base and Curvy → `production/qa/evidence/m3-cosmetic-pipeline/`;
+**Run Trio Check (M4)** — every `CH_*` prefab walking, plus a line-up and face
+close-ups → `production/qa/evidence/m4-trio/` (`CharacterTrioCheck.RunBatch`
+in batch mode).
+
+## Faces and recipes
+
+**Recipes** (`Assets/Art/Characters/Female/Recipes/<id>.recipe.json`,
+`RecipeDocument`) are the source of truth for a character: base model, height,
+skin (sRGB hex), slider values, face/eye texture names, items with optional
+colours per material slot, and the face-painting style. Unity's
+`CharacterRecipeImporter` turns each into a `CharacterRecipe` asset beside it
+and, once, a prefab variant of the base model in `Female/Prefabs/` that
+references the recipe (*Rebuild Recipes and Prefabs* rebuilds all).
+
+**Editing is two-way.** Select a character (scene or Prefab Mode) or its recipe
+asset: the inspector shows every body slider by name (0–1), height, skin,
+clothes and colours, and the face style. Changes re-dress the character live —
+characters preview dressed in the editor without Play mode, through `DontSave`
+objects that never end up in scenes or prefabs — and are written straight back
+to the recipe file (`CharacterRecipeSync`; undo/redo included, Play-mode tweaks
+too). Edits to the file (by hand or from tools) flow into Unity on import. If the
+file names items or textures Unity has not imported, Unity refuses to save over
+it rather than drop them. *New Character From Selected Recipe* copies a recipe
+(and its face/eye textures, to repaint) as a new character. Face style, iris and
+skin colour live in the recipe too, but the textures are painted by Blender:
+run `tasks.paint_faces()` after changing them.
+
+**Faces** are painted by `tools/blender/charkit/faces.py` from the recipe:
+brows, lash line and wing, eyeshadow, lips, blush and freckles, placed in 3D
+around landmarks measured on the body (eye-opening contours, mouth line), so
+they follow the mesh rather than its UVs. The face texture is white except for
+the features, stored as *feature colour ÷ skin colour*: Unity multiplies it by
+the skin tint and gets the painted colour back (repaint after changing a
+recipe's skin). The iris texture is drawn in the eyes' front-projected UVs.
+`recipes.run()` paints every recipe and renders the Blender line-up.
+
+**Body UVs** are one 0–1 atlas (`config.UV_ATLAS`: head 75 %, torso, hands and
+feet in the side column). The source mesh used UDIM tiles, which Unity would
+wrap onto each other.
 
 ## Body shape sliders
 
@@ -172,8 +220,9 @@ features that vary in both directions get a pair.
   values to match the body, so clothes follow the hips/bust instead of clipping.
 - **Height** is a whole-character scale (0.95–1.05), not a shape key, so the
   skeleton and animations are untouched.
-- **Presets** ("Slim", "Curvy", "Athletic") are saved slider combinations in
-  data, not extra shape keys.
+- **Presets** (`Petite`, `TallSlim`, `Curvy`, `Athletic` in
+  `config.BODY_PRESETS`) are saved slider combinations in data, not extra shape
+  keys; a recipe lists its slider values explicitly.
 - Face sliders (jaw, cheeks, nose, lips, eye size) follow the same pattern in a
   later face pass.
 
@@ -201,11 +250,15 @@ features that vary in both directions get a pair.
 
 | Part | Triangles |
 |---|---|
-| Body (all regions) | ~6,000 |
-| Eyes (pair) | ~300 |
-| Hair | ≤ 1,500 |
-| Top + Bottom + Shoes | ≤ 3,000 combined |
+| Body (all regions) | ~5,200 (less once covered skin is hidden) |
+| Eyes (pair) | ~200 |
+| Hair | ≤ 1,500 (M4: 820–1,250) |
+| Top | ≤ 1,800 (M4: 1,080–1,760) |
+| Bottom (+ legwear) | ≤ 2,000 (M4: 1,300–1,830; fishnet band 1,040) |
+| Shoes (pair) | ≤ 1,500 (M4: 910–1,500) |
 | **Dressed character (body regions hidden)** | **6,000–10,000 rendered** |
+
+The trio in Unity: see the `[TrioCheck] … tris dressed` log lines of the M4 check.
 
 Max 4 bone influences per vertex. One skin material + one material per cosmetic.
 
@@ -214,12 +267,11 @@ Max 4 bone influences per vertex. One skin material + one material per cosmetic.
 | Path | Contents |
 |---|---|
 | `ArtSource/Characters/SK_Human_Female.blend` | Master: skeleton + body (source of truth); cosmetics live in its `Cosmetics_Female` collection, rebuildable from the item scripts |
-| `ArtSource/Characters/Characters_Female.blend` | The three assembled girls for review (M4) |
-| `tools/blender/charkit/*.py` | Re-runnable pipeline scripts (see README there); `items/` = one module per cosmetic |
-| `Assets/Art/Characters/Female/` | Base FBX; `Cosmetics/` holds item FBX + `.cosmetic.json` + generated `CosmeticItem` assets |
+| `tools/blender/charkit/*.py` | Re-runnable pipeline scripts (see README there); `items/` = one module per cosmetic; `faces.py`, `recipes.py`; `tasks.py` one-call helpers |
+| `Assets/Art/Characters/Female/` | Base FBX; `Cosmetics/` item FBX + `.cosmetic.json` + generated `CosmeticItem` assets; `Recipes/` recipe JSON + generated `CharacterRecipe` assets; `Textures/` face/iris PNGs; `Prefabs/` generated `CH_F_*` characters |
 | `Assets/Art/Characters/Materials/` | Shared character materials (`M_Skin`) |
-| `Assets/Art/Characters/Editor/` | Unity import rules (`CharacterModelImporter`, `CosmeticSidecar`) and the check tools |
-| `Assets/Scripts/Characters/` | Runtime: `CosmeticItem`, `CharacterAppearance`, `BodyMask` |
+| `Assets/Art/Characters/Editor/` | Unity import rules (`CharacterModelImporter`, `CosmeticSidecar`, `CharacterRecipeImporter`) and the check tools |
+| `Assets/Scripts/Characters/` | Runtime: `CosmeticItem`, `CharacterRecipe`, `CharacterAppearance`, `CosmeticSlots`, `BodyMask` |
 | `Assets/Tests/EditMode/Characters/` | EditMode tests for the runtime logic |
 
 Naming: `SK_` skeleton, `SKM_` skinned mesh, `SM_` static mesh, `CH_` assembled
@@ -267,6 +319,18 @@ clip on a character in a hidden preview scene and writes a filmstrip PNG to
 `PlayableGraph` does not move bones in a preview scene, and a manually
 rendered preview camera does not re-skin.
 
+## Working with Claude
+
+The repeatable steps are captured so every session runs the same checks:
+
+| Use | For |
+|---|---|
+| `/charkit-item <SKM_F_Slot_Name>` | Add or change a cosmetic: template per slot, build-and-look loop, slider spikes, mask, export, Unity import |
+| `/charkit-character <Name>` | New recipe, face painting, line-up render, Unity prefab |
+| `/charkit-verify` | End-to-end gate and retained evidence before a milestone closes |
+| `tools/blender/charkit/tasks.py` | One-call Blender helpers for the MCP (`from charkit import tasks; tasks.status()`) |
+| `tools/unity/` | Unity MCP client (editor open), batch runner (editor closed), wait helpers; see its README |
+
 ## Tuning knobs
 
 All live as constants at the top of `body_prepare.py` and `skeleton.py`:
@@ -280,8 +344,8 @@ regions, bone placement offsets.
 | M1 | Skeleton + body + shape sliders in Blender, pose-tested | front/side/¾, slider and pose renders in `production/qa/evidence/` |
 | M2 | FBX in Unity as Humanoid; CityPeople female walk plays | Unity screenshot |
 | M3 | One skinned item (crop top) + one rigid accessory; region hiding | renders + Unity screenshot |
-| M4 | The characters1 trio assembled | turntable renders + Unity screenshot |
-| Later | Unity recipe ScriptableObject, runtime builder, network sync, player/NPC adoption | separate task |
+| M4 | The characters1 trio assembled: items, faces, recipes, Unity prefabs | Blender line-up + face renders, Unity line-up, faces and walk filmstrips (`m4-trio/`) |
+| Later | characters2 backlog items, spring bones (ponytail, skirt), network sync of recipes, player/NPC adoption | separate tasks |
 
 ## Risks
 

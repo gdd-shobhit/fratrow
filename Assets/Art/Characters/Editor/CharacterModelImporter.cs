@@ -27,7 +27,9 @@ namespace FratRow.Art.Characters.Editor
     /// import as static meshes.
     ///
     /// Each cosmetic's &lt;name&gt;.cosmetic.json sidecar becomes a CosmeticItem asset
-    /// (&lt;name&gt;.asset) in the same folder, created or updated on import.
+    /// (&lt;name&gt;.asset) in the same folder, created or updated on import; each
+    /// &lt;id&gt;.recipe.json becomes a CharacterRecipe and a character prefab
+    /// (CharacterRecipeImporter). Textures in a Textures folder import as clamped sRGB.
     /// </summary>
     public class CharacterModelImporter : AssetPostprocessor
     {
@@ -119,10 +121,25 @@ namespace FratRow.Art.Characters.Editor
             };
         }
 
+        void OnPreprocessTexture()
+        {
+            // Face and eye textures (charkit.faces) are painted per character in body/eye UVs.
+            if (!assetPath.StartsWith(Root) || !assetPath.Contains("/Textures/"))
+                return;
+            var importer = (TextureImporter)assetImporter;
+            importer.sRGBTexture = true;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.anisoLevel = 2;
+            importer.alphaSource = TextureImporterAlphaSource.None;
+        }
+
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
             foreach (string path in imported.Where(p => p.StartsWith(Root) && p.EndsWith(SidecarSuffix)))
                 CosmeticSidecar.Import(path);
+            // After the sidecars, so recipes find the items imported in the same batch.
+            CharacterRecipeImporter.OnImported(imported.Where(p => p.StartsWith(Root) && p.EndsWith(CharacterRecipeImporter.RecipeSuffix)));
             foreach (string path in imported.Where(IsBaseModel))
             {
                 var importer = (ModelImporter)AssetImporter.GetAtPath(path);
@@ -195,7 +212,13 @@ namespace FratRow.Art.Characters.Editor
                 item = ScriptableObject.CreateInstance<CosmeticItem>();
 
             item.id = data.id;
-            item.slot = Enum.TryParse(data.slot, out CosmeticSlot slot) ? slot : CosmeticSlot.Top;
+            if (!Enum.TryParse(data.slot, out CosmeticSlot slot))
+            {
+                Debug.LogError($"[CosmeticSidecar] {jsonPath}: unknown slot '{data.slot}' " +
+                               $"(expected one of {string.Join(", ", Enum.GetNames(typeof(CosmeticSlot)))})");
+                return null;
+            }
+            item.slot = slot;
             item.kind = string.Equals(data.kind, "rigid", StringComparison.OrdinalIgnoreCase) ? CosmeticKind.Rigid : CosmeticKind.Skinned;
             item.model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{data.model}");
             item.bodyVertexCount = data.body?.vertexCount ?? 0;

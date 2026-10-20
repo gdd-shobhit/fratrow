@@ -1,6 +1,6 @@
 # Available Skills (Slash Commands)
 
-74 slash commands organized by phase. Type `/` in Claude Code to access any of them.
+77 slash commands organized by phase. Type `/` in Claude Code to access any of them.
 
 ## Onboarding & Navigation
 
@@ -31,6 +31,9 @@
 | `/art-bible` | Guided, section-by-section Art Bible authoring — creates visual identity spec before asset production begins |
 | `/asset-spec` | Generate per-asset visual specifications and AI generation prompts from GDDs, level docs, or character profiles |
 | `/asset-audit` | Audit assets for naming conventions, file size budgets, and pipeline compliance |
+| `/charkit-item` | Add or change a modular character cosmetic (Blender charkit → FBX + sidecar → Unity CosmeticItem) |
+| `/charkit-character` | Create a character recipe: sliders, height, skin, painted face/eyes, items + colours → Unity prefab |
+| `/charkit-verify` | End-to-end character pipeline gate: Blender checks, Unity tests and dressed checks, retained evidence |
 
 ## UX & Interface Design
 

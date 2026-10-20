@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "SKM_F_Hair_HighPonytail",
+  "model": "SKM_F_Hair_HighPonytail.fbx",
+  "body": {
+    "vertexCount": 3150,
+    "topologyHash": "9f306667d11d462d"
+  },
+  "slot": "Hair",
+  "kind": "skinned",
+  "hiddenBodyVertices": "gP/kQQAHAAAAABgQAOAA4wB/gAMCAMBwBoAA/v////////////99AAAA4P//AAAAAAAAAAAAAOAvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgHzkwAAAAAAAcMABgAHHAB3CCAAAczv////////////cBAADA/w8AAAAAAAAAAADAbwgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAA+A8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+  "hiddenBodyVertexCount": 334,
+  "materials": [
+    {
+      "name": "M_Hair_HighPonytail",
+      "color": [
+        0.95,
+        0.45,
+        0.17
+      ],
+      "recolorable": true
+    },
+    {
+      "name": "M_Hair_HighPonytail_Bow",
+      "color": [
+        0.82,
+        0.08,
+        0.13
+      ],
+      "recolorable": true
+    }
+  ]
+}

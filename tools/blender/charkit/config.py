@@ -90,9 +90,17 @@ BODY_PRESETS = {
     "Curvy": {"Bust_Large": 0.7, "Hips_Wide": 0.9, "Butt_Large": 0.9, "Thighs_Thick": 0.8,
               "Waist_Narrow": 0.5, "Calves_Thick": 0.4, "Arms_Thick": 0.3, "Belly_Soft": 0.2,
               "height": 1.0},
+    "TallSlim": {"Waist_Narrow": 0.5, "Hips_Wide": 0.2, "Thighs_Thin": 0.25, "Arms_Thin": 0.35,
+                 "Shoulders_Narrow": 0.2, "Bust_Small": 0.15, "height": 1.04},
     "Athletic": {"Shoulders_Wide": 0.6, "Waist_Narrow": 0.2, "Butt_Large": 0.4, "Thighs_Thick": 0.4,
                  "Calves_Thick": 0.6, "Arms_Thick": 0.4, "Bust_Small": 0.2, "height": 1.02},
 }
+
+# Body UV atlas: the source body's UDIM tiles (head+neck 0, torso and limbs 1,
+# hands 2, feet 4) packed into 0-1, because Unity wraps UVs and the tiles would
+# overlap. tile -> (u offset, v offset, scale); the head gets the most room so
+# per-character face textures (charkit.faces) have the detail. 0-0.25 in v is free.
+UV_ATLAS = {0: (0.0, 0.25, 0.75), 1: (0.75, 0.75, 0.25), 2: (0.75, 0.5, 0.25), 4: (0.75, 0.25, 0.25)}
 
 # Preview colours only; in Unity the recipe sets these per character.
 SKIN_TONE = (0.80, 0.58, 0.46)

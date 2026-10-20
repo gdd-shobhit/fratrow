@@ -62,6 +62,35 @@ pipeline doc's *Unity import* section. `review.py` holds the deformation test po
 line-up (`preview_variants`) and a Workbench render helper used for the evidence
 in `production/qa/evidence/`.
 
+## Tasks
+
+`tasks.py` is the one-call API for scripted sessions (the Blender MCP's
+`execute_blender_code` runs each call in a fresh namespace, so every call
+starts with the import). Items can be named by module (`f_hair_bob`) or id
+(`SKM_F_Hair_Bob`).
+
+```python
+from charkit import tasks; tasks.status()            # body hash; items built/exported/stale; recipe PNGs
+from charkit import tasks; tasks.reload()            # after editing any charkit module
+from charkit import tasks; tasks.build("f_hair_bob") # rebuild in the file only (skinned items stay unbound)
+from charkit import tasks; tasks.export(["f_hair_bob"])   # full build + FBX/sidecar; export() = every item
+from charkit import tasks; tasks.slider_spikes()     # per-key max move; flags keys moving far-off vertices
+from charkit import tasks; tasks.focus(tasks.HEAD)   # then look(mode="angles", target=["_focus"])
+from charkit import tasks; tasks.isolate(["f_hair_bob"], with_armature=False)  # ... tasks.show_all()
+from charkit import tasks; tasks.viewport_colors("TEXTURE")   # solid view shows face/eye images
+from charkit import tasks; tasks.item_sheet("f_hair_bob")     # production/qa/evidence/items/
+from charkit import tasks; tasks.paint_faces(["Blonde"]); tasks.lineup()
+from charkit import tasks; tasks.save()              # tidy previews/images/focus boxes, save the master
+```
+
+`build`, `export`, `paint_faces` and `lineup` reload every charkit module
+first (including `tasks.py`), so edits take effect without a manual reload.
+`status()` calls an FBX stale when it is older than its item module or one of
+the shared builders it imports (`STALE_SOURCES`). `slider_spikes()` flags a
+key that moves an item vertex more than 5 mm while resting over 12 cm
+(`SPIKE_REACH`) from every body vertex that key moves. Renders stamp the date
+into the PNG metadata, so re-rendered evidence always shows as modified in git.
+
 ## Rules
 
 - The skeleton is the contract. Meshes may be replaced or re-sculpted; bone
