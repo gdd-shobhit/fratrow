@@ -174,7 +174,7 @@ accepted NPCs showed up, 0 who declined came anyway. The persona-2B run was stop
 
 ## How to get free speech in the editor now
 
-1. FratRow → Social Brains → **Enable development experiment (CUDA fallback)** (needs `Library/SocialNative/llama-cuda`).
+1. FratRow → Social Brains → **Enable development experiment** (after `pwsh -File tools/social/bootstrap.ps1 -Models`; the llama.cpp build is auto-picked, see ADR-0004).
 2. FratRow → Social Brains → **Reply mode: persona** (the default; shown checked).
 3. Optional: FratRow → Campaign → **Reset local campaign save**, so old template replies don't sit in NPC memory.
 4. Enter Play mode and talk. The console should say `Provider: llama.cpp CUDA (Qwen_Qwen3.5-2B-Q4_K_M.gguf, persona replies)`.
@@ -186,7 +186,7 @@ Without step 1 you are still on the heuristic, and no prompt change can make it 
 | Option | Quality | Latency | Cost / constraints |
 |---|---|---|---|
 | Heuristic (today's default) | 2.3/5 judged; canned | ~0 ms | free; no GPU |
-| Local 2B, persona | 3.4/5 judged; distinct voices, small-model slips | p50 1.5–2 s, p95 3–5.5 s on RTX 4080; much slower on CPU (`--social-timeout 90`) | free, offline, private; ~2.5 GB VRAM; licensing review before shipping |
+| Local 2B, persona | 3.4/5 judged; distinct voices, small-model slips | p50 1.5–2 s, p95 3–5.5 s on RTX 4080; Vulkan 1.4 s and CPU 4.9 s warm (llama.cpp builds, ADR-0004) | free, offline, private; ~2.5 GB VRAM; licensing review before shipping |
 | Local 4B, persona | expected better coherence (not yet judged) | earlier 4B runs: ~2–5 s | ~4 GB VRAM; misses the 2 GB memory target |
 | Cloud model (e.g. Claude Haiku 4.5) | ChatGPT-class | ~1–2 s per call over the API | about $0.001–0.003 per turn, needs internet, and a relay server, because an API key can't ship in the client; content moderation |
 

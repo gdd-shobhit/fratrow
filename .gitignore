@@ -4,7 +4,6 @@
 #
 .utmp/
 /[Ll]ibrary/
-/Assets/Plugins/x86_64/FratRowSocialNative.dll
 /Tests/SocialHarness/obj/
 /Tests/SocialHarness/bin/
 /[Tt]emp/
@@ -44,8 +43,8 @@
 ExportedObj/
 .consulo/
 *.csproj
-!Tests/SocialHarness/SocialHarness.csproj
-!Tests/GameLoopHarness/GameLoopHarness.csproj
+# Hand-written console harnesses are source, unlike Unity's generated project files.
+!/Tests/**/*.csproj
 *.unityproj
 *.sln
 *.suo

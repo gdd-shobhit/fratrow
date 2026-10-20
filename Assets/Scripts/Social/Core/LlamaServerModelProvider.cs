@@ -130,7 +130,7 @@ namespace FratRow.Social
             public int seed;
             public bool cache_prompt = false;
             public TemplateOptions chat_template_kwargs = new TemplateOptions();
-            public string grammar = NativeSocialModelProvider.Grammar;
+            public string grammar = SocialProposalGrammar.Grammar;
         }
         [Serializable] sealed class Choice { public Message message; public string finish_reason; }
         [Serializable] sealed class Usage { public int prompt_tokens; public int completion_tokens; }
@@ -187,7 +187,7 @@ namespace FratRow.Social
                 var format = CompactFormat ? new SocialInferenceFormat(context) : null;
                 var rendered = format?.Context ?? context;
                 LastRawDecision = await CompleteAsync(format != null ? SocialReply.PlannerSystem(format) : rendered.SystemPrompt, rendered.Prompt,
-                    format != null ? SocialReply.PlannerGrammar(format) : NativeSocialModelProvider.GrammarFor(context), cancellation).ConfigureAwait(false);
+                    format != null ? SocialReply.PlannerGrammar(format) : SocialProposalGrammar.GrammarFor(context), cancellation).ConfigureAwait(false);
                 SocialProposal proposal;
                 try { proposal = format != null ? format.Decode(LastRawDecision, codec) : codec.Decode<SocialProposal>(LastRawDecision); }
                 catch (Exception e) { throw new ArgumentException("Invalid model JSON: " + e.Message); }

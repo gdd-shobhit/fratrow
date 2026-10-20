@@ -31,19 +31,24 @@ Use it:
 |---|---|---|
 | `heuristic` | Keyword rules plus canned phrases. **What the game runs without `--social-brains`.** | nothing |
 | `grounded` | The local model picks enum acts; the host composes the reply from tone banks. | `--model`, `--llama-server` |
-| `persona` | The model speaks in character first (free speech), then a constrained pass labels the reply's RSVP/trust/grievance. **What the game runs with a model enabled (default reply mode).** | `--model`, `--llama-server` |
+| `persona` | The model speaks in character first (free speech), then a constrained pass labels the reply's RSVP/trust/grievance. **What the game runs with a model enabled (default reply mode).** | `--model`; llama.cpp build auto-picked |
 | `persona-claude` | Reference ceiling, not a game provider: the same persona prompts voiced and labeled by a Claude model (`--npc-model`, default `claude-haiku-4-5`). Compare its quality, not its latency (CLI start-up is included). | the `claude` CLI; costs per turn |
 
-Models and the CUDA server live in the **main checkout's** `Library/` (gitignored, so absent in
-worktrees). Use absolute paths:
+The only local runtime is llama.cpp (ADR-0004), installed by `pwsh -File tools/social/bootstrap.ps1 -Models`
+into `Library/SocialNative/llama-{cuda,vulkan,cpu}`. Without `--llama-server`, the tool picks the best installed
+build: CUDA on an NVIDIA machine, otherwise Vulkan, otherwise CPU (`--gpu N` overrides offloaded layers). Models
+and builds live in the **main checkout's** `Library/` (gitignored, so absent in worktrees); from a worktree pass
+absolute paths:
 
 ```
 --model D:/fratrow/Library/SocialModels/Qwen_Qwen3.5-2B-Q4_K_M.gguf
---llama-server D:/fratrow/Library/SocialNative/llama-cuda/llama-server.exe
+--native-root D:/fratrow/Library/SocialNative          # or --llama-server <path to one llama-server.exe>
 ```
 
 Also available: `Qwen_Qwen3.5-4B-Q4_K_M.gguf` and `MiniCPM5-1B-Q4_K_M.gguf`. The first turn includes
-the checksum and server start (about 40 s); later turns take about 2 s on the RTX 4080.
+the checksum and server start (about 40 s); later turns take about 2 s on the RTX 4080 (CUDA). The CPU build
+is much slower (about 5 s per model pass for the 2B model in the October measurements, and persona replies take
+two passes), so the game gives it a 90 s reply deadline.
 
 ## Phase 2: Run it
 

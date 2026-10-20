@@ -78,7 +78,7 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
     }
     public static double Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
 
-    /// <summary>Opt-in local model (development builds on Windows only; RunAnywhere/llama licensing not cleared for release).</summary>
+    /// <summary>Opt-in local model (development builds on Windows only; shipping the llama.cpp runtime and model is not decided yet, ADR-0004).</summary>
     static bool ShouldUseModel()
     {
         bool requested = Environment.GetCommandLineArgs().Contains("--social-brains");
@@ -108,18 +108,19 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
                 if (store.Read().campaignId != id) throw new InvalidDataException("Campaign ID does not match its save directory");
                 World = new SocialWorld(store);
                 RegisterRoster();
-                var provider = CreateProvider(out bool persona);
+                var provider = CreateProvider(out bool persona, out double defaultTimeout);
                 // Persona replies carry model-written words, so only the grounded composer's exact-text check is relaxed;
                 // decisions, evidence, effects and commitments are validated the same way.
+                string timeout = Option("--social-timeout");
                 service = new SocialConversationService(World, codec, provider, this,
-                    TimeSpan.FromSeconds(double.Parse(Option("--social-timeout", "15"), System.Globalization.CultureInfo.InvariantCulture)), requireGroundedProposal: !persona);
+                    TimeSpan.FromSeconds(timeout == null ? defaultTimeout : double.Parse(timeout, System.Globalization.CultureInfo.InvariantCulture)), requireGroundedProposal: !persona);
                 campaignId.Value = id;
                 localParty = World.EnsurePlannedParty(20);
                 featureEnabled.Value = true;
                 Debug.Log("[Social] Host campaign opened: " + id + ". Provider: " + ProviderName + ".");
                 if (provider is HeuristicSocialModelProvider)
                     Debug.LogWarning("[Social] NPC replies are canned keyword templates (no language model). For model replies use " +
-                        "FratRow > Social Brains > Enable development experiment (CUDA fallback), or launch with --social-brains --social-llama-server <llama-server.exe>.");
+                        "FratRow > Social Brains > Enable development experiment (after tools/social/bootstrap.ps1 -Models), or launch with --social-brains.");
             }
             catch (Exception e) { Debug.LogError("[Social] Startup failed: " + e); featureEnabled.Value = false; }
         }
@@ -161,9 +162,33 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
         return mode == "grounded" ? "grounded" : "persona";
     }
 
-    ISocialModelProvider CreateProvider(out bool persona)
+    /// <summary>Where llama.cpp builds are installed: <c>&lt;project&gt;/Library/SocialNative</c> in the editor (written by
+    /// tools/social/bootstrap.ps1), <c>&lt;player folder&gt;/SocialNative</c> in a development player. <c>--social-native-root</c> overrides.</summary>
+    public static string NativeRoot()
+    {
+        string root = Option("--social-native-root");
+        if (!string.IsNullOrEmpty(root)) return root;
+        string parent = Directory.GetParent(Application.dataPath)?.FullName ?? ".";
+        return Application.isEditor ? Path.Combine(parent, "Library", "SocialNative") : Path.Combine(parent, "SocialNative");
+    }
+
+    /// <summary>The llama.cpp build to launch: an explicit <c>--social-llama-server</c> or editor choice, otherwise the best
+    /// installed build for this machine (CUDA on NVIDIA, else Vulkan, else CPU). Null when none is installed.</summary>
+    public static LlamaRuntime ChooseRuntime()
+    {
+        string server = Option("--social-llama-server");
+#if UNITY_EDITOR
+        if (string.IsNullOrEmpty(server)) server = UnityEditor.EditorPrefs.GetString("FratRow.Social.LlamaServer", "");
+#endif
+        if (!string.IsNullOrEmpty(server)) return LlamaRuntimes.FromServerPath(server);
+        bool nvidia = SystemInfo.graphicsDeviceVendor.IndexOf("NVIDIA", StringComparison.OrdinalIgnoreCase) >= 0;
+        return LlamaRuntimes.Resolve(NativeRoot(), nvidia && LlamaRuntimes.CudaDriverPresent());
+    }
+
+    ISocialModelProvider CreateProvider(out bool persona, out double defaultTimeoutSeconds)
     {
         persona = false;
+        defaultTimeoutSeconds = 15;
         if (ShouldUseModel())
         {
             try
@@ -173,22 +198,15 @@ public sealed class NetworkedSocialConversation : NetworkBehaviour, IInteraction
                 path = UnityEditor.EditorPrefs.GetString("FratRow.Social.Model", path);
 #endif
                 string hash = SocialModelCatalog.HashFor(Path.GetFileName(path));
-                string llamaServer = Option("--social-llama-server");
-#if UNITY_EDITOR
-                if (llamaServer == null) llamaServer = UnityEditor.EditorPrefs.GetString("FratRow.Social.LlamaServer", "");
-#endif
+                var runtime = ChooseRuntime() ?? throw new FileNotFoundException(
+                    "No llama.cpp build under " + NativeRoot() + ". Run: pwsh -File tools/social/bootstrap.ps1 -Models");
                 bool compact = Environment.GetCommandLineArgs().Contains("--social-compact-inference");
                 bool voiced = ReplyMode() == "persona";
-                if (string.IsNullOrEmpty(llamaServer))
-                {
-                    ProviderName = "RunAnywhere CPU (" + Path.GetFileName(path) + ", " + ReplyMode() + " replies)";
-                    var native = new NativeSocialModelProvider(codec, path, hash) { CompactFormat = compact, PersonaReplies = voiced };
-                    persona = voiced;
-                    return native;
-                }
-                ProviderName = "llama.cpp CUDA (" + Path.GetFileName(path) + ", " + ReplyMode() + " replies)";
-                var llama = new LlamaServerModelProvider(codec, llamaServer, path, hash) { CompactFormat = compact, PersonaReplies = voiced };
+                ProviderName = runtime.Name + " (" + Path.GetFileName(path) + ", " + ReplyMode() + " replies)";
+                var llama = new LlamaServerModelProvider(codec, runtime.ServerPath, path, hash, runtime.GpuLayers) { CompactFormat = compact, PersonaReplies = voiced };
                 persona = voiced;
+                // Two passes per persona reply on the CPU build take tens of seconds; GPU builds answer in about 2 s.
+                if (runtime.Backend == LlamaBackend.Cpu) defaultTimeoutSeconds = 90;
                 return llama;
             }
             catch (Exception e) { Debug.LogWarning("[Social] Model provider unavailable, using heuristic replies: " + e.Message); }
